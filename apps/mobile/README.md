@@ -61,20 +61,16 @@ flutter run
 
 ### Configuração
 
-Edite os arquivos de configuração:
+Defina as variáveis em tempo de build (recomendado). O app não inicia sem `SUPABASE_URL` e `SUPABASE_ANON_KEY`:
 
-**1. Supabase** ([lib/core/config/supabase_config.dart](lib/core/config/supabase_config.dart)):
-```dart
-static const String url = 'https://seu-projeto.supabase.co';
-static const String anonKey = 'sua-anon-key';
+```bash
+flutter run \
+  --dart-define SUPABASE_URL=https://<projeto>.supabase.co \
+  --dart-define SUPABASE_ANON_KEY=<sua-anon-key> \
+  --dart-define API_URL=http://10.0.2.2:3000/api # use localhost no simulador iOS
 ```
 
-**2. API** ([lib/core/config/api_config.dart](lib/core/config/api_config.dart)):
-```dart
-static const String baseUrl = 'http://localhost:3000/api';
-// Para device físico, use o IP da máquina:
-// static const String baseUrl = 'http://192.168.1.X:3000/api';
-```
+Você também pode ajustar os valores padrão em `lib/core/config/api_config.dart` e `lib/core/config/supabase_config.dart` se preferir fixá-los no código.
 
 ## 📦 Dependências Principais
 

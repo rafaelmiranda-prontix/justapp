@@ -23,21 +23,15 @@ flutter pub get
 flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
-### 3. Configurar API
+### 3. Configurar API e Supabase (obrigatório)
 
-Edite `lib/core/config/api_config.dart`:
+O app não inicia mais sem `SUPABASE_URL` e `SUPABASE_ANON_KEY`. Informe tudo via `--dart-define` (recomendado) para usar os defaults corretos por plataforma:
 
-```dart
-class ApiConfig {
-  // Para emulador Android
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
-
-  // Para simulador iOS
-  // static const String baseUrl = 'http://localhost:3000/api';
-
-  // Para device físico (use o IP da sua máquina)
-  // static const String baseUrl = 'http://192.168.1.X:3000/api';
-}
+```bash
+flutter run \
+  --dart-define SUPABASE_URL=https://<projeto>.supabase.co \
+  --dart-define SUPABASE_ANON_KEY=<sua-anon-key> \
+  --dart-define API_URL=http://10.0.2.2:3000/api # use http://localhost:3000/api no simulador iOS
 ```
 
 ### 4. Rodar
