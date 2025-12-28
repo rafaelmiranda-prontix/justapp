@@ -1,0 +1,113 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  CLIENT
+  LAWYER
+  ADMIN
+}
+
+enum UrgencyLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum CaseStatus {
+  PENDING_ANALYSIS // Aguardando IA
+  OPEN             // Disponível para advogados
+  MATCHED          // Advogado aceitou
+  CLOSED           // Finalizado
+  ARCHIVED
+}
+
+// Modelos
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  phone     String?
+  avatarUrl String?
+  role      UserRole @default(CLIENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  clientCases   Case[]  @relation("ClientCases")
+  lawyerProfile Lawyer? // Só existe se role == LAWYER
+
+  @@map("users")
+}
+
+model Lawyer {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  oabNumber   String   @unique
+  oabState    String   // Ex: SP, RJ
+  bio         String?  @db.Text
+  specialties String[] // Array de strings: ["Trabalhista", "Penal"]
+  credits     Int      @default(0) // Sistema de monetização
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  matches     Match[]
+
+  @@map("lawyers")
+}
+
+model Case {
+  id             String       @id @default(uuid())
+  clientId       String
+  client         User         @relation("ClientCases", fields: [clientId], references: [id], onDelete: Cascade)
+
+  // Inputs do Usuário
+  rawText        String?      @db.Text
+  audioUrl       String?      // URL do Supabase Storage
+
+  // Análise da IA (Campos estruturados)
+  category       String?      // Ex: "Direito do Trabalho"
+  subCategory    String?      // Ex: "Demissão"
+  technicalSummary String?    @db.Text // Resumo anonimizado
+  urgency        UrgencyLevel @default(MEDIUM)
+  aiConfidence   Int?         // 0-100
+
+  status         CaseStatus   @default(PENDING_ANALYSIS)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  matches        Match[]
+
+  @@map("cases")
+  @@index([clientId])
+  @@index([status])
+  @@index([category])
+}
+
+model Match {
+  id        String   @id @default(uuid())
+  caseId    String
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  lawyerId  String
+  lawyer    Lawyer   @relation(fields: [lawyerId], references: [id], onDelete: Cascade)
+
+  acceptedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@unique([caseId, lawyerId])
+  @@map("matches")
+  @@index([lawyerId])
+}

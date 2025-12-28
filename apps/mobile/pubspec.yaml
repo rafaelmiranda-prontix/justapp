@@ -1,0 +1,61 @@
+name: legal_match
+description: App mobile para conectar clientes a advogados especialistas
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+# Plataformas suportadas
+platforms:
+  android:
+  ios:
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.4.9
+  riverpod_annotation: ^2.3.3
+
+  # Routing
+  go_router: ^13.0.0
+
+  # Supabase
+  supabase_flutter: ^2.3.0
+
+  # Audio Recording
+  flutter_sound: ^9.2.13
+  permission_handler: ^11.1.0
+  path_provider: ^2.1.1
+
+  # HTTP & API
+  dio: ^5.4.0
+
+  # UI
+  cupertino_icons: ^1.0.2
+  google_fonts: ^6.1.0
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.1
+
+  # Utils
+  intl: ^0.18.1
+  uuid: ^4.3.3
+  logger: ^2.0.2+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  riverpod_generator: ^2.3.9
+  build_runner: ^2.4.7
+  custom_lint: ^0.5.7
+  riverpod_lint: ^2.3.7
+
+flutter:
+  uses-material-design: true
+
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
