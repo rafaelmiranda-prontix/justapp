@@ -1,0 +1,219 @@
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+
+const createMatchSchema = z.object({
+  advogadoId: z.string(),
+  casoId: z.string().optional(),
+  descricao: z.string().min(10),
+  especialidadeId: z.string().optional(),
+  urgencia: z.enum(['BAIXA', 'NORMAL', 'ALTA', 'URGENTE']).optional(),
+})
+
+export async function POST(req: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    }
+
+    const body = await req.json()
+    const data = createMatchSchema.parse(body)
+
+    // Busca o cidadao
+    const cidadao = await prisma.cidadao.findUnique({
+      where: { userId: session.user.id },
+    })
+
+    if (!cidadao) {
+      return NextResponse.json({ error: 'Cidadão não encontrado' }, { status: 404 })
+    }
+
+    // Verifica se o advogado existe
+    const advogado = await prisma.advogado.findUnique({
+      where: { id: data.advogadoId },
+    })
+
+    if (!advogado) {
+      return NextResponse.json({ error: 'Advogado não encontrado' }, { status: 404 })
+    }
+
+    // Cria ou usa caso existente
+    let caso
+    if (data.casoId) {
+      caso = await prisma.caso.findUnique({
+        where: { id: data.casoId },
+      })
+    } else {
+      // Cria novo caso
+      caso = await prisma.caso.create({
+        data: {
+          cidadaoId: cidadao.id,
+          descricao: data.descricao,
+          especialidadeId: data.especialidadeId,
+          urgencia: data.urgencia || 'NORMAL',
+          status: 'ABERTO',
+        },
+      })
+    }
+
+    if (!caso) {
+      return NextResponse.json({ error: 'Caso não encontrado' }, { status: 404 })
+    }
+
+    // Verifica se já existe match entre esse caso e advogado
+    const existingMatch = await prisma.match.findUnique({
+      where: {
+        casoId_advogadoId: {
+          casoId: caso.id,
+          advogadoId: data.advogadoId,
+        },
+      },
+    })
+
+    if (existingMatch) {
+      return NextResponse.json({ error: 'Já existe uma solicitação para este advogado' }, { status: 400 })
+    }
+
+    // Cria o match com score simulado (depois calcular real)
+    const match = await prisma.match.create({
+      data: {
+        casoId: caso.id,
+        advogadoId: data.advogadoId,
+        score: 85, // Score simulado
+        status: 'PENDENTE',
+      },
+      include: {
+        advogado: {
+          include: {
+            user: true,
+          },
+        },
+        caso: true,
+      },
+    })
+
+    // TODO: Enviar notificação para o advogado
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        matchId: match.id,
+        casoId: caso.id,
+        status: match.status,
+      },
+    })
+  } catch (error) {
+    console.error('Error creating match:', error)
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Dados inválidos', details: error.errors }, { status: 400 })
+    }
+
+    return NextResponse.json({ error: 'Erro ao criar solicitação' }, { status: 500 })
+  }
+}
+
+// GET - Listar matches do usuário logado
+export async function GET(req: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const role = searchParams.get('role') || session.user.role
+
+    let matches
+
+    if (role === 'CIDADAO') {
+      const cidadao = await prisma.cidadao.findUnique({
+        where: { userId: session.user.id },
+      })
+
+      if (!cidadao) {
+        return NextResponse.json({ error: 'Cidadão não encontrado' }, { status: 404 })
+      }
+
+      matches = await prisma.match.findMany({
+        where: {
+          caso: {
+            cidadaoId: cidadao.id,
+          },
+        },
+        include: {
+          advogado: {
+            include: {
+              user: true,
+              especialidades: {
+                include: {
+                  especialidade: true,
+                },
+              },
+            },
+          },
+          caso: true,
+          mensagens: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 1,
+          },
+        },
+        orderBy: {
+          enviadoEm: 'desc',
+        },
+      })
+    } else if (role === 'ADVOGADO') {
+      const advogado = await prisma.advogado.findUnique({
+        where: { userId: session.user.id },
+      })
+
+      if (!advogado) {
+        return NextResponse.json({ error: 'Advogado não encontrado' }, { status: 404 })
+      }
+
+      matches = await prisma.match.findMany({
+        where: {
+          advogadoId: advogado.id,
+        },
+        include: {
+          caso: {
+            include: {
+              cidadao: {
+                include: {
+                  user: true,
+                },
+              },
+              especialidade: true,
+            },
+          },
+          mensagens: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 1,
+          },
+        },
+        orderBy: {
+          enviadoEm: 'desc',
+        },
+      })
+    } else {
+      return NextResponse.json({ error: 'Role inválido' }, { status: 400 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: matches,
+    })
+  } catch (error) {
+    console.error('Error fetching matches:', error)
+    return NextResponse.json({ error: 'Erro ao buscar matches' }, { status: 500 })
+  }
+}

@@ -2,9 +2,10 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MapPin, Star, Award, MessageSquare, Video } from 'lucide-react'
+import { MapPin, Star, Award, Video } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
+import { ContactAdvogadoDialog } from '@/components/advogado/contact-advogado-dialog'
 
 interface AdvogadoCardProps {
   id: string
@@ -20,6 +21,7 @@ interface AdvogadoCardProps {
   totalAvaliacoes: number
   distanciaKm: number | null
   score: number
+  casoId?: string
 }
 
 export function AdvogadoCard({
@@ -36,6 +38,7 @@ export function AdvogadoCard({
   totalAvaliacoes,
   distanciaKm,
   score,
+  casoId,
 }: AdvogadoCardProps) {
   // Pega as iniciais do nome para o avatar fallback
   const initials = nome
@@ -136,10 +139,11 @@ export function AdvogadoCard({
         <Button asChild className="flex-1">
           <Link href={`/advogados/${id}`}>Ver Perfil</Link>
         </Button>
-        <Button variant="outline" className="flex-1">
-          <MessageSquare className="h-4 w-4 mr-2" />
-          Contatar
-        </Button>
+        <ContactAdvogadoDialog
+          advogadoId={id}
+          advogadoNome={nome}
+          casoId={casoId}
+        />
       </CardFooter>
     </Card>
   )

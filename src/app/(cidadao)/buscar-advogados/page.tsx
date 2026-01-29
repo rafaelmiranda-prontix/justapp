@@ -30,6 +30,7 @@ export default function BuscarAdvogadosPage() {
   const searchParams = useSearchParams()
   const [advogados, setAdvogados] = useState<Advogado[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [casoId, setCasoId] = useState<string | undefined>()
   const [filters, setFilters] = useState({
     especialidade: searchParams.get('especialidade') || 'Direito do Consumidor',
     cidade: searchParams.get('cidade') || 'Rio de Janeiro',
@@ -37,7 +38,22 @@ export default function BuscarAdvogadosPage() {
 
   useEffect(() => {
     fetchAdvogados()
+    fetchActiveCaso()
   }, [])
+
+  const fetchActiveCaso = async () => {
+    try {
+      const res = await fetch('/api/casos/active')
+      if (res.ok) {
+        const result = await res.json()
+        if (result.success && result.data) {
+          setCasoId(result.data.id)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching active caso:', error)
+    }
+  }
 
   const fetchAdvogados = async () => {
     setIsLoading(true)
@@ -143,7 +159,7 @@ export default function BuscarAdvogadosPage() {
       ) : (
         <div className="grid md:grid-cols-2 gap-6">
           {advogados.map((advogado) => (
-            <AdvogadoCard key={advogado.id} {...advogado} />
+            <AdvogadoCard key={advogado.id} {...advogado} casoId={casoId} />
           ))}
         </div>
       )}
