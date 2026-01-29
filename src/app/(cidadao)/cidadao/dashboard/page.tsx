@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,8 @@ import { Plus, FileText, MessageSquare, Clock, CheckCircle, XCircle, AlertCircle
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
+import { CasoStats } from '@/components/cidadao/caso-stats'
+import { CasoFilters } from '@/components/cidadao/caso-filters'
 
 interface Caso {
   id: string
@@ -69,6 +71,9 @@ const matchStatusLabels = {
 export default function CidadaoDashboardPage() {
   const [casos, setCasos] = useState<Caso[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [especialidadeFilter, setEspecialidadeFilter] = useState('all')
 
   useEffect(() => {
     fetchCasos()
@@ -99,13 +104,45 @@ export default function CidadaoDashboardPage() {
       .toUpperCase()
   }
 
-  const activeCasos = casos.filter((c) => c.status !== 'FECHADO' && c.status !== 'CANCELADO')
-  const completedCasos = casos.filter((c) => c.status === 'FECHADO')
-  const totalMatches = casos.reduce((acc, c) => acc + c.matches.length, 0)
-  const acceptedMatches = casos.reduce(
-    (acc, c) => acc + c.matches.filter((m) => m.status === 'ACEITO').length,
-    0
-  )
+  // Filtros e busca
+  const especialidades = useMemo(() => {
+    const unique = new Set<string>()
+    casos.forEach((c) => {
+      if (c.especialidade?.nome) {
+        unique.add(c.especialidade.nome)
+      }
+    })
+    return Array.from(unique)
+  }, [casos])
+
+  const filteredCasos = useMemo(() => {
+    return casos.filter((caso) => {
+      // Busca por texto
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase()
+        const matchesDescricao = caso.descricao.toLowerCase().includes(query)
+        const matchesEspecialidade = caso.especialidade?.nome.toLowerCase().includes(query)
+        if (!matchesDescricao && !matchesEspecialidade) {
+          return false
+        }
+      }
+
+      // Filtro por status
+      if (statusFilter !== 'all' && caso.status !== statusFilter) {
+        return false
+      }
+
+      // Filtro por especialidade
+      if (especialidadeFilter !== 'all' && caso.especialidade?.nome !== especialidadeFilter) {
+        return false
+      }
+
+      return true
+    })
+  }, [casos, searchQuery, statusFilter, especialidadeFilter])
+
+  const activeCasos = filteredCasos.filter((c) => c.status !== 'FECHADO' && c.status !== 'CANCELADO')
+  const completedCasos = filteredCasos.filter((c) => c.status === 'FECHADO')
 
   return (
     <div className="container max-w-7xl py-8">
@@ -123,63 +160,18 @@ export default function CidadaoDashboardPage() {
       </div>
 
       {/* Estatísticas */}
-      <div className="grid md:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Casos Ativos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-blue-500" />
-              <span className="text-2xl font-bold">{activeCasos.length}</span>
-            </div>
-          </CardContent>
-        </Card>
+      <CasoStats />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Advogados Contatados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-yellow-500" />
-              <span className="text-2xl font-bold">{totalMatches}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Casos Aceitos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span className="text-2xl font-bold">{acceptedMatches}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Casos Concluídos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-gray-500" />
-              <span className="text-2xl font-bold">{completedCasos.length}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Filtros */}
+      <CasoFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        especialidadeFilter={especialidadeFilter}
+        onEspecialidadeFilterChange={setEspecialidadeFilter}
+        especialidades={especialidades}
+      />
 
       {/* Lista de Casos */}
       <div className="space-y-6">
@@ -206,7 +198,27 @@ export default function CidadaoDashboardPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {activeCasos.map((caso) => (
+              {activeCasos.length === 0 ? (
+                <Card>
+                  <CardContent className="py-16 text-center">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-4">
+                      {searchQuery || statusFilter !== 'all' || especialidadeFilter !== 'all'
+                        ? 'Nenhum caso encontrado com os filtros aplicados'
+                        : 'Você ainda não tem casos ativos'}
+                    </p>
+                    {!searchQuery && statusFilter === 'all' && especialidadeFilter === 'all' && (
+                      <Button asChild>
+                        <Link href="/novo-caso">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Criar Primeiro Caso
+                        </Link>
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ) : (
+                activeCasos.map((caso) => (
                 <Card key={caso.id}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -327,7 +339,8 @@ export default function CidadaoDashboardPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                ))
+              )}
             </div>
           )}
         </div>

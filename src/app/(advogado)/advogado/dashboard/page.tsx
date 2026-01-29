@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -10,20 +10,21 @@ import { CheckCircle, XCircle, Eye, AlertCircle, Clock, MapPin } from 'lucide-re
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useMatchActions } from '@/hooks/use-match-actions'
+import { LeadStats } from '@/components/advogado/lead-stats'
+import { LeadFilters } from '@/components/advogado/lead-filters'
 import Link from 'next/link'
 
 interface Match {
   id: string
   score: number
-  status: 'PENDENTE' | 'VISUALIZADO' | 'ACEITO' | 'RECUSADO'
-  criadoEm: string
+  status: 'PENDENTE' | 'VISUALIZADO' | 'ACEITO' | 'RECUSADO' | 'CONTRATADO' | 'EXPIRADO'
+  enviadoEm: string
   visualizadoEm: string | null
   respondidoEm: string | null
   caso: {
     id: string
-    titulo: string
     descricao: string
-    urgencia: 'BAIXA' | 'MEDIA' | 'ALTA'
+    urgencia: 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE'
     especialidade: {
       nome: string
     } | null
@@ -39,8 +40,9 @@ interface Match {
 
 const urgenciaColors = {
   BAIXA: 'bg-blue-500',
-  MEDIA: 'bg-yellow-500',
-  ALTA: 'bg-red-500',
+  NORMAL: 'bg-yellow-500',
+  ALTA: 'bg-orange-500',
+  URGENTE: 'bg-red-500',
 }
 
 const statusLabels = {
@@ -54,6 +56,10 @@ export default function AdvogadoDashboardPage() {
   const [matches, setMatches] = useState<Match[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('pendentes')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [especialidadeFilter, setEspecialidadeFilter] = useState('all')
+  const [urgenciaFilter, setUrgenciaFilter] = useState('all')
   const { visualizeMatch, respondMatch, isLoading: isActing } = useMatchActions()
 
   useEffect(() => {
@@ -90,10 +96,55 @@ export default function AdvogadoDashboardPage() {
     }
   }
 
-  const pendingMatches = matches.filter((m) => m.status === 'PENDENTE')
-  const visualizedMatches = matches.filter((m) => m.status === 'VISUALIZADO')
-  const acceptedMatches = matches.filter((m) => m.status === 'ACEITO')
-  const rejectedMatches = matches.filter((m) => m.status === 'RECUSADO')
+  // Filtros e busca
+  const especialidades = useMemo(() => {
+    const unique = new Set<string>()
+    matches.forEach((m) => {
+      if (m.caso.especialidade?.nome) {
+        unique.add(m.caso.especialidade.nome)
+      }
+    })
+    return Array.from(unique)
+  }, [matches])
+
+  const filteredMatches = useMemo(() => {
+    return matches.filter((match) => {
+      // Busca por texto
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase()
+        const matchesDescricao = match.caso.descricao.toLowerCase().includes(query)
+        const matchesCliente = match.caso.cidadao.user.name.toLowerCase().includes(query)
+        if (!matchesDescricao && !matchesCliente) {
+          return false
+        }
+      }
+
+      // Filtro por status
+      if (statusFilter !== 'all' && match.status !== statusFilter) {
+        return false
+      }
+
+      // Filtro por especialidade
+      if (
+        especialidadeFilter !== 'all' &&
+        match.caso.especialidade?.nome !== especialidadeFilter
+      ) {
+        return false
+      }
+
+      // Filtro por urgência
+      if (urgenciaFilter !== 'all' && match.caso.urgencia !== urgenciaFilter) {
+        return false
+      }
+
+      return true
+    })
+  }, [matches, searchQuery, statusFilter, especialidadeFilter, urgenciaFilter])
+
+  const pendingMatches = filteredMatches.filter((m) => m.status === 'PENDENTE')
+  const visualizedMatches = filteredMatches.filter((m) => m.status === 'VISUALIZADO')
+  const acceptedMatches = filteredMatches.filter((m) => m.status === 'ACEITO')
+  const rejectedMatches = filteredMatches.filter((m) => m.status === 'RECUSADO')
 
   const renderMatchCard = (match: Match) => (
     <Card key={match.id} className="hover:shadow-lg transition-shadow">
@@ -101,7 +152,9 @@ export default function AdvogadoDashboardPage() {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <CardTitle className="text-lg">{match.caso.titulo}</CardTitle>
+              <CardTitle className="text-lg line-clamp-1">
+                {match.caso.descricao.substring(0, 60) + '...'}
+              </CardTitle>
               <Badge
                 variant={match.status === 'ACEITO' ? 'default' : 'secondary'}
                 className="ml-auto"
@@ -112,7 +165,7 @@ export default function AdvogadoDashboardPage() {
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
-                {formatDistanceToNow(new Date(match.criadoEm), {
+                {formatDistanceToNow(new Date(match.enviadoEm), {
                   addSuffix: true,
                   locale: ptBR,
                 })}
@@ -232,63 +285,20 @@ export default function AdvogadoDashboardPage() {
       </div>
 
       {/* Estatísticas */}
-      <div className="grid md:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Novos Leads
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-blue-500" />
-              <span className="text-2xl font-bold">{pendingMatches.length}</span>
-            </div>
-          </CardContent>
-        </Card>
+      <LeadStats />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Visualizados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-yellow-500" />
-              <span className="text-2xl font-bold">{visualizedMatches.length}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Casos Aceitos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span className="text-2xl font-bold">{acceptedMatches.length}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Recusados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-red-500" />
-              <span className="text-2xl font-bold">{rejectedMatches.length}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Filtros */}
+      <LeadFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        especialidadeFilter={especialidadeFilter}
+        onEspecialidadeFilterChange={setEspecialidadeFilter}
+        urgenciaFilter={urgenciaFilter}
+        onUrgenciaFilterChange={setUrgenciaFilter}
+        especialidades={especialidades}
+      />
 
       {/* Tabs de Leads */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
