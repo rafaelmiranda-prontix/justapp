@@ -1,0 +1,246 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USUÁRIOS ====================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  phone     String?
+  role      UserRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cidadao  Cidadao?
+  advogado Advogado?
+
+  @@map("users")
+}
+
+enum UserRole {
+  CIDADAO
+  ADVOGADO
+  ADMIN
+}
+
+model Cidadao {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Localização
+  cidade    String?
+  estado    String?
+  latitude  Float?
+  longitude Float?
+
+  casos      Caso[]
+  avaliacoes Avaliacao[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cidadaos")
+}
+
+model Advogado {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Profissional
+  oab           String  @unique // Ex: "SP123456"
+  oabVerificado Boolean @default(false)
+  bio           String?
+  fotoUrl       String?
+
+  // Localização
+  cidade      String
+  estado      String
+  latitude    Float?
+  longitude   Float?
+  raioAtuacao Int     @default(50) // km
+
+  // Configurações
+  especialidades AdvogadoEspecialidade[]
+  precoConsulta  Float?
+  aceitaOnline   Boolean                 @default(true)
+
+  // Assinatura
+  plano       Plano     @default(FREE)
+  planoExpira DateTime?
+
+  // Relacionamentos
+  matches    Match[]
+  avaliacoes Avaliacao[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("advogados")
+}
+
+enum Plano {
+  FREE
+  BASIC
+  PREMIUM
+}
+
+// ==================== ESPECIALIDADES ====================
+
+model Especialidade {
+  id            String   @id @default(cuid())
+  nome          String   @unique // "Direito do Consumidor"
+  slug          String   @unique // "consumidor"
+  descricao     String?
+  palavrasChave String[] // Para matching
+
+  advogados AdvogadoEspecialidade[]
+  casos     Caso[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("especialidades")
+}
+
+model AdvogadoEspecialidade {
+  advogadoId      String
+  especialidadeId String
+  advogado        Advogado      @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+  especialidade   Especialidade @relation(fields: [especialidadeId], references: [id], onDelete: Cascade)
+
+  @@id([advogadoId, especialidadeId])
+  @@map("advogado_especialidades")
+}
+
+// ==================== CASOS ====================
+
+model Caso {
+  id        String  @id @default(cuid())
+  cidadaoId String
+  cidadao   Cidadao @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)
+
+  // Descrição do problema
+  descricao   String  @db.Text // Texto livre do usuário
+  descricaoIA String? @db.Text // Resumo gerado por IA
+
+  // Classificação (por IA)
+  especialidadeId String?
+  especialidade   Especialidade? @relation(fields: [especialidadeId], references: [id])
+  urgencia        Urgencia       @default(NORMAL)
+  complexidade    Int            @default(1) // 1-5
+
+  // Status
+  status CasoStatus @default(ABERTO)
+
+  // Matches
+  matches Match[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cidadaoId])
+  @@index([especialidadeId])
+  @@index([status])
+  @@map("casos")
+}
+
+enum Urgencia {
+  BAIXA
+  NORMAL
+  ALTA
+  URGENTE
+}
+
+enum CasoStatus {
+  ABERTO
+  EM_ANDAMENTO
+  FECHADO
+  CANCELADO
+}
+
+// ==================== MATCHING ====================
+
+model Match {
+  id         String   @id @default(cuid())
+  casoId     String
+  caso       Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  advogadoId String
+  advogado   Advogado @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+
+  // Score de compatibilidade (0-100)
+  score       Int
+  distanciaKm Float?
+
+  // Status do match
+  status MatchStatus @default(PENDENTE)
+
+  // Timestamps
+  enviadoEm     DateTime  @default(now())
+  visualizadoEm DateTime?
+  respondidoEm  DateTime?
+
+  mensagens Mensagem[]
+
+  @@unique([casoId, advogadoId])
+  @@index([advogadoId])
+  @@index([status])
+  @@map("matches")
+}
+
+enum MatchStatus {
+  PENDENTE // Aguardando advogado ver
+  VISUALIZADO // Advogado viu
+  ACEITO // Advogado aceitou
+  RECUSADO // Advogado recusou
+  CONTRATADO // Virou cliente
+  EXPIRADO // Tempo esgotado
+}
+
+// ==================== MENSAGENS ====================
+
+model Mensagem {
+  id          String   @id @default(cuid())
+  matchId     String
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  remetenteId String // UserId
+  conteudo    String   @db.Text
+  anexoUrl    String?
+  lida        Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([matchId])
+  @@index([remetenteId])
+  @@map("mensagens")
+}
+
+// ==================== AVALIAÇÕES ====================
+
+model Avaliacao {
+  id         String   @id @default(cuid())
+  cidadaoId  String
+  cidadao    Cidadao  @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)
+  advogadoId String
+  advogado   Advogado @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+
+  nota       Int     // 1-5
+  comentario String? @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@unique([cidadaoId, advogadoId])
+  @@index([advogadoId])
+  @@map("avaliacoes")
+}
