@@ -19,62 +19,66 @@
 - PostgreSQL 14+
 - npm ou pnpm
 
-## Setup Inicial
+## 🚀 Quick Start
 
-### 1. Instalar dependências
+### Opção 1: Script Automático (Recomendado)
+
+```bash
+./scripts/quick-start.sh
+```
+
+Este script irá:
+1. Verificar e criar `.env` se necessário
+2. Instalar dependências
+3. Configurar Prisma
+4. Sincronizar banco de dados
+5. Popular dados iniciais
+6. Iniciar servidor de desenvolvimento
+
+### Opção 2: Setup Manual
+
+#### 1. Instalar dependências
 
 ```bash
 npm install
-# ou
-pnpm install
 ```
 
-### 2. Configurar banco de dados
-
-Crie um banco PostgreSQL local:
-
-```bash
-createdb legalmatch
-```
-
-### 3. Configurar variáveis de ambiente
-
-Copie o arquivo `.env.example` para `.env`:
+#### 2. Configurar variáveis de ambiente
 
 ```bash
 cp .env.example .env
 ```
 
-Edite o arquivo `.env` com suas credenciais:
+Edite `.env` com suas credenciais (especialmente `DATABASE_URL`)
 
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/legalmatch?schema=public"
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="seu-secret-aqui"
-GOOGLE_CLIENT_ID="seu-google-client-id"
-GOOGLE_CLIENT_SECRET="seu-google-client-secret"
-```
-
-### 4. Gerar cliente Prisma e executar migrations
+#### 3. Configurar banco de dados
 
 ```bash
-npm run db:generate
-npm run db:push
+npm run db:generate    # Gerar Prisma Client
+npm run db:push        # Sincronizar schema
+npm run db:seed        # Popular dados iniciais
 ```
 
-### 5. Popular banco de dados (seed)
-
-```bash
-npm run db:seed
-```
-
-### 6. Iniciar servidor de desenvolvimento
+#### 4. Iniciar desenvolvimento
 
 ```bash
 npm run dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000) no navegador.
+Acesse: [http://localhost:3000](http://localhost:3000)
+
+## ✅ Status do Setup
+
+O projeto está **100% configurado** e pronto para desenvolvimento!
+
+- ✅ Next.js 16.1.6 (sem vulnerabilidades)
+- ✅ Database schema aplicado (9 modelos)
+- ✅ 4 especialidades pré-cadastradas
+- ✅ Design System completo (6 componentes)
+- ✅ Autenticação configurada (NextAuth)
+- ✅ Documentação completa
+
+Veja detalhes em [SETUP_COMPLETO.md](SETUP_COMPLETO.md)
 
 ## Scripts Disponíveis
 
