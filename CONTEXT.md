@@ -1,0 +1,430 @@
+# CONTEXT.md — Contexto de Desenvolvimento
+
+> Use este arquivo como referência ao desenvolver ou pedir ajuda com código.
+
+---
+
+## 📋 Resumo do Projeto
+
+**Nome:** LegalMatch (provisório)  
+**Conceito:** "Uber dos Processos" — marketplace que conecta cidadãos com problemas jurídicos a advogados especializados  
+**Estágio:** MVP em desenvolvimento  
+**Desenvolvedor:** Solo (Rafa)
+
+---
+
+## 🎯 Objetivo do MVP
+
+Validar se advogados pagam por leads qualificados e se cidadãos usam a plataforma para encontrar advogados.
+
+**Escopo mínimo:**
+1. Cidadão descreve problema → sistema categoriza
+2. Sistema sugere advogados compatíveis
+3. Cidadão solicita contato
+4. Advogado recebe lead e aceita/recusa
+5. Chat entre as partes
+
+---
+
+## 🛠️ Stack Técnica
+
+```
+Frontend:     Next.js 14 (App Router) + TypeScript + Tailwind CSS
+Backend:      Node.js + Fastify (ou API Routes do Next.js para MVP)
+Database:     PostgreSQL + Prisma ORM
+Auth:         Clerk (ou NextAuth)
+Pagamentos:   Stripe (ou Pagar.me para BR)
+Deploy:       Vercel (front) + Railway/Render (back + DB)
+AI:           OpenAI/Claude API para análise de texto
+Maps:         Google Maps API
+```
+
+---
+
+## 📁 Estrutura de Pastas (sugestão)
+
+```
+legal-match/
+├── apps/
+│   ├── web/                 # Next.js app
+│   │   ├── app/
+│   │   │   ├── (auth)/      # Rotas de autenticação
+│   │   │   ├── (cidadao)/   # Área do cidadão
+│   │   │   ├── (advogado)/  # Área do advogado
+│   │   │   ├── (admin)/     # Painel admin
+│   │   │   └── api/         # API routes
+│   │   ├── components/
+│   │   ├── lib/
+│   │   └── ...
+│   └── mobile/              # React Native (fase 2)
+├── packages/
+│   ├── database/            # Prisma schema + migrations
+│   ├── shared/              # Types, utils compartilhados
+│   └── ai/                  # Lógica de análise jurídica
+├── docs/
+│   ├── PRD.md
+│   └── CONTEXT.md
+└── package.json             # Monorepo com pnpm/turborepo
+```
+
+---
+
+## 🗄️ Modelo de Dados (Prisma)
+
+```prisma
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USUÁRIOS ====================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  phone         String?
+  role          UserRole
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  cidadao       Cidadao?
+  advogado      Advogado?
+}
+
+enum UserRole {
+  CIDADAO
+  ADVOGADO
+  ADMIN
+}
+
+model Cidadao {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+  
+  // Localização
+  cidade        String?
+  estado        String?
+  latitude      Float?
+  longitude     Float?
+  
+  casos         Caso[]
+  avaliacoes    Avaliacao[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Advogado {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+  
+  // Profissional
+  oab           String    @unique          // Ex: "SP123456"
+  oabVerificado Boolean   @default(false)
+  bio           String?
+  fotoUrl       String?
+  
+  // Localização
+  cidade        String
+  estado        String
+  latitude      Float?
+  longitude     Float?
+  raioAtuacao   Int       @default(50)     // km
+  
+  // Configurações
+  especialidades AdvogadoEspecialidade[]
+  precoConsulta  Float?
+  aceitaOnline   Boolean  @default(true)
+  
+  // Assinatura
+  plano         Plano     @default(FREE)
+  planoExpira   DateTime?
+  
+  // Relacionamentos
+  matches       Match[]
+  avaliacoes    Avaliacao[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum Plano {
+  FREE
+  BASIC
+  PREMIUM
+}
+
+// ==================== ESPECIALIDADES ====================
+
+model Especialidade {
+  id            String    @id @default(cuid())
+  nome          String    @unique           // "Direito do Consumidor"
+  slug          String    @unique           // "consumidor"
+  descricao     String?
+  palavrasChave String[]                    // Para matching
+  
+  advogados     AdvogadoEspecialidade[]
+  casos         Caso[]
+}
+
+model AdvogadoEspecialidade {
+  advogadoId      String
+  especialidadeId String
+  advogado        Advogado      @relation(fields: [advogadoId], references: [id])
+  especialidade   Especialidade @relation(fields: [especialidadeId], references: [id])
+  
+  @@id([advogadoId, especialidadeId])
+}
+
+// ==================== CASOS ====================
+
+model Caso {
+  id              String    @id @default(cuid())
+  cidadaoId       String
+  cidadao         Cidadao   @relation(fields: [cidadaoId], references: [id])
+  
+  // Descrição do problema
+  descricao       String                    // Texto livre do usuário
+  descricaoIA     String?                   // Resumo gerado por IA
+  
+  // Classificação (por IA)
+  especialidadeId String?
+  especialidade   Especialidade? @relation(fields: [especialidadeId], references: [id])
+  urgencia        Urgencia  @default(NORMAL)
+  complexidade    Int       @default(1)     // 1-5
+  
+  // Status
+  status          CasoStatus @default(ABERTO)
+  
+  // Matches
+  matches         Match[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+enum Urgencia {
+  BAIXA
+  NORMAL
+  ALTA
+  URGENTE
+}
+
+enum CasoStatus {
+  ABERTO
+  EM_ANDAMENTO
+  FECHADO
+  CANCELADO
+}
+
+// ==================== MATCHING ====================
+
+model Match {
+  id            String    @id @default(cuid())
+  casoId        String
+  caso          Caso      @relation(fields: [casoId], references: [id])
+  advogadoId    String
+  advogado      Advogado  @relation(fields: [advogadoId], references: [id])
+  
+  // Score de compatibilidade (0-100)
+  score         Int
+  distanciaKm   Float?
+  
+  // Status do match
+  status        MatchStatus @default(PENDENTE)
+  
+  // Timestamps
+  enviadoEm     DateTime  @default(now())
+  visualizadoEm DateTime?
+  respondidoEm  DateTime?
+  
+  mensagens     Mensagem[]
+  
+  @@unique([casoId, advogadoId])
+}
+
+enum MatchStatus {
+  PENDENTE      // Aguardando advogado ver
+  VISUALIZADO   // Advogado viu
+  ACEITO        // Advogado aceitou
+  RECUSADO      // Advogado recusou
+  CONTRATADO    // Virou cliente
+  EXPIRADO      // Tempo esgotado
+}
+
+// ==================== MENSAGENS ====================
+
+model Mensagem {
+  id          String    @id @default(cuid())
+  matchId     String
+  match       Match     @relation(fields: [matchId], references: [id])
+  
+  remetenteId String    // UserId
+  conteudo    String
+  lida        Boolean   @default(false)
+  
+  createdAt   DateTime  @default(now())
+}
+
+// ==================== AVALIAÇÕES ====================
+
+model Avaliacao {
+  id          String    @id @default(cuid())
+  cidadaoId   String
+  cidadao     Cidadao   @relation(fields: [cidadaoId], references: [id])
+  advogadoId  String
+  advogado    Advogado  @relation(fields: [advogadoId], references: [id])
+  
+  nota        Int                           // 1-5
+  comentario  String?
+  
+  createdAt   DateTime  @default(now())
+  
+  @@unique([cidadaoId, advogadoId])
+}
+```
+
+---
+
+## 🔌 APIs Externas
+
+### 1. Validação OAB
+```typescript
+// Consultar se advogado está regular
+// Fonte: https://cna.oab.org.br/
+
+async function verificarOAB(numero: string, estado: string): Promise<{
+  valido: boolean;
+  nome: string;
+  situacao: string;
+}> {
+  // Implementar scraping ou API se disponível
+}
+```
+
+### 2. Análise de Texto (IA)
+```typescript
+// Classificar problema jurídico
+async function analisarProblema(descricao: string): Promise<{
+  especialidade: string;
+  resumo: string;
+  urgencia: 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE';
+  complexidade: number;
+  perguntasAdicionais?: string[];
+}> {
+  // Usar Claude/GPT com prompt específico
+}
+```
+
+### 3. Geolocalização
+```typescript
+// Calcular distância e buscar advogados próximos
+async function buscarAdvogadosProximos(
+  latitude: number,
+  longitude: number,
+  especialidadeId: string,
+  raioKm: number
+): Promise<Advogado[]> {
+  // Query com PostGIS ou cálculo de Haversine
+}
+```
+
+---
+
+## 🎨 Design System (Sugestão)
+
+- **UI Library:** shadcn/ui (componentes copiáveis, Tailwind-based)
+- **Icons:** Lucide React
+- **Cores:**
+  ```css
+  --primary: #2563eb;      /* Azul confiança */
+  --secondary: #64748b;    /* Cinza neutro */
+  --accent: #10b981;       /* Verde sucesso */
+  --destructive: #ef4444;  /* Vermelho erro */
+  ```
+- **Tipografia:** Inter (clean, profissional)
+
+---
+
+## 🚀 Setup Inicial
+
+```bash
+# Criar projeto
+npx create-next-app@latest legal-match --typescript --tailwind --app
+
+# Dependências principais
+pnpm add @prisma/client @clerk/nextjs
+pnpm add -D prisma
+
+# Iniciar Prisma
+npx prisma init
+
+# UI
+pnpm dlx shadcn-ui@latest init
+```
+
+---
+
+## 📝 Convenções de Código
+
+- **Linguagem:** TypeScript strict mode
+- **Formatação:** Prettier + ESLint
+- **Commits:** Conventional Commits (`feat:`, `fix:`, `docs:`, etc.)
+- **Branches:** `main` → `develop` → `feature/xxx`
+- **Testes:** Vitest + Testing Library (quando aplicável)
+
+---
+
+## 🔐 Variáveis de Ambiente
+
+```env
+# .env.example
+
+# Database
+DATABASE_URL="postgresql://..."
+
+# Auth (Clerk)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
+CLERK_SECRET_KEY=sk_...
+
+# AI
+OPENAI_API_KEY=sk-...
+# ou
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Maps
+GOOGLE_MAPS_API_KEY=...
+
+# Payments
+STRIPE_SECRET_KEY=sk_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+---
+
+## ❓ Perguntas para Desenvolvimento
+
+Ao pedir ajuda com código, inclua:
+
+1. **Qual feature/componente** está trabalhando?
+2. **Código atual** (se houver)
+3. **Erro ou comportamento** inesperado
+4. **O que já tentou**
+
+---
+
+*Atualizar conforme o projeto evolui.*
+
+**Última atualização:** 2026-01-29
