@@ -1,7 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
+import '../config/supabase_config.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 final apiServiceProvider = Provider<ApiService>((ref) {
   return ApiService();
@@ -9,7 +10,8 @@ final apiServiceProvider = Provider<ApiService>((ref) {
 
 class ApiService {
   late final Dio _dio;
-  final _supabase = Supabase.instance.client;
+  String? _manualToken;
+  SupabaseClient? _supabase;
 
   ApiService() {
     _dio = Dio(
@@ -24,21 +26,31 @@ class ApiService {
     );
 
     // Add interceptor to include auth token
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final session = _supabase.auth.currentSession;
+    if (SupabaseConfig.useSupabase) {
+      _supabase = Supabase.instance.client;
+    }
+
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        if (SupabaseConfig.useSupabase && _supabase != null) {
+          final session = _supabase!.auth.currentSession;
           if (session != null) {
             options.headers['Authorization'] = 'Bearer ${session.accessToken}';
           }
-          return handler.next(options);
-        },
-        onError: (error, handler) {
-          print('API Error: ${error.message}');
-          return handler.next(error);
-        },
-      ),
-    );
+        } else if (_manualToken != null) {
+          options.headers['Authorization'] = 'Bearer $_manualToken';
+        }
+        return handler.next(options);
+      },
+      onError: (error, handler) {
+        print('API Error: ${error.message}');
+        return handler.next(error);
+      },
+    ));
+  }
+
+  void setAuthToken(String? token) {
+    _manualToken = token;
   }
 
   // Auth
@@ -146,6 +158,35 @@ class ApiService {
       if (lawyerId != null) 'lawyerId': lawyerId,
       if (caseId != null) 'caseId': caseId,
     });
+    return response.data;
+  }
+
+  // Public draft (no auth required)
+  Future<Map<String, dynamic>> createDraft({
+    String? rawText,
+    String? audioUrl,
+    bool? hasProofs,
+    String? proofTypes,
+    bool? hasContract,
+    bool? contactedParty,
+    String? desiredOutcome,
+    String? urgency,
+  }) async {
+    final response = await _dio.post('/public/cases/draft', data: {
+      if (rawText != null && rawText.isNotEmpty) 'rawText': rawText,
+      if (audioUrl != null && audioUrl.isNotEmpty) 'audioUrl': audioUrl,
+      if (hasProofs != null) 'hasProofs': hasProofs,
+      if (proofTypes != null && proofTypes.isNotEmpty) 'proofTypes': proofTypes,
+      if (hasContract != null) 'hasContract': hasContract,
+      if (contactedParty != null) 'contactedParty': contactedParty,
+      if (desiredOutcome != null && desiredOutcome.isNotEmpty) 'desiredOutcome': desiredOutcome,
+      if (urgency != null) 'urgency': urgency,
+    });
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> confirmDraft(String draftId) async {
+    final response = await _dio.post('/public/cases/draft/$draftId/confirm');
     return response.data;
   }
 }

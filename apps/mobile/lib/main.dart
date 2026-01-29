@@ -8,29 +8,31 @@ import 'core/theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (!SupabaseConfig.isConfigured) {
-    runApp(
-      const ConfigErrorApp(
-        message:
-            'Configuração do Supabase ausente. Defina SUPABASE_URL e SUPABASE_ANON_KEY via --dart-define para iniciar o app.',
-      ),
-    );
-    return;
-  }
+  if (SupabaseConfig.useSupabase) {
+    if (!SupabaseConfig.isConfigured) {
+      runApp(
+        const ConfigErrorApp(
+          message:
+              'Configuração do Supabase ausente. Defina SUPABASE_URL e SUPABASE_ANON_KEY via --dart-define ou desative com USE_SUPABASE=false.',
+        ),
+      );
+      return;
+    }
 
-  // Initialize Supabase
-  try {
-    await Supabase.initialize(
-      url: SupabaseConfig.url,
-      anonKey: SupabaseConfig.anonKey,
-    );
-  } catch (error) {
-    runApp(
-      ConfigErrorApp(
-        message: 'Falha ao inicializar o Supabase: $error',
-      ),
-    );
-    return;
+    // Initialize Supabase
+    try {
+      await Supabase.initialize(
+        url: SupabaseConfig.url,
+        anonKey: SupabaseConfig.anonKey,
+      );
+    } catch (error) {
+      runApp(
+        ConfigErrorApp(
+          message: 'Falha ao inicializar o Supabase: $error',
+        ),
+      );
+      return;
+    }
   }
 
   runApp(

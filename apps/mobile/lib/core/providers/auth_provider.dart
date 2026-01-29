@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../shared/models/user_model.dart';
 import '../services/api_service.dart';
+import '../config/supabase_config.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(ref.read(apiServiceProvider));
@@ -45,14 +46,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _checkSession() async {
+    if (!SupabaseConfig.useSupabase) return;
+
     final session = Supabase.instance.client.auth.currentSession;
-    if (session != null) {
-      // TODO: Fetch user data from API
-      state = state.copyWith(
-        token: session.accessToken,
-        isLoading: false,
-      );
-    }
+    if (session == null) return;
+
+    // TODO: Fetch user data from API
+    state = state.copyWith(
+      token: session.accessToken,
+      isLoading: false,
+    );
+    _apiService.setAuthToken(session.accessToken);
   }
 
   Future<void> signUp({
@@ -79,6 +83,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         token: token,
         isLoading: false,
       );
+      _apiService.setAuthToken(token);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -108,6 +113,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         token: token,
         isLoading: false,
       );
+      _apiService.setAuthToken(token);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -118,7 +124,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> signOut() async {
-    await Supabase.instance.client.auth.signOut();
+    if (SupabaseConfig.useSupabase) {
+      await Supabase.instance.client.auth.signOut();
+    }
+    _apiService.setAuthToken(null);
     state = AuthState();
   }
 }

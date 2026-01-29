@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { CreateCaseDto } from './dto/case.dto';
+import { CreateCaseDraftDto } from './dto/case-draft.dto';
 
 @Injectable()
 export class CasesService {
@@ -159,5 +160,61 @@ export class CasesService {
       where: { id },
       data: { status: status as any },
     });
+  }
+
+  // Public draft creation (no auth)
+  async createDraft(data: CreateCaseDraftDto) {
+    if (!data.rawText && !data.audioUrl) {
+      throw new Error('É necessário fornecer texto ou áudio.');
+    }
+
+    const draft = await this.prisma.caseDraft.create({
+      data: {
+        rawText: data.rawText,
+        audioUrl: data.audioUrl,
+        hasProofs: data.hasProofs,
+        proofTypes: data.proofTypes,
+        hasContract: data.hasContract,
+        contactedParty: data.contactedParty,
+        desiredOutcome: data.desiredOutcome,
+        urgency: data.urgency,
+      },
+    });
+
+    return {
+      draftId: draft.id,
+      message:
+        'Recebemos seu relato inicial. Para receber uma avaliação de um especialista, conclua seu cadastro.',
+    };
+  }
+
+  // Promote draft after login
+  async promoteDraft(draftId: string, clientId: string) {
+    const draft = await this.prisma.caseDraft.findUnique({
+      where: { id: draftId },
+    });
+
+    if (!draft) {
+      throw new NotFoundException('Rascunho não encontrado');
+    }
+
+    if (draft.status !== 'DRAFT') {
+      throw new Error('Rascunho já foi convertido em caso.');
+    }
+
+    const createdCase = await this.create(clientId, {
+      rawText: draft.rawText || undefined,
+      audioUrl: draft.audioUrl || undefined,
+    });
+
+    await this.prisma.caseDraft.update({
+      where: { id: draftId },
+      data: {
+        status: 'PROMOTED',
+        promotedCaseId: createdCase.id,
+      },
+    });
+
+    return createdCase;
   }
 }

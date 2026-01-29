@@ -2,36 +2,68 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { randomUUID } from 'crypto';
 import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
-  private supabase: SupabaseClient;
+  private supabase: SupabaseClient | null = null;
+  private useSupabase: boolean;
 
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
     private usersService: UsersService,
   ) {
-    this.supabase = createClient(
-      this.configService.get('SUPABASE_URL'),
-      this.configService.get('SUPABASE_ANON_KEY'),
-    );
+    const useSupabaseEnv = this.configService.get<string>('USE_SUPABASE');
+    this.useSupabase = useSupabaseEnv === undefined ? true : useSupabaseEnv !== 'false';
+
+    if (this.useSupabase) {
+      const url = this.configService.get<string>('SUPABASE_URL') || '';
+      const anonKey = this.configService.get<string>('SUPABASE_ANON_KEY') || '';
+
+      if (!url || !anonKey) {
+        throw new Error('Supabase habilitado, mas SUPABASE_URL/SUPABASE_ANON_KEY não foram definidos.');
+      }
+
+      this.supabase = createClient(url, anonKey);
+    }
   }
 
   async signUp(email: string, password: string, name: string, role: 'CLIENT' | 'LAWYER') {
-    const { data, error } = await this.supabase.auth.signUp({
-      email,
-      password,
-    });
+    if (this.useSupabase && this.supabase) {
+      const { data, error } = await this.supabase.auth.signUp({
+        email,
+        password,
+      });
 
-    if (error) {
-      throw new UnauthorizedException(error.message);
+      if (error) {
+        throw new UnauthorizedException(error.message);
+      }
+
+      const user = await this.usersService.create({
+        id: data.user.id,
+        email,
+        name,
+        role,
+      });
+
+      const token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+
+      return {
+        user,
+        access_token: token,
+      };
     }
 
-    // Create user in our database
+    // Modo dev sem Supabase: cria usuário localmente e ignora verificação de senha
+    const existing = await this.usersService.findByEmail(email);
+    if (existing) {
+      throw new UnauthorizedException('Email já registrado');
+    }
+
     const user = await this.usersService.create({
-      id: data.user.id,
+      id: randomUUID(),
       email,
       name,
       role,
@@ -46,15 +78,30 @@ export class AuthService {
   }
 
   async signIn(email: string, password: string) {
-    const { data, error } = await this.supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    if (this.useSupabase && this.supabase) {
+      const { data, error } = await this.supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      throw new UnauthorizedException('Invalid credentials');
+      if (error) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      const user = await this.usersService.findByEmail(email);
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+
+      return {
+        user,
+        access_token: token,
+      };
     }
 
+    // Modo dev sem Supabase: autentica apenas pelo email
     const user = await this.usersService.findByEmail(email);
     if (!user) {
       throw new UnauthorizedException('User not found');

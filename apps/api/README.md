@@ -23,6 +23,7 @@ Preencha com suas credenciais:
 - Supabase (DATABASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY)
 - OpenAI (OPENAI_API_KEY)
 - JWT_SECRET
+- Para rodar sem Supabase em desenvolvimento, defina `USE_SUPABASE=false` (signup/signin funcionam só com email e guardam usuários no Postgres; upload de áudio fica indisponível).
 
 ### 2. Instalar dependências
 

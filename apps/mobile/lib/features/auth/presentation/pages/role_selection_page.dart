@@ -53,6 +53,11 @@ class RoleSelectionPage extends StatelessWidget {
                 onPressed: () => context.push('/login'),
                 child: const Text('Já tenho uma conta'),
               ),
+              const SizedBox(height: 24),
+              TextButton(
+                onPressed: () => context.push('/cases/anonymous'),
+                child: const Text('Começar sem login'),
+              ),
             ],
           ),
         ),

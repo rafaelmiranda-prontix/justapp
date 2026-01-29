@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/services/api_service.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
-  const LoginPage({super.key});
+  final String? draftId;
+
+  const LoginPage({super.key, this.draftId});
 
   @override
   ConsumerState<LoginPage> createState() => _LoginPageState();
@@ -33,6 +36,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
       if (mounted) {
         final user = ref.read(authProvider).user;
+        // Se veio de um rascunho, confirma e depois segue
+        if (user != null && widget.draftId != null && user.isClient) {
+          try {
+            await ref.read(apiServiceProvider).confirmDraft(widget.draftId!);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Relato salvo como caso.')),
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Erro ao confirmar relato: $e')),
+              );
+            }
+          }
+        }
+
         if (user != null) {
           if (user.isClient) {
             context.go('/cases');

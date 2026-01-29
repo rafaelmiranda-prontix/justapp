@@ -4,18 +4,28 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class StorageService {
-  private supabase: SupabaseClient;
+  private supabase: SupabaseClient | null = null;
   private bucketName: string;
+  private useSupabase: boolean;
 
   constructor(private configService: ConfigService) {
-    this.supabase = createClient(
-      this.configService.get('SUPABASE_URL'),
-      this.configService.get('SUPABASE_SERVICE_ROLE_KEY'),
-    );
+    const useSupabaseEnv = this.configService.get<string>('USE_SUPABASE');
+    this.useSupabase = useSupabaseEnv === undefined ? true : useSupabaseEnv !== 'false';
+
+    if (this.useSupabase) {
+      this.supabase = createClient(
+        this.configService.get('SUPABASE_URL'),
+        this.configService.get('SUPABASE_SERVICE_ROLE_KEY'),
+      );
+    }
     this.bucketName = this.configService.get('SUPABASE_STORAGE_BUCKET') || 'case-audios';
   }
 
   async uploadAudio(file: Buffer, fileName: string, userId: string): Promise<string> {
+    if (!this.useSupabase || !this.supabase) {
+      throw new Error('Upload de áudio requer Supabase. Defina USE_SUPABASE=true e variáveis do Supabase.');
+    }
+
     const filePath = `${userId}/${Date.now()}-${fileName}`;
 
     const { data, error } = await this.supabase.storage
@@ -38,6 +48,8 @@ export class StorageService {
   }
 
   async deleteAudio(filePath: string): Promise<void> {
+    if (!this.useSupabase || !this.supabase) return;
+
     const { error } = await this.supabase.storage.from(this.bucketName).remove([filePath]);
 
     if (error) {
@@ -46,9 +58,11 @@ export class StorageService {
   }
 
   async getSignedUrl(filePath: string, expiresIn: number = 3600): Promise<string> {
-    const { data, error } = await this.supabase.storage
-      .from(this.bucketName)
-      .createSignedUrl(filePath, expiresIn);
+    if (!this.useSupabase || !this.supabase) {
+      throw new Error('Signed URLs requerem Supabase. Defina USE_SUPABASE=true e variáveis do Supabase.');
+    }
+
+    const { data, error } = await this.supabase.storage.from(this.bucketName).createSignedUrl(filePath, expiresIn);
 
     if (error) {
       throw new Error(`Failed to create signed URL: ${error.message}`);

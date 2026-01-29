@@ -6,7 +6,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // usa conexão direta (porta 5432) para migrations; DATABASE_URL pode apontar para o pooler em runtime
 }
 
 // Enums
@@ -28,6 +29,11 @@ enum CaseStatus {
   MATCHED          // Advogado aceitou
   CLOSED           // Finalizado
   ARCHIVED
+}
+
+enum DraftStatus {
+  DRAFT
+  PROMOTED
 }
 
 // Modelos
@@ -90,6 +96,7 @@ model Case {
   updatedAt      DateTime     @updatedAt
 
   matches        Match[]
+  draftPromotion CaseDraft?   @relation("DraftPromotion")
 
   @@map("cases")
   @@index([clientId])
@@ -110,4 +117,25 @@ model Match {
   @@unique([caseId, lawyerId])
   @@map("matches")
   @@index([lawyerId])
+}
+
+model CaseDraft {
+  id              String        @id @default(uuid())
+  rawText         String?       @db.Text
+  audioUrl        String?
+  hasProofs       Boolean?
+  proofTypes      String?
+  hasContract     Boolean?
+  contactedParty  Boolean?
+  desiredOutcome  String?
+  urgency         UrgencyLevel?
+  status          DraftStatus   @default(DRAFT)
+  promotedCaseId  String?
+  promotedCase    Case?         @relation("DraftPromotion", fields: [promotedCaseId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("case_drafts")
+  @@index([status])
+  @@unique([promotedCaseId])
 }

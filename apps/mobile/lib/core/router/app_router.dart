@@ -7,6 +7,7 @@ import '../../features/auth/presentation/pages/role_selection_page.dart';
 import '../../features/cases/presentation/pages/cases_list_page.dart';
 import '../../features/cases/presentation/pages/create_case_page.dart';
 import '../../features/lawyers/presentation/pages/lawyers_list_page.dart';
+import '../../features/cases/presentation/pages/anonymous_case_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -18,12 +19,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/login',
-        builder: (context, state) => const LoginPage(),
+        builder: (context, state) => LoginPage(
+          draftId: state.uri.queryParameters['draftId'],
+        ),
       ),
       GoRoute(
         path: '/signup',
         builder: (context, state) => SignupPage(
           role: state.uri.queryParameters['role'] ?? 'CLIENT',
+          draftId: state.uri.queryParameters['draftId'],
         ),
       ),
       GoRoute(
@@ -33,6 +37,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/cases/create',
         builder: (context, state) => const CreateCasePage(),
+      ),
+      GoRoute(
+        path: '/cases/anonymous',
+        builder: (context, state) => const AnonymousCasePage(),
       ),
       GoRoute(
         path: '/lawyers',

@@ -9,11 +9,16 @@ final storageServiceProvider = Provider<StorageService>((ref) {
 });
 
 class StorageService {
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient? _supabase =
+      SupabaseConfig.useSupabase ? Supabase.instance.client : null;
   final _uuid = const Uuid();
 
   Future<String> uploadAudio(File audioFile) async {
-    final userId = _supabase.auth.currentUser?.id;
+    if (!SupabaseConfig.useSupabase) {
+      throw Exception('Upload de áudio requer Supabase. Ative USE_SUPABASE ou envie apenas texto em dev.');
+    }
+
+    final userId = _supabase?.auth.currentUser?.id;
     if (userId == null) {
       throw Exception('User not authenticated');
     }
@@ -21,7 +26,7 @@ class StorageService {
     final fileName = '${_uuid.v4()}.m4a';
     final filePath = '$userId/$fileName';
 
-    await _supabase.storage.from(SupabaseConfig.storageBucket).upload(
+    await _supabase!.storage.from(SupabaseConfig.storageBucket).upload(
           filePath,
           audioFile,
           fileOptions: const FileOptions(
@@ -29,7 +34,7 @@ class StorageService {
           ),
         );
 
-    final publicUrl = _supabase.storage
+    final publicUrl = _supabase!.storage
         .from(SupabaseConfig.storageBucket)
         .getPublicUrl(filePath);
 
@@ -37,11 +42,13 @@ class StorageService {
   }
 
   Future<void> deleteAudio(String url) async {
+    if (!SupabaseConfig.useSupabase) return;
+
     // Extract file path from URL
     final uri = Uri.parse(url);
     final pathSegments = uri.pathSegments;
     final filePath = pathSegments.sublist(pathSegments.indexOf(SupabaseConfig.storageBucket) + 1).join('/');
 
-    await _supabase.storage.from(SupabaseConfig.storageBucket).remove([filePath]);
+    await _supabase!.storage.from(SupabaseConfig.storageBucket).remove([filePath]);
   }
 }

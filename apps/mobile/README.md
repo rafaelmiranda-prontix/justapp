@@ -72,6 +72,11 @@ flutter run \
 
 Você também pode ajustar os valores padrão em `lib/core/config/api_config.dart` e `lib/core/config/supabase_config.dart` se preferir fixá-los no código.
 
+#### Modo sem Supabase (dev)
+- Rode com `--dart-define USE_SUPABASE=false --dart-define API_URL=http://10.0.2.2:3000/api`
+- O app não inicializa o Supabase; login/signup usam apenas o backend (token vindo da API é guardado localmente).
+- Upload de áudio fica desabilitado; envie texto ou adapte o backend para receber o arquivo por outro endpoint.
+
 ## 📦 Dependências Principais
 
 ```yaml

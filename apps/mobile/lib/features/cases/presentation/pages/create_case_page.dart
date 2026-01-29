@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/services/audio_service.dart';
 import '../../../../core/services/storage_service.dart';
 import '../../../../core/providers/cases_provider.dart';
+import '../../../../core/config/supabase_config.dart';
 
 class CreateCasePage extends ConsumerStatefulWidget {
   const CreateCasePage({super.key});
@@ -101,10 +102,16 @@ class _CreateCasePageState extends ConsumerState<CreateCasePage> {
       String? audioUrl;
 
       // Upload audio if exists
-      if (_hasRecording && _recordingPath != null) {
+      if (_hasRecording && _recordingPath != null && SupabaseConfig.useSupabase) {
         final storageService = ref.read(storageServiceProvider);
         final file = File(_recordingPath!);
         audioUrl = await storageService.uploadAudio(file);
+      } else if (_hasRecording && !SupabaseConfig.useSupabase) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Upload de áudio desabilitado no modo sem Supabase. O caso será enviado sem áudio.'),
+          ),
+        );
       }
 
       // Create case

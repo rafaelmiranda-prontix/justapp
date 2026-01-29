@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/services/api_service.dart';
 
-class SignupPage extends StatefulWidget {
+class SignupPage extends ConsumerStatefulWidget {
   final String role;
+  final String? draftId;
 
   const SignupPage({
     super.key,
     required this.role,
+    this.draftId,
   });
 
   @override
-  State<SignupPage> createState() => _SignupPageState();
+  ConsumerState<SignupPage> createState() => _SignupPageState();
 }
 
-class _SignupPageState extends State<SignupPage> {
+class _SignupPageState extends ConsumerState<SignupPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -33,13 +38,44 @@ class _SignupPageState extends State<SignupPage> {
 
     setState(() => _isLoading = true);
 
-    // TODO: Implement signup logic with API
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      await ref.read(authProvider.notifier).signUp(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+            name: _nameController.text.trim(),
+            role: widget.role,
+          );
 
-    setState(() => _isLoading = false);
+      // Se veio de rascunho, confirma (apenas cliente)
+      if (mounted && widget.draftId != null && widget.role == 'CLIENT') {
+        try {
+          await ref.read(apiServiceProvider).confirmDraft(widget.draftId!);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Relato salvo como caso.')),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao confirmar relato: $e')),
+          );
+        }
+      }
 
-    if (mounted) {
-      context.go('/cases');
+      if (!mounted) return;
+      if (widget.role == 'LAWYER') {
+        context.go('/lawyers');
+      } else {
+        context.go('/cases');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao criar conta: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -127,7 +163,9 @@ class _SignupPageState extends State<SignupPage> {
                 ),
                 const SizedBox(height: 16),
                 TextButton(
-                  onPressed: () => context.push('/login'),
+                  onPressed: () => context.push(
+                    widget.draftId != null ? '/login?draftId=${widget.draftId}' : '/login',
+                  ),
                   child: const Text('Já tem conta? Faça login'),
                 ),
               ],

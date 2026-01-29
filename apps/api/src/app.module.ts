@@ -15,6 +15,7 @@ import { AiModule } from './ai/ai.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '../../.env',
+      cache: true,
     }),
     PrismaModule,
     AuthModule,
