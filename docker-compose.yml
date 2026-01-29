@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://legalmatch:password@db:5432/legalmatch
+      - NODE_ENV=production
+    depends_on:
+      - db
+    restart: unless-stopped
+    volumes:
+      - ./.env:/app/.env:ro
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=legalmatch
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=legalmatch
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
