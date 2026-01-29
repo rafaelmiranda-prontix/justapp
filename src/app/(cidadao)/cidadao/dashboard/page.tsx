@@ -13,11 +13,11 @@ import Link from 'next/link'
 
 interface Caso {
   id: string
-  titulo: string
   descricao: string
-  status: 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDO'
-  urgencia: 'BAIXA' | 'MEDIA' | 'ALTA'
-  criadoEm: string
+  descricaoIA?: string | null
+  status: 'ABERTO' | 'EM_ANDAMENTO' | 'FECHADO' | 'CANCELADO'
+  urgencia: 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE'
+  createdAt: string
   especialidade: {
     nome: string
   } | null
@@ -27,11 +27,11 @@ interface Caso {
 interface Match {
   id: string
   score: number
-  status: 'PENDENTE' | 'VISUALIZADO' | 'ACEITO' | 'RECUSADO'
-  criadoEm: string
+  status: 'PENDENTE' | 'VISUALIZADO' | 'ACEITO' | 'RECUSADO' | 'CONTRATADO' | 'EXPIRADO'
+  enviadoEm: string
   advogado: {
-    nome: string
-    foto: string | null
+    id: string
+    fotoUrl: string | null
     user: {
       name: string
     }
@@ -39,21 +39,24 @@ interface Match {
 }
 
 const statusColors = {
-  PENDENTE: 'bg-yellow-500',
+  ABERTO: 'bg-yellow-500',
   EM_ANDAMENTO: 'bg-blue-500',
-  CONCLUIDO: 'bg-green-500',
+  FECHADO: 'bg-green-500',
+  CANCELADO: 'bg-gray-500',
 }
 
 const statusLabels = {
-  PENDENTE: 'Aguardando Match',
+  ABERTO: 'Aberto',
   EM_ANDAMENTO: 'Em Andamento',
-  CONCLUIDO: 'Concluído',
+  FECHADO: 'Fechado',
+  CANCELADO: 'Cancelado',
 }
 
 const urgenciaColors = {
   BAIXA: 'bg-blue-500',
-  MEDIA: 'bg-yellow-500',
-  ALTA: 'bg-red-500',
+  NORMAL: 'bg-yellow-500',
+  ALTA: 'bg-orange-500',
+  URGENTE: 'bg-red-500',
 }
 
 const matchStatusLabels = {
@@ -96,8 +99,8 @@ export default function CidadaoDashboardPage() {
       .toUpperCase()
   }
 
-  const activeCasos = casos.filter((c) => c.status !== 'CONCLUIDO')
-  const completedCasos = casos.filter((c) => c.status === 'CONCLUIDO')
+  const activeCasos = casos.filter((c) => c.status !== 'FECHADO' && c.status !== 'CANCELADO')
+  const completedCasos = casos.filter((c) => c.status === 'FECHADO')
   const totalMatches = casos.reduce((acc, c) => acc + c.matches.length, 0)
   const acceptedMatches = casos.reduce(
     (acc, c) => acc + c.matches.filter((m) => m.status === 'ACEITO').length,
@@ -209,7 +212,9 @@ export default function CidadaoDashboardPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <CardTitle className="text-lg">{caso.titulo}</CardTitle>
+                          <CardTitle className="text-lg line-clamp-1">
+                            {caso.descricaoIA || caso.descricao.substring(0, 50) + '...'}
+                          </CardTitle>
                           <Badge
                             variant="secondary"
                             className={`${statusColors[caso.status]} text-white`}
@@ -220,7 +225,7 @@ export default function CidadaoDashboardPage() {
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />
-                            {formatDistanceToNow(new Date(caso.criadoEm), {
+                            {formatDistanceToNow(new Date(caso.createdAt), {
                               addSuffix: true,
                               locale: ptBR,
                             })}
@@ -263,15 +268,15 @@ export default function CidadaoDashboardPage() {
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-10 w-10">
                                   <AvatarImage
-                                    src={match.advogado.foto || undefined}
-                                    alt={match.advogado.nome}
+                                    src={match.advogado.fotoUrl || undefined}
+                                    alt={match.advogado.user.name}
                                   />
                                   <AvatarFallback>
-                                    {getInitials(match.advogado.nome)}
+                                    {getInitials(match.advogado.user.name)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <p className="font-medium text-sm">{match.advogado.nome}</p>
+                                  <p className="font-medium text-sm">{match.advogado.user.name}</p>
                                   <p className="text-xs text-muted-foreground">
                                     {match.score}% compatibilidade
                                   </p>
@@ -284,12 +289,21 @@ export default function CidadaoDashboardPage() {
                                   {matchStatusLabels[match.status]}
                                 </Badge>
                                 {match.status === 'ACEITO' && (
-                                  <Button size="sm" asChild>
-                                    <Link href={`/chat/${match.id}`}>
-                                      <MessageSquare className="h-4 w-4 mr-2" />
-                                      Chat
-                                    </Link>
-                                  </Button>
+                                  <>
+                                    <Button size="sm" asChild>
+                                      <Link href={`/chat/${match.id}`}>
+                                        <MessageSquare className="h-4 w-4 mr-2" />
+                                        Chat
+                                      </Link>
+                                    </Button>
+                                    {caso.status === 'FECHADO' && (
+                                      <Button size="sm" variant="outline" asChild>
+                                        <Link href={`/casos/${caso.id}/avaliar?matchId=${match.id}`}>
+                                          Avaliar
+                                        </Link>
+                                      </Button>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -328,9 +342,11 @@ export default function CidadaoDashboardPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <CardTitle className="text-lg">{caso.titulo}</CardTitle>
+                          <CardTitle className="text-lg line-clamp-1">
+                            {caso.descricaoIA || caso.descricao.substring(0, 50) + '...'}
+                          </CardTitle>
                           <Badge variant="secondary" className="bg-green-500 text-white">
-                            Concluído
+                            Fechado
                           </Badge>
                         </div>
                       </div>

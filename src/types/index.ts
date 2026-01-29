@@ -159,3 +159,37 @@ export type DashboardCidadao = {
   casosFechados: number
   matchesPendentes: number
 }
+
+// Avaliação types
+export type AvaliacaoWithDetails = Prisma.AvaliacaoGetPayload<{
+  include: {
+    cidadao: {
+      include: {
+        user: {
+          select: {
+            name: true
+          }
+        }
+      }
+    }
+    advogado: {
+      include: {
+        user: {
+          select: {
+            name: true
+          }
+        }
+      }
+    }
+  }
+}>
+
+export type AvaliacaoStats = {
+  media: number
+  total: number
+  distribuicao: Array<{
+    nota: number
+    quantidade: number
+    percentual: number
+  }>
+}
