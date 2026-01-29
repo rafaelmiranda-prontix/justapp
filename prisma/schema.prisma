@@ -69,7 +69,7 @@ model Advogado {
   estado      String
   latitude    Float?
   longitude   Float?
-  raioAtuacao Int     @default(50) // km
+  raioAtuacao Int    @default(50) // km
 
   // Configurações
   especialidades AdvogadoEspecialidade[]
@@ -77,8 +77,13 @@ model Advogado {
   aceitaOnline   Boolean                 @default(true)
 
   // Assinatura
-  plano       Plano     @default(FREE)
-  planoExpira DateTime?
+  plano                Plano     @default(FREE)
+  planoExpira          DateTime?
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  leadsRecebidosMes    Int       @default(0)
+  leadsLimiteMes       Int       @default(0)
+  ultimoResetLeads     DateTime  @default(now())
 
   // Relacionamentos
   matches    Match[]
@@ -211,13 +216,13 @@ enum MatchStatus {
 // ==================== MENSAGENS ====================
 
 model Mensagem {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   matchId     String
-  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  match       Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
   remetenteId String // UserId
-  conteudo    String   @db.Text
+  conteudo    String  @db.Text
   anexoUrl    String?
-  lida        Boolean  @default(false)
+  lida        Boolean @default(false)
 
   createdAt DateTime @default(now())
 
@@ -235,7 +240,7 @@ model Avaliacao {
   advogadoId String
   advogado   Advogado @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
 
-  nota       Int     // 1-5
+  nota       Int // 1-5
   comentario String? @db.Text
 
   createdAt DateTime @default(now())

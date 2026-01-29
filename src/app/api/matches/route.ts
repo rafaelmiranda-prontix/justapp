@@ -3,6 +3,10 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import {
+  canAdvogadoReceiveLead,
+  incrementLeadsReceived,
+} from '@/lib/subscription-service'
 
 const createMatchSchema = z.object({
   advogadoId: z.string(),
@@ -78,6 +82,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Já existe uma solicitação para este advogado' }, { status: 400 })
     }
 
+    // Verifica se o advogado pode receber o lead
+    const { canReceive, reason } = await canAdvogadoReceiveLead(data.advogadoId)
+    if (!canReceive) {
+      return NextResponse.json(
+        { error: reason || 'Advogado não pode receber leads no momento' },
+        { status: 403 }
+      )
+    }
+
     // Cria o match com score simulado (depois calcular real)
     const match = await prisma.match.create({
       data: {
@@ -95,6 +108,9 @@ export async function POST(req: Request) {
         caso: true,
       },
     })
+
+    // Incrementa contador de leads recebidos
+    await incrementLeadsReceived(data.advogadoId)
 
     // TODO: Enviar notificação para o advogado
 

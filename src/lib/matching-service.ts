@@ -1,5 +1,6 @@
 import { prisma } from './prisma'
 import { calculateDistance } from './geo-service'
+import { canAdvogadoReceiveLead, resetMonthlyLeadsIfNeeded } from './subscription-service'
 
 interface MatchingCriteria {
   especialidade: string
@@ -78,8 +79,17 @@ export async function findMatchingAdvogados(
     take: 50, // Busca mais para depois rankear
   })
 
-  // Calcula score para cada advogado
-  const advogadosComScore = advogados.map((advogado) => {
+  // Filtra advogados que podem receber leads e calcula score
+  const advogadosComScore = await Promise.all(
+    advogados.map(async (advogado) => {
+      // Reseta leads se necessário
+      await resetMonthlyLeadsIfNeeded(advogado.id)
+
+      // Verifica se pode receber lead
+      const { canReceive } = await canAdvogadoReceiveLead(advogado.id)
+      if (!canReceive) {
+        return null // Filtra fora depois
+      }
     let score = 0
 
     // 1. Especialidade (40 pontos)
@@ -162,11 +172,15 @@ export async function findMatchingAdvogados(
       distanciaKm,
       score: Math.round(score),
     }
-  })
+    })
+  )
 
-  // Ordena por score (maior primeiro)
-  advogadosComScore.sort((a, b) => b.score - a.score)
+  // Filtra nulls e ordena por score (maior primeiro)
+  const advogadosFiltrados = advogadosComScore.filter(
+    (a): a is AdvogadoMatch => a !== null
+  )
+  advogadosFiltrados.sort((a, b) => b.score - a.score)
 
   // Retorna os top matches
-  return advogadosComScore.slice(0, limit)
+  return advogadosFiltrados.slice(0, limit)
 }
