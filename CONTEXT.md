@@ -17,12 +17,14 @@
 
 Validar se advogados pagam por leads qualificados e se cidadãos usam a plataforma para encontrar advogados.
 
-**Escopo mínimo:**
-1. Cidadão descreve problema → sistema categoriza
+**Foco inicial:** Rio de Janeiro — Direito do Consumidor
+
+**Escopo mínimo (custo baixo):**
+1. Cidadão descreve problema (chat texto ou áudio) → sistema categoriza
 2. Sistema sugere advogados compatíveis
 3. Cidadão solicita contato
 4. Advogado recebe lead e aceita/recusa
-5. Chat entre as partes
+5. Comunicação entre as partes dentro da plataforma
 
 ---
 
@@ -30,13 +32,13 @@ Validar se advogados pagam por leads qualificados e se cidadãos usam a platafor
 
 ```
 Frontend:     Next.js 14 (App Router) + TypeScript + Tailwind CSS
-Backend:      Node.js + Fastify (ou API Routes do Next.js para MVP)
+Backend:      Next.js API Routes (MVP) ou Fastify isolado
 Database:     PostgreSQL + Prisma ORM
-Auth:         Clerk (ou NextAuth)
-Pagamentos:   Stripe (ou Pagar.me para BR)
-Deploy:       Vercel (front) + Railway/Render (back + DB)
-AI:           OpenAI/Claude API para análise de texto
-Maps:         Google Maps API
+Auth:         NextAuth (custo zero inicial) ou Clerk (se necessário) + social signup
+Pagamentos:   Stripe (ou Pagar.me para BR) — fase 2
+Deploy:       VPS com Kubernetes (single cluster) + ingress + SSL
+AI:           OpenAI/Claude API para análise de texto (com fallback rule-based)
+Maps:         OpenStreetMap + Nominatim (MVP) ou Google Maps (se necessário)
 ```
 
 ---
@@ -46,7 +48,7 @@ Maps:         Google Maps API
 ```
 legal-match/
 ├── apps/
-│   ├── web/                 # Next.js app
+│   ├── web/                 # Next.js app (web + API)
 │   │   ├── app/
 │   │   │   ├── (auth)/      # Rotas de autenticação
 │   │   │   ├── (cidadao)/   # Área do cidadão
@@ -64,7 +66,7 @@ legal-match/
 ├── docs/
 │   ├── PRD.md
 │   └── CONTEXT.md
-└── package.json             # Monorepo com pnpm/turborepo
+└── package.json             # Monorepo com pnpm/turborepo (opcional)
 ```
 
 ---
@@ -297,21 +299,7 @@ model Avaliacao {
 
 ## 🔌 APIs Externas
 
-### 1. Validação OAB
-```typescript
-// Consultar se advogado está regular
-// Fonte: https://cna.oab.org.br/
-
-async function verificarOAB(numero: string, estado: string): Promise<{
-  valido: boolean;
-  nome: string;
-  situacao: string;
-}> {
-  // Implementar scraping ou API se disponível
-}
-```
-
-### 2. Análise de Texto (IA)
+### 1. Análise de Texto (IA)
 ```typescript
 // Classificar problema jurídico
 async function analisarProblema(descricao: string): Promise<{
@@ -321,11 +309,11 @@ async function analisarProblema(descricao: string): Promise<{
   complexidade: number;
   perguntasAdicionais?: string[];
 }> {
-  // Usar Claude/GPT com prompt específico
+// Usar Claude/GPT com prompt específico
 }
 ```
 
-### 3. Geolocalização
+### 2. Geolocalização
 ```typescript
 // Calcular distância e buscar advogados próximos
 async function buscarAdvogadosProximos(
@@ -334,9 +322,62 @@ async function buscarAdvogadosProximos(
   especialidadeId: string,
   raioKm: number
 ): Promise<Advogado[]> {
-  // Query com PostGIS ou cálculo de Haversine
+// Query com PostGIS ou cálculo de Haversine
 }
 ```
+
+---
+
+## 💸 Custos e Decisões de MVP
+
+- **Infra inicial:** VPS com Kubernetes já disponível
+- **Objetivo:** reduzir custos fixos, priorizando serviços gratuitos/open source
+- **Preferências de custo:** OSM/Nominatim, e-mail transacional barato, auth open source
+- **Chat in-app:** obrigatório para comunicação entre cidadão e advogado
+- **Analytics:** PostHog (self-host) ou Plausible (phase 2)
+
+---
+
+## 📍 Foco Inicial
+
+- **Cidade:** Rio de Janeiro
+- **Especialidade principal:** Direito do Consumidor
+
+---
+
+## 🧭 Fluxo de Entrada (Cidadão)
+
+- **Formato:** chat (texto ou áudio)
+- **Perguntas mínimas:** coletar apenas o essencial para triagem
+- **Identificação:** nome + e-mail ou telefone
+- **Social signup:** permitido
+- **Roteiro base:** 3 perguntas objetivas + confirmação de envio
+- **Regras de direcionamento:** relação de consumo + fato + data; fora do RJ não encaminha
+- **Social signup:** Google (MVP); Apple se necessário; OTP SMS/magic link como fallback
+
+---
+
+## 🎤 Áudio (MVP)
+
+- **Upload:** direto para a VPS (API)
+- **Formato:** `ogg/opus` 24–32 kbps
+- **Compressão:** `opus` com bitrate baixo
+- **Limites:** duração curta (60–90s) e tamanho máximo
+- **Transcrição:** via recurso do navegador (ex.: plugin do Chrome/Web Speech API) no PWA; se indisponível, pedir resumo em texto
+
+---
+
+## 💬 Chat In-App (MVP)
+
+- **Abertura:** somente após advogado aceitar o caso
+- **Mensagens:** texto + anexos (imagem/PDF)
+- **Limites:** 2.000 caracteres por mensagem; 20MB por arquivo; 10 mensagens/minuto
+
+---
+
+## 👤 Perfil Público do Advogado (MVP)
+
+- **Campos exibidos:** foto, nome, especialidade, cidade
 
 ---
 
@@ -410,6 +451,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_WHATSAPP_SUPPORT=5511999999999
 ```
 
 ---
