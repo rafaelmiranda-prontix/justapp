@@ -85,6 +85,11 @@ model Advogado {
   leadsLimiteMes       Int       @default(0)
   ultimoResetLeads     DateTime  @default(now())
 
+  // Beta/Onboarding
+  isBeta               Boolean   @default(false)
+  betaInviteCode       String?   @unique
+  onboardingCompleted  Boolean   @default(false)
+
   // Relacionamentos
   matches    Match[]
   avaliacoes Avaliacao[]

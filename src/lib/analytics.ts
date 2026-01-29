@@ -1,0 +1,92 @@
+'use client'
+
+// Analytics service - suporta PostHog e outros
+// Por enquanto, implementação básica que pode ser expandida
+
+declare global {
+  interface Window {
+    posthog?: any
+  }
+}
+
+export function initAnalytics() {
+  // Inicializa PostHog se disponível
+  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+    // PostHog será carregado via script tag ou npm package
+    // Por enquanto, apenas estrutura básica
+  }
+}
+
+export function trackEvent(eventName: string, properties?: Record<string, any>) {
+  if (typeof window === 'undefined') return
+
+  // PostHog
+  if (window.posthog) {
+    window.posthog.capture(eventName, properties)
+  }
+
+  // Google Analytics (se configurado)
+  if (typeof window.gtag !== 'undefined') {
+    window.gtag('event', eventName, properties)
+  }
+
+  // Log para desenvolvimento
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Analytics Event:', eventName, properties)
+  }
+}
+
+export function identifyUser(userId: string, traits?: Record<string, any>) {
+  if (typeof window === 'undefined') return
+
+  // PostHog
+  if (window.posthog) {
+    window.posthog.identify(userId, traits)
+  }
+
+  // Log para desenvolvimento
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Analytics Identify:', userId, traits)
+  }
+}
+
+export function resetUser() {
+  if (typeof window === 'undefined') return
+
+  // PostHog
+  if (window.posthog) {
+    window.posthog.reset()
+  }
+}
+
+// Eventos pré-definidos
+export const AnalyticsEvents = {
+  // Autenticação
+  SIGNUP_STARTED: 'signup_started',
+  SIGNUP_COMPLETED: 'signup_completed',
+  LOGIN: 'login',
+  LOGOUT: 'logout',
+
+  // Casos
+  CASO_CREATED: 'caso_created',
+  CASO_VIEWED: 'caso_viewed',
+  CASO_CLOSED: 'caso_closed',
+
+  // Matches
+  MATCH_CREATED: 'match_created',
+  MATCH_ACCEPTED: 'match_accepted',
+  MATCH_REJECTED: 'match_rejected',
+
+  // Avaliações
+  AVALIACAO_CREATED: 'avaliacao_created',
+
+  // Assinatura
+  PLAN_VIEWED: 'plan_viewed',
+  PLAN_SELECTED: 'plan_selected',
+  CHECKOUT_STARTED: 'checkout_started',
+  SUBSCRIPTION_CREATED: 'subscription_created',
+
+  // Navegação
+  PAGE_VIEWED: 'page_viewed',
+  BUTTON_CLICKED: 'button_clicked',
+} as const
