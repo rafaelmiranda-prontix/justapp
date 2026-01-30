@@ -102,15 +102,31 @@ export async function POST(request: NextRequest) {
       `[Activate] Cases activated: ${user.cidadao?.casos.length || 0} case(s) moved to ABERTO`
     )
 
+    // Analytics: Ativação completada (server-side log)
+    console.log('[Analytics] activation_completed', {
+      userId: user.id,
+      email: user.email,
+      casosCount: user.cidadao?.casos.length || 0,
+    })
+
     // Distribuir casos para advogados (em background)
     if (user.cidadao && user.cidadao.casos.length > 0) {
       // Disparar distribuição para cada caso ativado
       for (const caso of user.cidadao.casos) {
+        console.log(`[Activate] Triggering matching for case ${caso.id}`)
+
         CaseDistributionService.distributeCase(caso.id)
           .then(async (result) => {
             console.log(
               `[Activate] Case ${caso.id} distributed: ${result.matchesCreated} matches created`
             )
+
+            // Analytics: Matching disparado (server-side log)
+            console.log('[Analytics] activation_matching_triggered', {
+              userId: user.id,
+              casoId: caso.id,
+              matchesCreated: result.matchesCreated,
+            })
 
             // Notificar advogados sobre matches criados
             const matches = await prisma.match.findMany({

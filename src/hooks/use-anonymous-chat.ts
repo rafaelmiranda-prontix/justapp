@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { ChatMessage } from '@/lib/anonymous-session.service'
+import { trackEvent, AnalyticsEvents } from '@/lib/analytics'
 
 const SESSION_STORAGE_KEY = 'anonymous_session_id'
 
@@ -84,16 +85,22 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
 
   // Abrir chat
   const openChat = useCallback(async () => {
-    setIsOpen(true)
+    // Analytics: Chat aberto
+    trackEvent(AnalyticsEvents.ANONYMOUS_CHAT_OPENED)
 
-    // Se não tem sessão, criar uma
+    // Se não tem sessão, criar uma ANTES de abrir
     if (!sessionId) {
       try {
         await createSession()
       } catch (error) {
         console.error('Failed to create session:', error)
+        alert('Erro ao iniciar conversa. Tente novamente.')
+        return
       }
     }
+
+    // Só abre depois da sessão estar criada
+    setIsOpen(true)
   }, [sessionId, createSession])
 
   // Fechar chat
@@ -141,6 +148,12 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
         const data = await response.json()
 
         if (data.success) {
+          // Analytics: Mensagem enviada
+          trackEvent(AnalyticsEvents.ANONYMOUS_MESSAGE_SENT, {
+            messageLength: message.length,
+            messageNumber: messages.filter(m => m.role === 'user').length + 1,
+          })
+
           // Adicionar resposta da IA
           const aiMessage: ChatMessage = {
             role: 'assistant',
@@ -151,6 +164,13 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
 
           // Verificar se deve mostrar formulário de captura
           if (data.data.shouldCaptureLeadData) {
+            // Analytics: Lead capture mostrado
+            trackEvent(AnalyticsEvents.LEAD_CAPTURE_SHOWN, {
+              messageCount: messages.filter(m => m.role === 'user').length + 1,
+              especialidade: data.data.extractedData?.especialidade,
+              score: data.data.score,
+            })
+
             setShouldCaptureLeadData(true)
             setExtractedData({
               especialidade: data.data.extractedData?.especialidade,
@@ -203,6 +223,22 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
         const result = await response.json()
 
         if (result.success) {
+          // Analytics: Lead capturado com sucesso
+          trackEvent(AnalyticsEvents.LEAD_CAPTURED, {
+            email: data.email,
+            hasPhone: !!data.phone,
+            messageCount: messages.filter(m => m.role === 'user').length,
+            especialidade: extractedData?.especialidade,
+            cidade: extractedData?.cidade,
+            estado: extractedData?.estado,
+            score: extractedData?.score,
+          })
+
+          // Analytics: Email de ativação enviado
+          trackEvent(AnalyticsEvents.ACTIVATION_EMAIL_SENT, {
+            email: data.email,
+          })
+
           // Sucesso! Mostrar mensagem de confirmação
           const confirmationMessage: ChatMessage = {
             role: 'assistant',

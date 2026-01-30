@@ -67,6 +67,16 @@ export const AnalyticsEvents = {
   LOGIN: 'login',
   LOGOUT: 'logout',
 
+  // Chat Anônimo - Funil de Conversão
+  ANONYMOUS_CHAT_OPENED: 'anonymous_chat_opened',
+  ANONYMOUS_MESSAGE_SENT: 'anonymous_message_sent',
+  LEAD_CAPTURE_SHOWN: 'lead_capture_shown',
+  LEAD_CAPTURED: 'lead_captured',
+  ACTIVATION_EMAIL_SENT: 'activation_email_sent',
+  ACTIVATION_EMAIL_OPENED: 'activation_email_opened',
+  ACTIVATION_COMPLETED: 'activation_completed',
+  ACTIVATION_MATCHING_TRIGGERED: 'activation_matching_triggered',
+
   // Casos
   CASO_CREATED: 'caso_created',
   CASO_VIEWED: 'caso_viewed',

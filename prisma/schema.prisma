@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,330 +7,242 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ==================== USUÁRIOS ====================
-
-model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  emailVerified DateTime?
-  name          String
-  image         String?
-  phone         String?
-  password      String? // Para login com credentials
-  role          UserRole
-  status        UserStatus @default(ACTIVE)
-
-  // Ativação de conta
-  activationToken   String?   @unique
-  activationExpires DateTime?
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  cidadao  Cidadao?
-  advogado Advogado?
-  accounts Account[]
-  sessions Session[]
-
-  @@map("users")
-}
-
-enum UserStatus {
-  PRE_ACTIVE  // Criado mas não ativou email
-  ACTIVE      // Ativado e funcionando
-  SUSPENDED   // Suspenso por admin
-  DELETED     // Deletado (soft delete)
-}
-
-// NextAuth Adapter Models
-model Account {
-  id                String  @id @default(cuid())
+model accounts {
+  id                String  @id
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  users             users   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@map("accounts")
 }
 
-model Session {
-  id           String   @id @default(cuid())
+model advogado_especialidades {
+  advogadoId      String
+  especialidadeId String
+  advogados       advogados      @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+  especialidades  especialidades @relation(fields: [especialidadeId], references: [id], onDelete: Cascade)
+
+  @@id([advogadoId, especialidadeId])
+}
+
+model advogados {
+  id                      String                    @id
+  userId                  String                    @unique
+  oab                     String                    @unique
+  oabVerificado           Boolean                   @default(false)
+  bio                     String?
+  fotoUrl                 String?
+  cidade                  String
+  estado                  String
+  latitude                Float?
+  longitude               Float?
+  raioAtuacao             Int                       @default(50)
+  precoConsulta           Float?
+  aceitaOnline            Boolean                   @default(true)
+  plano                   Plano                     @default(FREE)
+  planoExpira             DateTime?
+  stripeCustomerId        String?                   @unique
+  stripeSubscriptionId    String?                   @unique
+  leadsRecebidosMes       Int                       @default(0)
+  leadsLimiteMes          Int                       @default(0)
+  ultimoResetLeads        DateTime                  @default(now())
+  isBeta                  Boolean                   @default(false)
+  betaInviteCode          String?                   @unique
+  onboardingCompleted     Boolean                   @default(false)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  advogado_especialidades advogado_especialidades[]
+  users                   users                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  avaliacoes              avaliacoes[]
+  matches                 matches[]
+}
+
+model AnonymousSession {
+  id                     String        @id
+  sessionId              String        @unique
+  mensagens              Json[]
+  userAgent              String?
+  ipAddress              String?
+  cidade                 String?
+  estado                 String?
+  especialidadeDetectada String?
+  urgenciaDetectada      String?
+  preQualificationState  Json?
+  preQualificationScore  Int?
+  useAI                  Boolean       @default(false)
+  status                 SessionStatus @default(ACTIVE)
+  convertedToUserId      String?       @unique
+  convertedToCasoId      String?       @unique
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime
+  expiresAt              DateTime
+
+  @@index([createdAt])
+  @@index([sessionId])
+  @@index([status])
+  @@map("anonymous_sessions")
+}
+
+model avaliacoes {
+  id         String    @id
+  cidadaoId  String
+  advogadoId String
+  nota       Int
+  comentario String?
+  createdAt  DateTime  @default(now())
+  advogados  advogados @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+  cidadaos   cidadaos  @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)
+
+  @@unique([cidadaoId, advogadoId])
+  @@index([advogadoId])
+}
+
+model casos {
+  id              String          @id
+  cidadaoId       String
+  descricao       String
+  descricaoIA     String?
+  especialidadeId String?
+  urgencia        Urgencia        @default(NORMAL)
+  complexidade    Int             @default(1)
+  status          CasoStatus      @default(PENDENTE_ATIVACAO)
+  sessionId       String?         @unique
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime
+  cidadaos        cidadaos        @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)
+  especialidades  especialidades? @relation(fields: [especialidadeId], references: [id])
+  matches         matches[]
+
+  @@index([cidadaoId])
+  @@index([especialidadeId])
+  @@index([sessionId])
+  @@index([status])
+}
+
+model cidadaos {
+  id         String       @id
+  userId     String       @unique
+  cidade     String?
+  estado     String?
+  latitude   Float?
+  longitude  Float?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime
+  avaliacoes avaliacoes[]
+  casos      casos[]
+  users      users        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model configuracoes {
+  id        String           @id
+  chave     String           @unique
+  valor     String
+  tipo      ConfiguracaoTipo @default(STRING)
+  descricao String?
+  categoria String           @default("geral")
+  createdAt DateTime         @default(now())
+  updatedAt DateTime
+
+  @@index([categoria])
+}
+
+model especialidades {
+  id                      String                    @id
+  nome                    String                    @unique
+  slug                    String                    @unique
+  descricao               String?
+  palavrasChave           String[]
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  advogado_especialidades advogado_especialidades[]
+  casos                   casos[]
+}
+
+model matches {
+  id            String      @id
+  casoId        String
+  advogadoId    String
+  score         Int
+  distanciaKm   Float?
+  status        MatchStatus @default(PENDENTE)
+  enviadoEm     DateTime    @default(now())
+  visualizadoEm DateTime?
+  respondidoEm  DateTime?
+  expiresAt     DateTime?
+  advogados     advogados   @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+  casos         casos       @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  mensagens     mensagens[]
+
+  @@unique([casoId, advogadoId])
+  @@index([advogadoId])
+  @@index([status])
+}
+
+model mensagens {
+  id          String   @id
+  matchId     String
+  remetenteId String
+  conteudo    String
+  anexoUrl    String?
+  lida        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  matches     matches  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@index([remetenteId])
+}
+
+model sessions {
+  id           String   @id
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
+  users        users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model VerificationToken {
+model users {
+  id                String     @id
+  email             String     @unique
+  emailVerified     DateTime?
+  name              String
+  image             String?
+  phone             String?
+  password          String?
+  role              UserRole
+  status            UserStatus @default(ACTIVE)
+  activationToken   String?    @unique
+  activationExpires DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime
+  accounts          accounts[]
+  advogados         advogados?
+  cidadaos          cidadaos?
+  sessions          sessions[]
+}
+
+model verification_tokens {
   identifier String
   token      String   @unique
   expires    DateTime
 
   @@unique([identifier, token])
-  @@map("verification_tokens")
-}
-
-enum UserRole {
-  CIDADAO
-  ADVOGADO
-  ADMIN
-}
-
-model Cidadao {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Localização
-  cidade    String?
-  estado    String?
-  latitude  Float?
-  longitude Float?
-
-  casos      Caso[]
-  avaliacoes Avaliacao[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("cidadaos")
-}
-
-model Advogado {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Profissional
-  oab           String  @unique // Ex: "SP123456"
-  oabVerificado Boolean @default(false)
-  bio           String?
-  fotoUrl       String?
-
-  // Localização
-  cidade      String
-  estado      String
-  latitude    Float?
-  longitude   Float?
-  raioAtuacao Int    @default(50) // km
-
-  // Configurações
-  especialidades AdvogadoEspecialidade[]
-  precoConsulta  Float?
-  aceitaOnline   Boolean                 @default(true)
-
-  // Assinatura
-  plano                Plano     @default(FREE)
-  planoExpira          DateTime?
-  stripeCustomerId     String?   @unique
-  stripeSubscriptionId String?   @unique
-  leadsRecebidosMes    Int       @default(0)
-  leadsLimiteMes       Int       @default(0)
-  ultimoResetLeads     DateTime  @default(now())
-
-  // Beta/Onboarding
-  isBeta               Boolean   @default(false)
-  betaInviteCode       String?   @unique
-  onboardingCompleted  Boolean   @default(false)
-
-  // Relacionamentos
-  matches    Match[]
-  avaliacoes Avaliacao[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("advogados")
-}
-
-enum Plano {
-  FREE
-  BASIC
-  PREMIUM
-}
-
-// ==================== ESPECIALIDADES ====================
-
-model Especialidade {
-  id            String   @id @default(cuid())
-  nome          String   @unique // "Direito do Consumidor"
-  slug          String   @unique // "consumidor"
-  descricao     String?
-  palavrasChave String[] // Para matching
-
-  advogados AdvogadoEspecialidade[]
-  casos     Caso[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("especialidades")
-}
-
-model AdvogadoEspecialidade {
-  advogadoId      String
-  especialidadeId String
-  advogado        Advogado      @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
-  especialidade   Especialidade @relation(fields: [especialidadeId], references: [id], onDelete: Cascade)
-
-  @@id([advogadoId, especialidadeId])
-  @@map("advogado_especialidades")
-}
-
-// ==================== CASOS ====================
-
-model Caso {
-  id        String  @id @default(cuid())
-  cidadaoId String
-  cidadao   Cidadao @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)
-
-  // Descrição do problema
-  descricao   String  @db.Text // Texto livre do usuário
-  descricaoIA String? @db.Text // Resumo gerado por IA
-
-  // Classificação (por IA)
-  especialidadeId String?
-  especialidade   Especialidade? @relation(fields: [especialidadeId], references: [id])
-  urgencia        Urgencia       @default(NORMAL)
-  complexidade    Int            @default(1) // 1-5
-
-  // Status
-  status CasoStatus @default(PENDENTE_ATIVACAO)
-
-  // Referência da sessão anônima (se veio do chat)
-  sessionId String? @unique
-
-  // Matches
-  matches Match[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([cidadaoId])
-  @@index([especialidadeId])
-  @@index([status])
-  @@index([sessionId])
-  @@map("casos")
-}
-
-enum Urgencia {
-  BAIXA
-  NORMAL
-  ALTA
-  URGENTE
 }
 
 enum CasoStatus {
-  PENDENTE_ATIVACAO // Esperando ativação do usuário (novo)
-  ABERTO            // Ativo e distribuído
-  EM_ANDAMENTO      // Advogado aceitou
-  FECHADO           // Resolvido
-  CANCELADO         // Cancelado
-}
-
-// ==================== MATCHING ====================
-
-model Match {
-  id         String   @id @default(cuid())
-  casoId     String
-  caso       Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
-  advogadoId String
-  advogado   Advogado @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
-
-  // Score de compatibilidade (0-100)
-  score       Int
-  distanciaKm Float?
-
-  // Status do match
-  status MatchStatus @default(PENDENTE)
-
-  // Timestamps
-  enviadoEm     DateTime  @default(now())
-  visualizadoEm DateTime?
-  respondidoEm  DateTime?
-  expiresAt     DateTime? // Data de expiração do match (calculada automaticamente)
-
-  mensagens Mensagem[]
-
-  @@unique([casoId, advogadoId])
-  @@index([advogadoId])
-  @@index([status])
-  @@map("matches")
-}
-
-enum MatchStatus {
-  PENDENTE // Aguardando advogado ver
-  VISUALIZADO // Advogado viu
-  ACEITO // Advogado aceitou
-  RECUSADO // Advogado recusou
-  CONTRATADO // Virou cliente
-  EXPIRADO // Tempo esgotado
-}
-
-// ==================== MENSAGENS ====================
-
-model Mensagem {
-  id          String  @id @default(cuid())
-  matchId     String
-  match       Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  remetenteId String // UserId
-  conteudo    String  @db.Text
-  anexoUrl    String?
-  lida        Boolean @default(false)
-
-  createdAt DateTime @default(now())
-
-  @@index([matchId])
-  @@index([remetenteId])
-  @@map("mensagens")
-}
-
-// ==================== AVALIAÇÕES ====================
-
-model Avaliacao {
-  id         String   @id @default(cuid())
-  cidadaoId  String
-  cidadao    Cidadao  @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)
-  advogadoId String
-  advogado   Advogado @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
-
-  nota       Int // 1-5
-  comentario String? @db.Text
-
-  createdAt DateTime @default(now())
-
-  @@unique([cidadaoId, advogadoId])
-  @@index([advogadoId])
-  @@map("avaliacoes")
-}
-
-// ==================== CONFIGURAÇÕES ====================
-
-model Configuracao {
-  id    String @id @default(cuid())
-  chave String @unique // Ex: "match_expiration_hours", "max_matches_per_caso"
-  valor String // Valor em formato string (converter conforme necessário)
-  tipo  ConfiguracaoTipo @default(STRING) // Para facilitar conversão
-  descricao String? @db.Text
-  categoria String @default("geral") // geral, matching, pagamento, notificacao, etc.
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([categoria])
-  @@map("configuracoes")
+  PENDENTE_ATIVACAO
+  ABERTO
+  EM_ANDAMENTO
+  FECHADO
+  CANCELADO
 }
 
 enum ConfiguracaoTipo {
@@ -343,53 +252,44 @@ enum ConfiguracaoTipo {
   JSON
 }
 
-// ==================== SESSÕES ANÔNIMAS ====================
+enum MatchStatus {
+  PENDENTE
+  VISUALIZADO
+  ACEITO
+  RECUSADO
+  CONTRATADO
+  EXPIRADO
+}
 
-model AnonymousSession {
-  id        String @id @default(cuid())
-  sessionId String @unique // Identificador no cookie/localStorage
-
-  // Conversa
-  mensagens Json[] // Array de {role: 'user'|'assistant', content: string, timestamp: DateTime}
-
-  // Metadados
-  userAgent String?
-  ipAddress String?
-
-  // Localização estimada (capturada durante conversa)
-  cidade    String?
-  estado    String?
-
-  // Classificação automática (pré-qualificação ou IA)
-  especialidadeDetectada String?
-  urgenciaDetectada      String?
-
-  // Pré-qualificação (sem custo de IA)
-  preQualificationState Json? // Estado do fluxo de perguntas
-  preQualificationScore Int?  // Score calculado (0-100)
-  useAI                 Boolean @default(false) // Se deve usar IA
-
-  // Status da sessão
-  status    SessionStatus @default(ACTIVE)
-
-  // Conversão
-  convertedToUserId String? @unique
-  convertedToCasoId String? @unique
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  expiresAt DateTime // 7 dias após criação
-
-  @@index([sessionId])
-  @@index([status])
-  @@index([createdAt])
-  @@map("anonymous_sessions")
+enum Plano {
+  FREE
+  BASIC
+  PREMIUM
 }
 
 enum SessionStatus {
-  ACTIVE      // Conversando ativamente
-  CONVERTED   // Converteu em usuário + caso
-  ABANDONED   // Abandonado (7 dias sem atividade)
-  EXPIRED     // Expirou
+  ACTIVE
+  CONVERTED
+  ABANDONED
+  EXPIRED
+}
+
+enum Urgencia {
+  BAIXA
+  NORMAL
+  ALTA
+  URGENTE
+}
+
+enum UserRole {
+  CIDADAO
+  ADVOGADO
+  ADMIN
+}
+
+enum UserStatus {
+  PRE_ACTIVE
+  ACTIVE
+  SUSPENDED
+  DELETED
 }
