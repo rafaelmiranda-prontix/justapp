@@ -51,6 +51,9 @@ export default withAuth(
           pathname.startsWith('/signup') ||
           pathname.startsWith('/api/auth') ||
           pathname.startsWith('/api/users') ||
+          pathname.startsWith('/api/anonymous') || // Rotas do chat anônimo
+          pathname.startsWith('/api/health') || // Health check
+          pathname.startsWith('/api/test-') || // Rotas de teste
           pathname.startsWith('/_next') ||
           pathname.startsWith('/advogado/') // Perfil público de advogado
         ) {

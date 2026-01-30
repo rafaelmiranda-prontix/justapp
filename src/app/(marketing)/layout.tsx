@@ -1,19 +1,21 @@
-import { Providers } from '@/components/providers'
-import { Inter } from 'next/font/google'
-import '../globals.css'
+import { Metadata } from 'next'
 
-const inter = Inter({ subsets: ['latin'] })
+export const metadata: Metadata = {
+  title: 'LegalConnect - Plataforma Jurídica Inteligente | Encontre seu Advogado em Minutos',
+  description:
+    'Conectamos pessoas com problemas jurídicos a advogados especializados. Chat inteligente, conexão automática e 100% online. Comece agora!',
+  openGraph: {
+    title: 'LegalConnect - Plataforma Jurídica Inteligente',
+    description:
+      'Encontre o advogado ideal para seu caso em minutos. Plataforma inteligente que conecta você ao profissional certo.',
+    type: 'website',
+  },
+}
 
 export default function MarketingLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return (
-    <html lang="pt-BR" suppressHydrationWarning>
-      <body className={inter.className}>
-        <Providers>{children}</Providers>
-      </body>
-    </html>
-  )
+  return <>{children}</>
 }

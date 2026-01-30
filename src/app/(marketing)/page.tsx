@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -18,19 +20,13 @@ import {
   Award,
   BarChart3,
 } from 'lucide-react'
-import { Metadata } from 'next'
+import { AnonymousChatButton } from '@/components/anonymous-chat/anonymous-chat-button'
+import { AnonymousChatSheet } from '@/components/anonymous-chat/anonymous-chat-sheet'
+import { useAnonymousChat } from '@/hooks/use-anonymous-chat'
+import { MarketingHeader } from '@/components/marketing/header'
+import { MarketingFooter } from '@/components/marketing/footer'
 
-export const metadata: Metadata = {
-  title: 'LegalConnect - Plataforma Jurídica Inteligente | Encontre seu Advogado em Minutos',
-  description:
-    'Conectamos pessoas com problemas jurídicos a advogados especializados. Chat inteligente, conexão automática e 100% online. Comece agora!',
-  openGraph: {
-    title: 'LegalConnect - Plataforma Jurídica Inteligente',
-    description:
-      'Encontre o advogado ideal para seu caso em minutos. Plataforma inteligente que conecta você ao profissional certo.',
-    type: 'website',
-  },
-}
+// Metadata moved to layout.tsx since this is now a client component
 
 const problems = [
   {
@@ -135,8 +131,12 @@ const testimonials = [
 ]
 
 export default function LandingPage() {
+  const { isOpen, openChat, closeChat, messages, sendMessage, isTyping } = useAnonymousChat()
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
+      <MarketingHeader />
+
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-background">
         <div className="absolute inset-0 bg-grid-pattern opacity-5" />
@@ -145,7 +145,7 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
               <Sparkles className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium text-primary">
-                O Uber dos Processos
+                Conexão Inteligente entre Pessoas e Advogados
               </span>
             </div>
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent leading-tight">
@@ -163,12 +163,7 @@ export default function LandingPage() {
               </span>
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Button size="lg" className="text-lg px-8 py-6 h-auto" asChild>
-                <Link href="/signup/cidadao">
-                  Começar Agora
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+              <AnonymousChatButton onClick={openChat} variant="large" />
               <Button
                 size="lg"
                 variant="outline"
@@ -351,12 +346,7 @@ export default function LandingPage() {
               ))}
             </div>
             <div className="text-center mt-12">
-              <Button size="lg" className="text-lg px-8" asChild>
-                <Link href="/signup/cidadao">
-                  Buscar Advogado Agora
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+              <AnonymousChatButton onClick={openChat} variant="large" />
             </div>
           </div>
         </div>
@@ -448,12 +438,7 @@ export default function LandingPage() {
                 através do LegalConnect. Comece agora, é grátis!
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="text-lg px-8 py-6 h-auto" asChild>
-                  <Link href="/signup/cidadao">
-                    Começar Agora
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                </Button>
+                <AnonymousChatButton onClick={openChat} variant="large" />
                 <Button
                   size="lg"
                   variant="outline"
@@ -481,6 +466,17 @@ export default function LandingPage() {
           </CardContent>
         </Card>
       </section>
+
+      <MarketingFooter />
+
+      {/* Anonymous Chat Sheet */}
+      <AnonymousChatSheet
+        open={isOpen}
+        onOpenChange={closeChat}
+        messages={messages}
+        onSendMessage={sendMessage}
+        isTyping={isTyping}
+      />
     </div>
   )
 }
