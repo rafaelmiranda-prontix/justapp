@@ -85,7 +85,7 @@ export async function GET() {
     }, {} as Record<string, number>)
 
     // Taxa de aceitação por especialidade
-    const aceitacaoPorEspecialidade = matches.reduce((acc, match) => {
+    const aceitacaoPorEspecialidadeRaw = matches.reduce((acc, match) => {
       const especialidade =
         match.casos.especialidades?.nome || 'Sem especialidade'
       if (!acc[especialidade]) {
@@ -97,6 +97,16 @@ export async function GET() {
       }
       return acc
     }, {} as Record<string, { total: number; aceitos: number }>)
+
+    // Converte para percentuais
+    const aceitacaoPorEspecialidade = Object.entries(aceitacaoPorEspecialidadeRaw).reduce(
+      (acc, [especialidade, dados]) => {
+        acc[especialidade] =
+          dados.total > 0 ? Math.round((dados.aceitos / dados.total) * 100) : 0
+        return acc
+      },
+      {} as Record<string, number>
+    )
 
     // Busca avaliações
     const avaliacoes = await prisma.avaliacoes.findMany({
