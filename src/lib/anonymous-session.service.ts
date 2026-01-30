@@ -1,5 +1,7 @@
 import { prisma } from './prisma'
 import { nanoid } from 'nanoid'
+import { PreQualificationService } from './pre-qualification/pre-qualification.service'
+import { PreQualificationState } from './pre-qualification/types'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
@@ -17,6 +19,9 @@ export interface AnonymousSessionData {
   estado?: string
   especialidadeDetectada?: string
   urgenciaDetectada?: string
+  preQualificationState?: PreQualificationState
+  preQualificationScore?: number
+  useAI: boolean
   status: string
   createdAt: Date
   expiresAt: Date
@@ -46,21 +51,30 @@ export class AnonymousSessionService {
       expiresAt.setDate(expiresAt.getDate() + 7) // 7 dias
       console.log('[Service] Expires at:', expiresAt)
 
-      // Mensagem de boas-vindas
+      // Inicializar pré-qualificação (SEM IA - economia de custos)
+      const preQualState = PreQualificationService.initializeState()
+      const welcomeText = PreQualificationService.getWelcomeMessage()
+
       const welcomeMessage: ChatMessage = {
         role: 'assistant',
-        content: 'Olá! Sou o assistente da LegalConnect. 👋\n\nEstou aqui para entender sua situação jurídica e conectá-lo ao advogado ideal para o seu caso.\n\nPode me contar o que aconteceu?',
+        content: welcomeText,
         timestamp: new Date(),
       }
-      console.log('[Service] Welcome message created')
+      console.log('[Service] Pre-qualification initialized')
 
       console.log('[Service] Creating session in database...')
       const session = await prisma.anonymousSession.create({
         data: {
           sessionId,
-          mensagens: [welcomeMessage] as any,
+          mensagens: [{
+            role: welcomeMessage.role,
+            content: welcomeMessage.content,
+            timestamp: welcomeMessage.timestamp.toISOString(),
+          }],
           userAgent: data.userAgent,
           ipAddress: data.ipAddress,
+          preQualificationState: preQualState as any,
+          useAI: false, // Começa SEM IA
           status: 'ACTIVE',
           expiresAt,
         },
@@ -125,7 +139,7 @@ export class AnonymousSessionService {
   }
 
   /**
-   * Atualiza dados detectados pela IA
+   * Atualiza dados detectados (IA ou pré-qualificação)
    */
   static async updateDetectedData(
     sessionId: string,
@@ -134,6 +148,9 @@ export class AnonymousSessionService {
       estado?: string
       especialidadeDetectada?: string
       urgenciaDetectada?: string
+      preQualificationState?: any
+      preQualificationScore?: number
+      useAI?: boolean
     }
   ): Promise<void> {
     await prisma.anonymousSession.update({
@@ -253,6 +270,9 @@ export class AnonymousSessionService {
       estado: session.estado || undefined,
       especialidadeDetectada: session.especialidadeDetectada || undefined,
       urgenciaDetectada: session.urgenciaDetectada || undefined,
+      preQualificationState: session.preQualificationState as PreQualificationState || undefined,
+      preQualificationScore: session.preQualificationScore || undefined,
+      useAI: session.useAI || false,
       status: session.status,
       createdAt: session.createdAt,
       expiresAt: session.expiresAt,

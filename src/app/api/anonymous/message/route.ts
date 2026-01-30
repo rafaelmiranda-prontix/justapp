@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AnonymousSessionService, ChatMessage } from '@/lib/anonymous-session.service'
-import { AIChatService } from '@/lib/ai-chat.service'
+import { HybridChatService } from '@/lib/hybrid-chat.service'
 
 /**
  * POST /api/anonymous/message
  * Adiciona mensagem à sessão anônima
+ * Usa sistema híbrido: pré-qualificação (grátis) primeiro, IA (pago) só quando necessário
  */
 export async function POST(request: NextRequest) {
   try {
@@ -49,49 +50,35 @@ export async function POST(request: NextRequest) {
       timestamp: now,
     }
 
-    const updatedSession = await AnonymousSessionService.addMessage(sessionId, userMessage)
+    await AnonymousSessionService.addMessage(sessionId, userMessage)
 
-    // Gerar resposta com IA
-    const aiChatResponse = await AIChatService.generateResponse(
-      message,
-      updatedSession.mensagens
+    // Processar com sistema híbrido (decide automaticamente se usa IA ou não)
+    const response = await HybridChatService.processMessage(sessionId, message)
+
+    console.log(
+      `[API] ${session.useAI ? 'IA' : 'Pré-qualificação'} | Score: ${session.preQualificationScore || 'N/A'} | Completed: ${response.preQualificationCompleted}`
     )
 
-    // Criar mensagem da IA
-    const aiResponse: ChatMessage = {
+    // Criar mensagem da resposta
+    const aiMessage: ChatMessage = {
       role: 'assistant',
-      content: aiChatResponse.reply,
+      content: response.reply,
       timestamp: new Date(),
     }
 
-    const finalSession = await AnonymousSessionService.addMessage(sessionId, aiResponse)
-
-    // Atualizar dados extraídos pela IA (se houver)
-    if (aiChatResponse.extractedData) {
-      const { cidade, estado, especialidadeDetectada, urgenciaDetectada } = aiChatResponse.extractedData
-
-      // Só atualiza se tiver confiança >= 60%
-      if (aiChatResponse.extractedData.confidence >= 60) {
-        await AnonymousSessionService.updateDetectedData(sessionId, {
-          cidade: cidade || undefined,
-          estado: estado || undefined,
-          especialidadeDetectada: especialidadeDetectada || undefined,
-          urgenciaDetectada: urgenciaDetectada || undefined,
-        })
-      }
-    }
-
-    // Verificar se deve solicitar dados de contato
-    const shouldCaptureLeadData = AnonymousSessionService.shouldCaptureLeadData(finalSession)
+    const finalSession = await AnonymousSessionService.addMessage(sessionId, aiMessage)
 
     return NextResponse.json({
       success: true,
       data: {
-        reply: aiResponse.content,
+        reply: response.reply,
         mensagens: finalSession.mensagens,
-        shouldCaptureLeadData,
+        shouldCaptureLeadData: response.shouldCaptureLeadData,
+        preQualificationCompleted: response.preQualificationCompleted,
         sessionStatus: finalSession.status,
-        extractedData: aiChatResponse.extractedData,
+        extractedData: response.extractedData,
+        useAI: finalSession.useAI,
+        score: finalSession.preQualificationScore,
       },
     })
   } catch (error: any) {

@@ -360,9 +360,14 @@ model AnonymousSession {
   cidade    String?
   estado    String?
 
-  // Classificação automática pela IA
+  // Classificação automática (pré-qualificação ou IA)
   especialidadeDetectada String?
   urgenciaDetectada      String?
+
+  // Pré-qualificação (sem custo de IA)
+  preQualificationState Json? // Estado do fluxo de perguntas
+  preQualificationScore Int?  // Score calculado (0-100)
+  useAI                 Boolean @default(false) // Se deve usar IA
 
   // Status da sessão
   status    SessionStatus @default(ACTIVE)
