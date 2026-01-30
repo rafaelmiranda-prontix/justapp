@@ -1,6 +1,7 @@
-import { Inter } from 'next/font/google'
+'use client'
 
-const inter = Inter({ subsets: ['latin'] })
+import { DashboardHeader } from '@/components/layout/dashboard-header'
+import { AdvogadoNav } from '@/components/advogado/advogado-nav'
 
 export default function AdvogadoLayout({
   children,
@@ -8,9 +9,13 @@ export default function AdvogadoLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className={inter.className}>
-      <div className="min-h-screen bg-background">
-        {children}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50">
+      <DashboardHeader mobileNav={<AdvogadoNav />} />
+      <div className="flex">
+        <AdvogadoNav />
+        <main className="flex-1">
+          {children}
+        </main>
       </div>
     </div>
   )

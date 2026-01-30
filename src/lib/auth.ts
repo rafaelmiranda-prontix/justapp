@@ -58,8 +58,8 @@ export const authOptions: NextAuthOptions = {
       // Initial sign in
       if (user) {
         token.id = user.id
-        token.email = user.email
-        token.name = user.name
+        token.email = user.email ?? undefined
+        token.name = user.name ?? undefined
         token.role = user.role
         token.cidadaoId = user.cidadaoId
         token.advogadoId = user.advogadoId
@@ -77,9 +77,9 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string
         session.user.email = token.email as string
         session.user.name = token.name as string
-        session.user.role = token.role as string
-        session.user.cidadaoId = token.cidadaoId as string | undefined
-        session.user.advogadoId = token.advogadoId as string | undefined
+        session.user.role = token.role
+        session.user.cidadaoId = token.cidadaoId
+        session.user.advogadoId = token.advogadoId
       }
       return session
     },

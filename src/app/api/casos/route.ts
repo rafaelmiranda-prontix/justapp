@@ -35,8 +35,8 @@ export async function GET() {
           include: {
             advogado: {
               select: {
-                nome: true,
-                foto: true,
+                id: true,
+                fotoUrl: true,
                 user: {
                   select: {
                     name: true,
@@ -46,12 +46,12 @@ export async function GET() {
             },
           },
           orderBy: {
-            criadoEm: 'desc',
+            enviadoEm: 'desc',
           },
         },
       },
       orderBy: {
-        criadoEm: 'desc',
+        createdAt: 'desc',
       },
     })
 

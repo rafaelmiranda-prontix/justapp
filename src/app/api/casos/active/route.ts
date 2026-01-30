@@ -25,11 +25,11 @@ export async function GET() {
       where: {
         cidadaoId: cidadao.id,
         status: {
-          in: ['PENDENTE', 'EM_ANDAMENTO'],
+          in: ['ABERTO', 'EM_ANDAMENTO'],
         },
       },
       orderBy: {
-        criadoEm: 'desc',
+        createdAt: 'desc',
       },
     })
 

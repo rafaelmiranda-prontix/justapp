@@ -61,11 +61,13 @@ const urgenciaColors = {
   URGENTE: 'bg-red-500',
 }
 
-const matchStatusLabels = {
+const matchStatusLabels: Record<string, string> = {
   PENDENTE: 'Aguardando',
   VISUALIZADO: 'Visualizado',
   ACEITO: 'Aceito',
   RECUSADO: 'Recusado',
+  CONTRATADO: 'Contratado',
+  EXPIRADO: 'Expirado',
 }
 
 export default function CidadaoDashboardPage() {

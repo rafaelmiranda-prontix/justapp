@@ -45,11 +45,13 @@ const urgenciaColors = {
   URGENTE: 'bg-red-500',
 }
 
-const statusLabels = {
+const statusLabels: Record<string, string> = {
   PENDENTE: 'Novo',
   VISUALIZADO: 'Visualizado',
   ACEITO: 'Aceito',
   RECUSADO: 'Recusado',
+  CONTRATADO: 'Contratado',
+  EXPIRADO: 'Expirado',
 }
 
 export default function AdvogadoDashboardPage() {

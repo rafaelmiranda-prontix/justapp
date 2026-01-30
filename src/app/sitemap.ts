@@ -57,16 +57,4 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       },
     ]
   }
-} catch (error) {
-    console.error('Error generating sitemap:', error)
-    // Retorna sitemap básico em caso de erro
-    return [
-      {
-        url: baseUrl,
-        lastModified: new Date(),
-        changeFrequency: 'daily',
-        priority: 1,
-      },
-    ]
-  }
 }
