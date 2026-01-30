@@ -245,6 +245,7 @@ model Match {
   enviadoEm     DateTime  @default(now())
   visualizadoEm DateTime?
   respondidoEm  DateTime?
+  expiresAt     DateTime? // Data de expiração do match (calculada automaticamente)
 
   mensagens Mensagem[]
 
@@ -298,4 +299,28 @@ model Avaliacao {
   @@unique([cidadaoId, advogadoId])
   @@index([advogadoId])
   @@map("avaliacoes")
+}
+
+// ==================== CONFIGURAÇÕES ====================
+
+model Configuracao {
+  id    String @id @default(cuid())
+  chave String @unique // Ex: "match_expiration_hours", "max_matches_per_caso"
+  valor String // Valor em formato string (converter conforme necessário)
+  tipo  ConfiguracaoTipo @default(STRING) // Para facilitar conversão
+  descricao String? @db.Text
+  categoria String @default("geral") // geral, matching, pagamento, notificacao, etc.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoria])
+  @@map("configuracoes")
+}
+
+enum ConfiguracaoTipo {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
 }

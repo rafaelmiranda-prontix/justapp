@@ -96,6 +96,144 @@ async function main() {
     console.log(`✅ Especialidade criada: ${esp.nome}`)
   }
 
+  // Criar configurações padrão
+  console.log('\n📋 Criando configurações padrão...')
+
+  const configuracoesPadrao = [
+    // MATCHING
+    {
+      chave: 'match_expiration_hours',
+      valor: '48',
+      tipo: 'NUMBER',
+      descricao: 'Tempo em horas para o advogado aceitar ou recusar um match antes de expirar',
+      categoria: 'matching',
+    },
+    {
+      chave: 'max_matches_per_caso',
+      valor: '5',
+      tipo: 'NUMBER',
+      descricao: 'Número máximo de advogados que recebem cada caso',
+      categoria: 'matching',
+    },
+    {
+      chave: 'min_match_score',
+      valor: '60',
+      tipo: 'NUMBER',
+      descricao: 'Score mínimo para criar um match (0-100)',
+      categoria: 'matching',
+    },
+    {
+      chave: 'auto_expire_matches',
+      valor: 'true',
+      tipo: 'BOOLEAN',
+      descricao: 'Se deve expirar automaticamente matches não respondidos',
+      categoria: 'matching',
+    },
+
+    // LIMITES DE PLANOS
+    {
+      chave: 'free_plan_monthly_leads',
+      valor: '3',
+      tipo: 'NUMBER',
+      descricao: 'Número de leads mensais para plano FREE',
+      categoria: 'planos',
+    },
+    {
+      chave: 'basic_plan_monthly_leads',
+      valor: '10',
+      tipo: 'NUMBER',
+      descricao: 'Número de leads mensais para plano BASIC',
+      categoria: 'planos',
+    },
+    {
+      chave: 'premium_plan_monthly_leads',
+      valor: '50',
+      tipo: 'NUMBER',
+      descricao: 'Número de leads mensais para plano PREMIUM (ou ilimitado se -1)',
+      categoria: 'planos',
+    },
+
+    // NOTIFICAÇÕES
+    {
+      chave: 'notify_match_created',
+      valor: 'true',
+      tipo: 'BOOLEAN',
+      descricao: 'Enviar email quando um novo match é criado',
+      categoria: 'notificacao',
+    },
+    {
+      chave: 'notify_match_accepted',
+      valor: 'true',
+      tipo: 'BOOLEAN',
+      descricao: 'Enviar email quando um match é aceito',
+      categoria: 'notificacao',
+    },
+    {
+      chave: 'notify_match_expiring_hours',
+      valor: '6',
+      tipo: 'NUMBER',
+      descricao: 'Enviar lembrete X horas antes do match expirar',
+      categoria: 'notificacao',
+    },
+
+    // CHAT
+    {
+      chave: 'chat_only_after_accept',
+      valor: 'true',
+      tipo: 'BOOLEAN',
+      descricao: 'Cidadão só pode enviar mensagem após advogado aceitar o match',
+      categoria: 'chat',
+    },
+    {
+      chave: 'max_attachment_size_mb',
+      valor: '20',
+      tipo: 'NUMBER',
+      descricao: 'Tamanho máximo de anexo em MB',
+      categoria: 'chat',
+    },
+
+    // AVALIAÇÕES
+    {
+      chave: 'allow_reviews_after_days',
+      valor: '1',
+      tipo: 'NUMBER',
+      descricao: 'Número de dias após aceitar para permitir avaliação',
+      categoria: 'avaliacoes',
+    },
+    {
+      chave: 'require_review_comment',
+      valor: 'false',
+      tipo: 'BOOLEAN',
+      descricao: 'Tornar comentário obrigatório nas avaliações',
+      categoria: 'avaliacoes',
+    },
+
+    // GERAL
+    {
+      chave: 'maintenance_mode',
+      valor: 'false',
+      tipo: 'BOOLEAN',
+      descricao: 'Ativar modo de manutenção',
+      categoria: 'geral',
+    },
+    {
+      chave: 'beta_mode',
+      valor: 'true',
+      tipo: 'BOOLEAN',
+      descricao: 'Ativar modo beta (requer código de convite)',
+      categoria: 'geral',
+    },
+  ]
+
+  for (const config of configuracoesPadrao) {
+    await prisma.configuracao.upsert({
+      where: { chave: config.chave },
+      update: {},
+      create: config,
+    })
+    console.log(`✅ Configuração criada: ${config.chave} = ${config.valor}`)
+  }
+
   console.log('✨ Seed completed!')
 }
 
