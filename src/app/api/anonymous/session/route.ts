@@ -2,6 +2,57 @@ import { NextRequest, NextResponse } from 'next/server'
 import { AnonymousSessionService } from '@/lib/anonymous-session.service'
 
 /**
+ * GET /api/anonymous/session?sessionId=xxx
+ * Busca sessão anônima existente
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const sessionId = searchParams.get('sessionId')
+
+    if (!sessionId) {
+      return NextResponse.json(
+        { success: false, error: 'sessionId é obrigatório' },
+        { status: 400 }
+      )
+    }
+
+    const session = await AnonymousSessionService.findBySessionId(sessionId)
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Sessão não encontrada ou expirada' },
+        { status: 404 }
+      )
+    }
+
+    // Verificar se deve mostrar formulário de captura
+    const shouldCaptureLeadData = AnonymousSessionService.shouldCaptureLeadData(session)
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        sessionId: session.sessionId,
+        mensagens: session.mensagens,
+        shouldCaptureLeadData,
+        especialidadeDetectada: session.especialidadeDetectada,
+        cidade: session.cidade,
+        estado: session.estado,
+        preQualificationScore: session.preQualificationScore,
+        status: session.status,
+        expiresAt: session.expiresAt,
+      },
+    })
+  } catch (error: any) {
+    console.error('[API] Error fetching session:', error)
+    return NextResponse.json(
+      { success: false, error: error.message || 'Erro ao buscar sessão' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
  * POST /api/anonymous/session
  * Cria nova sessão anônima
  */

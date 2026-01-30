@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { hash } from 'bcryptjs'
+import { nanoid } from 'nanoid'
 import { prisma } from '@/lib/prisma'
 
 const signupSchema = z.object({
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
     const data = signupSchema.parse(body)
 
     // Verificar se email já existe
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.users.findUnique({
       where: { email: data.email },
     })
 
@@ -26,21 +27,27 @@ export async function POST(req: Request) {
 
     // Hash da senha
     const hashedPassword = await hash(data.password, 12)
+    const now = new Date()
 
     // Criar usuário + cidadão
-    const user = await prisma.user.create({
+    const user = await prisma.users.create({
       data: {
+        id: nanoid(),
         email: data.email,
         name: data.name,
         phone: data.phone,
         password: hashedPassword,
         role: 'CIDADAO',
-        cidadao: {
-          create: {},
+        updatedAt: now,
+        cidadaos: {
+          create: {
+            id: nanoid(),
+            updatedAt: now,
+          },
         },
       },
       include: {
-        cidadao: true,
+        cidadaos: true,
       },
     })
 

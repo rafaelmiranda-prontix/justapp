@@ -1,9 +1,16 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Bot, User as UserIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Bot, User as UserIcon, MoreVertical, RotateCcw } from 'lucide-react'
 import { ChatMessage as ChatMessageType } from '@/lib/anonymous-session.service'
 import { ChatInput } from './chat-input'
 import { ChatMessage } from './chat-message'
@@ -24,6 +31,7 @@ interface AnonymousChatSheetProps {
     score?: number
   }
   onSubmitLeadData?: (data: { name: string; email: string; phone?: string }) => Promise<void>
+  onResetChat?: () => Promise<void>
 }
 
 export function AnonymousChatSheet({
@@ -35,13 +43,32 @@ export function AnonymousChatSheet({
   shouldCaptureLeadData = false,
   extractedData,
   onSubmitLeadData,
+  onResetChat,
 }: AnonymousChatSheetProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [isResetting, setIsResetting] = useState(false)
 
   // Auto-scroll para última mensagem
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isTyping])
+
+  const handleReset = async () => {
+    if (!onResetChat) return
+    
+    if (!confirm('Tem certeza que deseja reiniciar o chat? Todas as mensagens serão perdidas.')) {
+      return
+    }
+
+    setIsResetting(true)
+    try {
+      await onResetChat()
+    } catch (error) {
+      console.error('Error resetting chat:', error)
+    } finally {
+      setIsResetting(false)
+    }
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -61,6 +88,30 @@ export function AnonymousChatSheet({
                 Online agora
               </div>
             </div>
+            {onResetChat && messages.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={isResetting || isTyping}
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={handleReset}
+                    disabled={isResetting || isTyping}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    {isResetting ? 'Reiniciando...' : 'Reiniciar chat'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </SheetHeader>
 

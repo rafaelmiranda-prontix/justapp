@@ -12,12 +12,15 @@ export async function GET() {
     console.log('SessionId:', sessionId)
 
     // Test 1: Create without messages
+    const now = new Date()
     const session1 = await prisma.anonymousSession.create({
       data: {
+        id: nanoid(),
         sessionId: `${sessionId}_empty`,
         mensagens: [],
         status: 'ACTIVE',
         expiresAt,
+        updatedAt: now,
       },
     })
     console.log('✓ Empty session created:', session1.id)
@@ -25,6 +28,7 @@ export async function GET() {
     // Test 2: Create with simple message
     const session2 = await prisma.anonymousSession.create({
       data: {
+        id: nanoid(),
         sessionId: `${sessionId}_simple`,
         mensagens: [
           {
@@ -35,6 +39,7 @@ export async function GET() {
         ],
         status: 'ACTIVE',
         expiresAt,
+        updatedAt: now,
       },
     })
     console.log('✓ Session with message created:', session2.id)

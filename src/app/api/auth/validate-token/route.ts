@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar usuário com este token
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { activationToken: token },
       select: {
         id: true,

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { EmailService } from '@/lib/email.service'
 import { CaseDistributionService } from '@/lib/case-distribution.service'
 import { NotificationService } from '@/lib/notification.service'
-import { hash } from 'bcrypt'
+import { hash } from 'bcryptjs'
 
 /**
  * POST /api/auth/activate
@@ -30,10 +30,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar usuário com este token
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { activationToken: token },
       include: {
-        cidadao: {
+        cidadaos: {
           include: {
             casos: {
               where: { status: 'PENDENTE_ATIVACAO' },
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     // Ativar conta e casos em uma transação
     await prisma.$transaction(async (tx) => {
       // Atualizar usuário para ACTIVE
-      await tx.user.update({
+      await tx.users.update({
         where: { id: user.id },
         data: {
           status: 'ACTIVE',
@@ -80,14 +80,15 @@ export async function POST(request: NextRequest) {
           activationToken: null, // Limpar token
           activationExpires: null,
           emailVerified: new Date(),
+          updatedAt: new Date(),
         },
       })
 
       // Ativar todos os casos PENDENTE_ATIVACAO deste cidadão
-      if (user.cidadao) {
-        await tx.caso.updateMany({
+      if (user.cidadaos) {
+        await tx.casos.updateMany({
           where: {
-            cidadaoId: user.cidadao.id,
+            cidadaoId: user.cidadaos.id,
             status: 'PENDENTE_ATIVACAO',
           },
           data: {
@@ -99,20 +100,20 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Activate] User activated: ${user.id} (${user.email})`)
     console.log(
-      `[Activate] Cases activated: ${user.cidadao?.casos.length || 0} case(s) moved to ABERTO`
+      `[Activate] Cases activated: ${user.cidadaos?.casos.length || 0} case(s) moved to ABERTO`
     )
 
     // Analytics: Ativação completada (server-side log)
     console.log('[Analytics] activation_completed', {
       userId: user.id,
       email: user.email,
-      casosCount: user.cidadao?.casos.length || 0,
+      casosCount: user.cidadaos?.casos.length || 0,
     })
 
     // Distribuir casos para advogados (em background)
-    if (user.cidadao && user.cidadao.casos.length > 0) {
+    if (user.cidadaos && user.cidadaos.casos.length > 0) {
       // Disparar distribuição para cada caso ativado
-      for (const caso of user.cidadao.casos) {
+      for (const caso of user.cidadaos.casos) {
         console.log(`[Activate] Triggering matching for case ${caso.id}`)
 
         CaseDistributionService.distributeCase(caso.id)

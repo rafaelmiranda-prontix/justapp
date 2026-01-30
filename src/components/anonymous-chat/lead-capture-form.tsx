@@ -46,9 +46,15 @@ export function LeadCaptureForm({ onSubmit, extractedData }: LeadCaptureFormProp
         email: email.trim().toLowerCase(),
         phone: phone.trim() || undefined,
       })
+      // Se chegou aqui, foi sucesso - o formulário será escondido pelo componente pai
+      // Não precisamos limpar os campos aqui, pois o formulário será desmontado
     } catch (err: any) {
-      setError(err.message || 'Erro ao enviar dados. Tente novamente.')
+      // Em caso de erro, manter os dados preenchidos para permitir reenvio
+      // Apenas mostrar o erro e permitir nova tentativa
+      const errorMessage = err.message || 'Erro ao enviar dados. Tente novamente.'
+      setError(errorMessage)
       setIsSubmitting(false)
+      // NÃO limpar os campos - permitir reenvio com os mesmos dados
     }
   }
 

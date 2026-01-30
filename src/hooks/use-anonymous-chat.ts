@@ -22,6 +22,7 @@ interface UseAnonymousChatReturn {
     score?: number
   }
   submitLeadData: (data: { name: string; email: string; phone?: string }) => Promise<void>
+  resetChat: () => Promise<void>
 }
 
 export function useAnonymousChat(): UseAnonymousChatReturn {
@@ -37,14 +38,65 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
     score?: number
   }>()
 
+  // Função para carregar estado completo da sessão
+  const loadSessionState = useCallback(async (sessionIdToLoad: string) => {
+    try {
+      console.log('[Hook] Loading session state for:', sessionIdToLoad)
+      // Buscar sessão via API para obter estado completo
+      const response = await fetch(`/api/anonymous/session?sessionId=${sessionIdToLoad}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data) {
+          console.log('[Hook] Session data loaded:', {
+            mensagens: data.data.mensagens?.length || 0,
+            shouldCaptureLeadData: data.data.shouldCaptureLeadData,
+            especialidade: data.data.especialidadeDetectada,
+            cidade: data.data.cidade,
+            estado: data.data.estado,
+          })
+          
+          // Carregar mensagens
+          if (data.data.mensagens && data.data.mensagens.length > 0) {
+            setMessages(data.data.mensagens)
+          }
+          
+          // Verificar se deve mostrar formulário de captura
+          if (data.data.shouldCaptureLeadData) {
+            console.log('[Hook] Setting shouldCaptureLeadData to true')
+            setShouldCaptureLeadData(true)
+            setExtractedData({
+              especialidade: data.data.especialidadeDetectada,
+              cidade: data.data.cidade,
+              estado: data.data.estado,
+              score: data.data.preQualificationScore,
+            })
+          } else {
+            // Garantir que está false se não deve mostrar
+            setShouldCaptureLeadData(false)
+          }
+        }
+      } else {
+        console.warn('[Hook] Failed to load session state:', response.status)
+      }
+    } catch (error) {
+      console.error('[Hook] Error loading session state:', error)
+      // Não falhar silenciosamente - apenas logar o erro
+    }
+  }, [])
+
   // Carregar sessionId do localStorage ao montar
   useEffect(() => {
     const storedSessionId = localStorage.getItem(SESSION_STORAGE_KEY)
     if (storedSessionId) {
+      console.log('[Hook] Found stored sessionId on mount:', storedSessionId)
       setSessionId(storedSessionId)
-      // TODO: Carregar mensagens existentes da sessão
+      // Carregar estado completo da sessão imediatamente
+      // Isso garante que o formulário apareça após reload da página
+      loadSessionState(storedSessionId).catch((error) => {
+        console.error('[Hook] Error loading session state on mount:', error)
+      })
     }
-  }, [])
+  }, [loadSessionState])
 
   // Criar nova sessão
   const createSession = useCallback(async () => {
@@ -97,11 +149,16 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
         alert('Erro ao iniciar conversa. Tente novamente.')
         return
       }
+    } else {
+      // Se já tem sessão, SEMPRE recarregar estado completo
+      // Isso garante que o formulário apareça após reload da página
+      console.log('[Hook] Reloading session state before opening chat')
+      await loadSessionState(sessionId)
     }
 
-    // Só abre depois da sessão estar criada
+    // Só abre depois da sessão estar criada/recarregada
     setIsOpen(true)
-  }, [sessionId, createSession])
+  }, [sessionId, createSession, loadSessionState])
 
   // Fechar chat
   const closeChat = useCallback(() => {
@@ -217,7 +274,18 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
         if (!response.ok) {
           const text = await response.text()
           console.error('Lead submission failed:', text)
-          throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}`)
+          
+          // Tentar parsear JSON para obter mensagem de erro mais específica
+          let errorMessage = `Erro ao enviar dados (${response.status})`
+          try {
+            const errorData = JSON.parse(text)
+            errorMessage = errorData.error || errorMessage
+          } catch {
+            // Se não for JSON, usar texto truncado
+            errorMessage = text.substring(0, 200) || errorMessage
+          }
+          
+          throw new Error(errorMessage)
         }
 
         const result = await response.json()
@@ -246,17 +314,44 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
             timestamp: new Date(),
           }
           setMessages((prev) => [...prev, confirmationMessage])
+          
+          // Limpar estado e localStorage apenas em caso de sucesso
           setShouldCaptureLeadData(false)
+          localStorage.removeItem(SESSION_STORAGE_KEY)
+          setSessionId(null)
         } else {
           throw new Error(result.error || 'Erro ao registrar lead')
         }
       } catch (error) {
         console.error('Error submitting lead:', error)
+        // NÃO limpar shouldCaptureLeadData em caso de erro
+        // O formulário deve permanecer visível para permitir reenvio
         throw error
       }
     },
-    [sessionId]
+    [sessionId, messages, extractedData]
   )
+
+  // Reiniciar chat (limpar tudo e criar nova sessão)
+  const resetChat = useCallback(async () => {
+    // Limpar estado local
+    setMessages([])
+    setShouldCaptureLeadData(false)
+    setExtractedData(undefined)
+    setIsTyping(false)
+    
+    // Limpar localStorage
+    localStorage.removeItem(SESSION_STORAGE_KEY)
+    setSessionId(null)
+    
+    // Criar nova sessão
+    try {
+      await createSession()
+    } catch (error) {
+      console.error('Failed to create new session after reset:', error)
+      // Não mostrar erro ao usuário, apenas logar
+    }
+  }, [createSession])
 
   return {
     isOpen,
@@ -269,5 +364,6 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
     shouldCaptureLeadData,
     extractedData,
     submitLeadData,
+    resetChat,
   }
 }

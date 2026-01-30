@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { hash } from 'bcryptjs'
+import { nanoid } from 'nanoid'
 import { prisma } from '@/lib/prisma'
 import { validateOAB } from '@/lib/utils'
 
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
     const oabNormalizado = data.oab.replace(/[^A-Z0-9]/gi, '').toUpperCase()
 
     // Verificar se email já existe
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.users.findUnique({
       where: { email: data.email },
     })
 
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     }
 
     // Verificar se OAB já existe
-    const existingOAB = await prisma.advogado.findUnique({
+    const existingOAB = await prisma.advogados.findUnique({
       where: { oab: oabNormalizado },
     })
 
@@ -44,25 +45,30 @@ export async function POST(req: Request) {
 
     // Hash da senha
     const hashedPassword = await hash(data.password, 12)
+    const now = new Date()
 
     // Criar usuário + advogado
-    const user = await prisma.user.create({
+    const user = await prisma.users.create({
       data: {
+        id: nanoid(),
         email: data.email,
         name: data.name,
         phone: data.phone,
         password: hashedPassword,
         role: 'ADVOGADO',
-        advogado: {
+        updatedAt: now,
+        advogados: {
           create: {
+            id: nanoid(),
             oab: oabNormalizado,
             cidade: data.cidade,
             estado: data.estado.toUpperCase(),
+            updatedAt: now,
           },
         },
       },
       include: {
-        advogado: true,
+        advogados: true,
       },
     })
 

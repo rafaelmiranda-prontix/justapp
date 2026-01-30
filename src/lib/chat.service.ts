@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { ConfigService } from '@/lib/config.service'
+import { ConfigService } from '@/lib/config-service'
 
 /**
  * Serviço de Chat

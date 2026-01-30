@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 import { prisma } from '@/lib/prisma'
-import { ConfigService } from '@/lib/config.service'
+import { ConfigService } from '@/lib/config-service'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 

@@ -63,8 +63,10 @@ export class AnonymousSessionService {
       console.log('[Service] Pre-qualification initialized')
 
       console.log('[Service] Creating session in database...')
+      const now = new Date()
       const session = await prisma.anonymousSession.create({
         data: {
+          id: nanoid(),
           sessionId,
           mensagens: [{
             role: welcomeMessage.role,
@@ -77,6 +79,7 @@ export class AnonymousSessionService {
           useAI: false, // Começa SEM IA
           status: 'ACTIVE',
           expiresAt,
+          updatedAt: now,
         },
       })
       console.log('[Service] Session created in database:', session.id)

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { ConfigService } from '@/lib/config.service'
+import { ConfigService } from '@/lib/config-service'
 
 /**
  * Serviço de Distribuição Automática de Casos
@@ -15,7 +15,7 @@ export class CaseDistributionService {
    * Distribui um caso para advogados compatíveis
    * Cria até N matches baseado em especialidade, localização e score
    */
-  static async distributeCa se(casoId: string): Promise<{
+  static async distributeCase(casoId: string): Promise<{
     matchesCreated: number
     advogadosNotificados: string[]
   }> {

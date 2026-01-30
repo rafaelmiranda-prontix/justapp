@@ -27,16 +27,16 @@ export async function POST(req: Request) {
       `BETA-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
 
     // Verifica se o email já existe
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.users.findUnique({
       where: { email: data.email },
-      include: { advogado: true },
+      include: { advogados: true },
     })
 
     if (existingUser) {
       // Se já tem advogado, marca como beta
-      if (existingUser.advogado) {
-        await prisma.advogado.update({
-          where: { id: existingUser.advogado.id },
+      if (existingUser.advogados) {
+        await prisma.advogados.update({
+          where: { id: existingUser.advogados.id },
           data: {
             isBeta: true,
             betaInviteCode: inviteCode,

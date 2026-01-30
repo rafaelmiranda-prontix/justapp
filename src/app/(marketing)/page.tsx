@@ -141,6 +141,7 @@ export default function LandingPage() {
     shouldCaptureLeadData,
     extractedData,
     submitLeadData,
+    resetChat,
   } = useAnonymousChat()
 
   return (
@@ -489,6 +490,7 @@ export default function LandingPage() {
         shouldCaptureLeadData={shouldCaptureLeadData}
         extractedData={extractedData}
         onSubmitLeadData={submitLeadData}
+        onResetChat={resetChat}
       />
     </div>
   )

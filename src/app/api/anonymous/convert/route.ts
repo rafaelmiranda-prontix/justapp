@@ -3,7 +3,7 @@ import { AnonymousSessionService } from '@/lib/anonymous-session.service'
 import { EmailService } from '@/lib/email.service'
 import { prisma } from '@/lib/prisma'
 import { nanoid } from 'nanoid'
-import { hash } from 'bcrypt'
+import { hash } from 'bcryptjs'
 
 /**
  * POST /api/anonymous/convert
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se email já existe
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.users.findUnique({
       where: { email: email.toLowerCase() },
     })
 
@@ -79,8 +79,10 @@ export async function POST(request: NextRequest) {
     // Criar usuário PRE_ACTIVE e cidadão em uma transação
     const result = await prisma.$transaction(async (tx) => {
       // Criar User
-      const user = await tx.user.create({
+      const now = new Date()
+      const user = await tx.users.create({
         data: {
+          id: nanoid(),
           name: name.trim(),
           email: email.toLowerCase(),
           phone: phone?.trim() || null,
@@ -89,21 +91,25 @@ export async function POST(request: NextRequest) {
           activationToken,
           activationExpires,
           password: await hash(nanoid(32), 10), // Senha temporária (será definida na ativação)
+          updatedAt: now,
         },
       })
 
       // Criar Cidadao
-      const cidadao = await tx.cidadao.create({
+      const cidadao = await tx.cidadaos.create({
         data: {
+          id: nanoid(),
           userId: user.id,
           cidade: session.cidade || null,
           estado: session.estado || null,
+          updatedAt: now,
         },
       })
 
       // Criar Caso PENDENTE_ATIVACAO
-      const caso = await tx.caso.create({
+      const caso = await tx.casos.create({
         data: {
+          id: nanoid(),
           descricao:
             session.mensagens
               .filter((m) => m.role === 'user')
@@ -118,6 +124,7 @@ export async function POST(request: NextRequest) {
           status: 'PENDENTE_ATIVACAO',
           cidadaoId: cidadao.id,
           sessionId: session.sessionId,
+          updatedAt: now,
         },
       })
 

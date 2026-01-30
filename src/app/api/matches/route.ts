@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { nanoid } from 'nanoid'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -48,18 +49,21 @@ export async function POST(req: Request) {
     // Cria ou usa caso existente
     let caso
     if (data.casoId) {
-      caso = await prisma.caso.findUnique({
+      caso = await prisma.casos.findUnique({
         where: { id: data.casoId },
       })
     } else {
       // Cria novo caso
-      caso = await prisma.caso.create({
+      const now = new Date()
+      caso = await prisma.casos.create({
         data: {
+          id: nanoid(),
           cidadaoId: cidadao.id,
           descricao: data.descricao,
           especialidadeId: data.especialidadeId,
           urgencia: data.urgencia || 'NORMAL',
           status: 'ABERTO',
+          updatedAt: now,
         },
       })
     }

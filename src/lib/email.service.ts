@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Inicializa Resend apenas se a API key estiver configurada
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 export class EmailService {
   /**
@@ -14,18 +15,32 @@ export class EmailService {
     const activationUrl = `${process.env.NEXTAUTH_URL}/auth/activate?token=${activationToken}`
     const firstName = name.split(' ')[0]
 
+    // Verificar se Resend está configurado
+    if (!resend) {
+      console.warn('[Email] Resend não configurado. Email de ativação não enviado.')
+      console.log(`[Email] Link de ativação que seria enviado: ${activationUrl}`)
+      // Não lançar erro - apenas logar, pois o usuário foi criado com sucesso
+      return
+    }
+
     try {
-      await resend.emails.send({
+      const result = await resend.emails.send({
         from: process.env.EMAIL_FROM || 'LegalConnect <noreply@legalconnect.com>',
         to: email,
         subject: 'Ative sua conta no LegalConnect',
         html: this.getActivationEmailTemplate(firstName, activationUrl),
       })
 
-      console.log(`[Email] Activation email sent to: ${email}`)
-    } catch (error) {
+      if (result.error) {
+        console.error('[Email] Resend error:', result.error)
+        throw new Error(result.error.message || 'Erro ao enviar email de ativação')
+      }
+
+      console.log(`[Email] Activation email sent to: ${email} (ID: ${result.data?.id})`)
+    } catch (error: any) {
       console.error('[Email] Failed to send activation email:', error)
-      throw new Error('Erro ao enviar email de ativação')
+      // Não lançar erro - apenas logar, pois o usuário foi criado com sucesso
+      console.log(`[Email] Link de ativação: ${activationUrl}`)
     }
   }
 
@@ -136,8 +151,14 @@ export class EmailService {
     const firstName = name.split(' ')[0]
     const dashboardUrl = `${process.env.NEXTAUTH_URL}/cidadao/dashboard`
 
+    // Verificar se Resend está configurado
+    if (!resend) {
+      console.warn('[Email] Resend não configurado. Email de boas-vindas não enviado.')
+      return
+    }
+
     try {
-      await resend.emails.send({
+      const result = await resend.emails.send({
         from: process.env.EMAIL_FROM || 'LegalConnect <noreply@legalconnect.com>',
         to: email,
         subject: 'Bem-vindo ao LegalConnect! 🎉',
@@ -189,8 +210,13 @@ export class EmailService {
         `,
       })
 
-      console.log(`[Email] Welcome email sent to: ${email}`)
-    } catch (error) {
+      if (result.error) {
+        console.error('[Email] Resend error:', result.error)
+        return
+      }
+
+      console.log(`[Email] Welcome email sent to: ${email} (ID: ${result.data?.id})`)
+    } catch (error: any) {
       console.error('[Email] Failed to send welcome email:', error)
       // Não lançar erro pois email de boas-vindas não é crítico
     }

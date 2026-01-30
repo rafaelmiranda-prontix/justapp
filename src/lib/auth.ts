@@ -21,11 +21,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email e senha são obrigatórios')
         }
 
-        const user = await prisma.user.findUnique({
+        const user = await prisma.users.findUnique({
           where: { email: credentials.email },
           include: {
-            cidadao: true,
-            advogado: true,
+            cidadaos: true,
+            advogados: true,
           },
         })
 
@@ -47,8 +47,8 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
-          cidadaoId: user.cidadao?.id,
-          advogadoId: user.advogado?.id,
+          cidadaoId: user.cidadaos?.id,
+          advogadoId: user.advogados?.id,
         }
       },
     }),

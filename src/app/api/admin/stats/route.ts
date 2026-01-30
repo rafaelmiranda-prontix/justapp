@@ -12,10 +12,10 @@ export async function GET() {
 
     // Estatísticas de usuários
     const [totalUsuarios, cidadaos, advogados, admins] = await Promise.all([
-      prisma.user.count(),
-      prisma.user.count({ where: { role: 'CIDADAO' } }),
-      prisma.user.count({ where: { role: 'ADVOGADO' } }),
-      prisma.user.count({ where: { role: 'ADMIN' } }),
+      prisma.users.count(),
+      prisma.users.count({ where: { role: 'CIDADAO' } }),
+      prisma.users.count({ where: { role: 'ADVOGADO' } }),
+      prisma.users.count({ where: { role: 'ADMIN' } }),
     ])
 
     // Estatísticas de advogados
