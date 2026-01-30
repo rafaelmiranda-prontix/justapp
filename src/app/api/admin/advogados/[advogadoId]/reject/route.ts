@@ -16,7 +16,7 @@ export async function POST(
     const body = await req.json()
     const { motivo } = body
 
-    const advogado = await prisma.advogado.findUnique({
+    const advogado = await prisma.advogados.findUnique({
       where: { id: params.advogadoId },
       include: {
         user: true,
@@ -32,7 +32,7 @@ export async function POST(
 
     // Por enquanto apenas marca como não verificado
     // Futuramente pode adicionar campo de motivo de rejeição
-    await prisma.advogado.update({
+    await prisma.advogados.update({
       where: { id: params.advogadoId },
       data: {
         oabVerificado: false,

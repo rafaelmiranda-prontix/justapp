@@ -13,7 +13,7 @@ export async function GET() {
     }
 
     // Busca o advogado
-    const advogado = await prisma.advogado.findUnique({
+    const advogado = await prisma.advogados.findUnique({
       where: { userId: session.user.id },
     })
 
@@ -25,7 +25,7 @@ export async function GET() {
     await resetMonthlyLeadsIfNeeded(advogado.id)
 
     // Busca novamente para ter dados atualizados
-    const advogadoAtualizado = await prisma.advogado.findUnique({
+    const advogadoAtualizado = await prisma.advogados.findUnique({
       where: { id: advogado.id },
     })
 

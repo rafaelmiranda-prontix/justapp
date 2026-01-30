@@ -13,7 +13,7 @@ export async function POST(
       return error
     }
 
-    const advogado = await prisma.advogado.findUnique({
+    const advogado = await prisma.advogados.findUnique({
       where: { id: params.advogadoId },
     })
 
@@ -24,7 +24,7 @@ export async function POST(
       )
     }
 
-    await prisma.advogado.update({
+    await prisma.advogados.update({
       where: { id: params.advogadoId },
       data: {
         oabVerificado: true,

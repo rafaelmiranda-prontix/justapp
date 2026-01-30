@@ -54,7 +54,7 @@ export async function findMatchingAdvogados(
   }
 
   // Busca advogados com a especialidade
-  const advogados = await prisma.advogado.findMany({
+  const advogados = await prisma.advogados.findMany({
     where: {
       especialidades: {
         some: {

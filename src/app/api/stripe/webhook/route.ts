@@ -50,7 +50,7 @@ export async function POST(req: Request) {
             const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
 
             // Atualiza o advogado
-            await prisma.advogado.update({
+            await prisma.advogados.update({
               where: { id: advogadoId },
               data: {
                 stripeSubscriptionId: subscriptionId,
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
         if (advogadoId && plan) {
           const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
 
-          await prisma.advogado.update({
+          await prisma.advogados.update({
             where: { id: advogadoId },
             data: {
               plano: plan,
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
 
         if (advogadoId) {
           // Volta para plano FREE
-          await prisma.advogado.update({
+          await prisma.advogados.update({
             where: { id: advogadoId },
             data: {
               plano: 'FREE',
@@ -115,7 +115,7 @@ export async function POST(req: Request) {
           if (advogadoId && plan) {
             const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
 
-            await prisma.advogado.update({
+            await prisma.advogados.update({
               where: { id: advogadoId },
               data: {
                 plano: plan,

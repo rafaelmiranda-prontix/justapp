@@ -4,6 +4,7 @@ import { hash } from 'bcryptjs'
 import { nanoid } from 'nanoid'
 import { prisma } from '@/lib/prisma'
 import { validateOAB } from '@/lib/utils'
+import { EmailService } from '@/lib/email.service'
 
 const signupSchema = z.object({
   name: z.string().min(2),
@@ -47,15 +48,23 @@ export async function POST(req: Request) {
     const hashedPassword = await hash(data.password, 12)
     const now = new Date()
 
-    // Criar usuário + advogado
+    // Gerar token de ativação
+    const activationToken = nanoid(32)
+    const activationExpires = new Date()
+    activationExpires.setHours(activationExpires.getHours() + 48) // 48h para ativar
+
+    // Criar usuário + advogado com status PRE_ACTIVE
     const user = await prisma.users.create({
       data: {
         id: nanoid(),
-        email: data.email,
+        email: data.email.toLowerCase(),
         name: data.name,
         phone: data.phone,
         password: hashedPassword,
         role: 'ADVOGADO',
+        status: 'PRE_ACTIVE',
+        activationToken,
+        activationExpires,
         updatedAt: now,
         advogados: {
           create: {
@@ -72,19 +81,33 @@ export async function POST(req: Request) {
       },
     })
 
+    // Enviar email de ativação
+    try {
+      await EmailService.sendActivationEmail(user.email, user.name, activationToken)
+      console.log(`[Signup] Activation email sent to: ${user.email}`)
+    } catch (emailError) {
+      // Log mas não falha a request - usuário foi criado com sucesso
+      console.error('[Signup] Email send failed:', emailError)
+      console.log(
+        `[Signup] Activation link: ${process.env.NEXTAUTH_URL}/auth/activate?token=${activationToken}`
+      )
+    }
+
     // Retornar sem a senha
     return NextResponse.json({
       success: true,
+      message: 'Conta criada com sucesso! Verifique seu email para ativar sua conta.',
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
         role: user.role,
+        activationRequired: true,
         advogado: {
-          id: user.advogado?.id,
-          oab: user.advogado?.oab,
-          cidade: user.advogado?.cidade,
-          estado: user.advogado?.estado,
+          id: user.advogados?.id,
+          oab: user.advogados?.oab,
+          cidade: user.advogados?.cidade,
+          estado: user.advogados?.estado,
         },
       },
     })

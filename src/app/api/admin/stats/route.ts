@@ -25,9 +25,9 @@ export async function GET() {
       advogadosAprovados,
       advogadosSuspensos,
     ] = await Promise.all([
-      prisma.advogado.count(),
-      prisma.advogado.count({ where: { oabVerificado: false } }),
-      prisma.advogado.count({ where: { oabVerificado: true } }),
+      prisma.advogados.count(),
+      prisma.advogados.count({ where: { oabVerificado: false } }),
+      prisma.advogados.count({ where: { oabVerificado: true } }),
       // Por enquanto não temos campo de suspenso, usar 0
       0,
     ])

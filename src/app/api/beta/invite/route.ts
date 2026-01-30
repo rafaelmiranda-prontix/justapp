@@ -86,7 +86,7 @@ export async function GET() {
       return error
     }
 
-    const betaAdvogados = await prisma.advogado.findMany({
+    const betaAdvogados = await prisma.advogados.findMany({
       where: { isBeta: true },
       include: {
         user: {

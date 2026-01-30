@@ -228,7 +228,7 @@ export class ChatService {
       where: { userId },
     })
 
-    const advogado = await prisma.advogado.findUnique({
+    const advogado = await prisma.advogados.findUnique({
       where: { userId },
     })
 
@@ -292,7 +292,7 @@ export class ChatService {
       where: { userId: cidadaoUserId },
     })
 
-    const advogado = await prisma.advogado.findUnique({
+    const advogado = await prisma.advogados.findUnique({
       where: { userId: advogadoUserId },
     })
 

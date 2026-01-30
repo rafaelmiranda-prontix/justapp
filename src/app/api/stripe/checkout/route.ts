@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     const { plan } = checkoutSchema.parse(body)
 
     // Busca o advogado
-    const advogado = await prisma.advogado.findUnique({
+    const advogado = await prisma.advogados.findUnique({
       where: { userId: session.user.id },
     })
 
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       customerId = customer.id
 
       // Salva customer ID no banco
-      await prisma.advogado.update({
+      await prisma.advogados.update({
         where: { id: advogado.id },
         data: { stripeCustomerId: customerId },
       })

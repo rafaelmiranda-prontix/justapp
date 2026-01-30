@@ -9,7 +9,7 @@ interface PageProps {
 
 async function getAdvogadoPublic(advogadoId: string) {
   try {
-    const advogado = await prisma.advogado.findUnique({
+    const advogado = await prisma.advogados.findUnique({
       where: { id: advogadoId },
       include: {
         user: {

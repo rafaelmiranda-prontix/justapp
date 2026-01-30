@@ -12,7 +12,7 @@ export async function GET() {
     }
 
     // Busca o advogado
-    const advogado = await prisma.advogado.findUnique({
+    const advogado = await prisma.advogados.findUnique({
       where: { userId: session.user.id },
     })
 

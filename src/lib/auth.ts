@@ -33,6 +33,15 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email ou senha inválidos')
         }
 
+        // Verificar se a conta está ativa
+        if (user.status === 'PRE_ACTIVE') {
+          throw new Error('Sua conta ainda não foi ativada. Verifique seu email e clique no link de ativação.')
+        }
+
+        if (user.status !== 'ACTIVE') {
+          throw new Error('Sua conta está suspensa ou inativa. Entre em contato com o suporte.')
+        }
+
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
           user.password

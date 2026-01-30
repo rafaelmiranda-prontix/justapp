@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: { advogadoId: string } }
 ) {
   try {
-    const advogado = await prisma.advogado.findUnique({
+    const advogado = await prisma.advogados.findUnique({
       where: { id: params.advogadoId },
       include: {
         user: {

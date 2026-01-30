@@ -6,7 +6,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     // Busca advogados públicos para incluir no sitemap
-    const advogados = await prisma.advogado.findMany({
+    const advogados = await prisma.advogados.findMany({
       where: {
         oabVerificado: true,
       },

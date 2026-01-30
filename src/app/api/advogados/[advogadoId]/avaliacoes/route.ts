@@ -11,7 +11,7 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '10')
 
     // Verifica se o advogado existe
-    const advogado = await prisma.advogado.findUnique({
+    const advogado = await prisma.advogados.findUnique({
       where: { id: params.advogadoId },
     })
 

@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     }
 
     // Verifica se o advogado existe
-    const advogado = await prisma.advogado.findUnique({
+    const advogado = await prisma.advogados.findUnique({
       where: { id: data.advogadoId },
     })
 

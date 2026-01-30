@@ -5,7 +5,7 @@ import { PLANS, getPlanLimits, type PlanType } from './plans'
  * Reseta o contador de leads mensais se necessário
  */
 export async function resetMonthlyLeadsIfNeeded(advogadoId: string): Promise<void> {
-  const advogado = await prisma.advogado.findUnique({
+  const advogado = await prisma.advogados.findUnique({
     where: { id: advogadoId },
   })
 
@@ -24,7 +24,7 @@ export async function resetMonthlyLeadsIfNeeded(advogadoId: string): Promise<voi
     const limits = getPlanLimits(advogado.plano)
     const novoLimite = limits.isUnlimited ? -1 : limits.leadsPerMonth
 
-    await prisma.advogado.update({
+    await prisma.advogados.update({
       where: { id: advogadoId },
       data: {
         leadsRecebidosMes: 0,
@@ -37,7 +37,7 @@ export async function resetMonthlyLeadsIfNeeded(advogadoId: string): Promise<voi
     const limits = getPlanLimits(advogado.plano)
     const novoLimite = limits.isUnlimited ? -1 : limits.leadsPerMonth
 
-    await prisma.advogado.update({
+    await prisma.advogados.update({
       where: { id: advogadoId },
       data: {
         leadsLimiteMes: novoLimite,
@@ -50,7 +50,7 @@ export async function resetMonthlyLeadsIfNeeded(advogadoId: string): Promise<voi
  * Incrementa o contador de leads recebidos
  */
 export async function incrementLeadsReceived(advogadoId: string): Promise<void> {
-  await prisma.advogado.update({
+  await prisma.advogados.update({
     where: { id: advogadoId },
     data: {
       leadsRecebidosMes: {
@@ -67,7 +67,7 @@ export async function canAdvogadoReceiveLead(advogadoId: string): Promise<{
   canReceive: boolean
   reason?: string
 }> {
-  const advogado = await prisma.advogado.findUnique({
+  const advogado = await prisma.advogados.findUnique({
     where: { id: advogadoId },
   })
 
@@ -89,7 +89,7 @@ export async function canAdvogadoReceiveLead(advogadoId: string): Promise<{
   await resetMonthlyLeadsIfNeeded(advogadoId)
 
   // Busca novamente para ter os valores atualizados
-  const advogadoAtualizado = await prisma.advogado.findUnique({
+  const advogadoAtualizado = await prisma.advogados.findUnique({
     where: { id: advogadoId },
   })
 
@@ -128,7 +128,7 @@ export async function updateAdvogadoPlan(
   const limits = getPlanLimits(plano)
   const novoLimite = limits.isUnlimited ? -1 : limits.leadsPerMonth
 
-  await prisma.advogado.update({
+  await prisma.advogados.update({
     where: { id: advogadoId },
     data: {
       plano,

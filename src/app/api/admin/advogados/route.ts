@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     }
 
     const [advogados, total] = await Promise.all([
-      prisma.advogado.findMany({
+      prisma.advogados.findMany({
         where,
         include: {
           user: {
@@ -56,7 +56,7 @@ export async function GET(req: Request) {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.advogado.count({ where }),
+      prisma.advogados.count({ where }),
     ])
 
     // Calcula média de avaliações para cada advogado
