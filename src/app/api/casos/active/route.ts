@@ -12,7 +12,7 @@ export async function GET() {
     }
 
     // Busca o cidadao
-    const cidadao = await prisma.cidadao.findUnique({
+    const cidadao = await prisma.cidadaos.findUnique({
       where: { userId: session.user.id },
     })
 
@@ -21,7 +21,7 @@ export async function GET() {
     }
 
     // Busca o caso mais recente que ainda não está concluído
-    const caso = await prisma.caso.findFirst({
+    const caso = await prisma.casos.findFirst({
       where: {
         cidadaoId: cidadao.id,
         status: {

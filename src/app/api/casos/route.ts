@@ -12,7 +12,7 @@ export async function GET() {
     }
 
     // Busca o cidadao
-    const cidadao = await prisma.cidadao.findUnique({
+    const cidadao = await prisma.cidadaos.findUnique({
       where: { userId: session.user.id },
     })
 
@@ -21,23 +21,23 @@ export async function GET() {
     }
 
     // Busca todos os casos do cidadão
-    const casos = await prisma.caso.findMany({
+    const casos = await prisma.casos.findMany({
       where: {
         cidadaoId: cidadao.id,
       },
       include: {
-        especialidade: {
+        especialidades: {
           select: {
             nome: true,
           },
         },
         matches: {
           include: {
-            advogado: {
+            advogados: {
               select: {
                 id: true,
                 fotoUrl: true,
-                user: {
+                users: {
                   select: {
                     name: true,
                   },

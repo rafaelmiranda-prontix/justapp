@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid'
 import { prisma } from '@/lib/prisma'
 import { ConfigService } from '@/lib/config-service'
 
@@ -20,15 +21,15 @@ export class CaseDistributionService {
     advogadosNotificados: string[]
   }> {
     // Buscar caso com detalhes
-    const caso = await prisma.caso.findUnique({
+    const caso = await prisma.casos.findUnique({
       where: { id: casoId },
       include: {
-        cidadao: {
+        cidadaos: {
           include: {
-            user: true,
+            users: true,
           },
         },
-        especialidade: true,
+        especialidades: true,
       },
     })
 
@@ -42,8 +43,8 @@ export class CaseDistributionService {
     }
 
     console.log(`[Distribution] Starting distribution for case ${casoId}`)
-    console.log(`[Distribution] Especialidade: ${caso.especialidade?.nome || 'Não definida'}`)
-    console.log(`[Distribution] Localização: ${caso.cidadao.cidade}, ${caso.cidadao.estado}`)
+    console.log(`[Distribution] Especialidade: ${caso.especialidades?.nome || 'Não definida'}`)
+    console.log(`[Distribution] Localização: ${caso.cidadaos.cidade}, ${caso.cidadaos.estado}`)
 
     // Buscar configurações
     const maxMatches = await ConfigService.getNumber('max_matches_per_caso', 5)
@@ -67,7 +68,7 @@ export class CaseDistributionService {
     for (const advogado of advogadosParaMatch) {
       try {
         // Verificar se já existe match
-        const existingMatch = await prisma.match.findUnique({
+        const existingMatch = await prisma.matches.findUnique({
           where: {
             casoId_advogadoId: {
               casoId: caso.id,
@@ -82,8 +83,9 @@ export class CaseDistributionService {
         }
 
         // Criar match
-        const match = await prisma.match.create({
+        const match = await prisma.matches.create({
           data: {
+            id: nanoid(),
             casoId: caso.id,
             advogadoId: advogado.id,
             score: advogado.matchScore,
@@ -94,12 +96,13 @@ export class CaseDistributionService {
         })
 
         // Incrementar contador de leads do advogado
-        await prisma.advogado.update({
+        await prisma.advogados.update({
           where: { id: advogado.id },
           data: {
             leadsRecebidosMes: {
               increment: 1,
             },
+            updatedAt: new Date(),
           },
         })
 
@@ -136,18 +139,18 @@ export class CaseDistributionService {
     }>
   > {
     // Buscar todos os advogados ativos
-    const advogados = await prisma.advogado.findMany({
+    const advogados = await prisma.advogados.findMany({
       where: {
-        user: {
+        users: {
           status: 'ACTIVE',
         },
         onboardingCompleted: true,
       },
       include: {
-        user: true,
-        especialidades: {
+        users: true,
+        advogado_especialidades: {
           include: {
-            especialidade: true,
+            especialidades: true,
           },
         },
       },
@@ -176,14 +179,14 @@ export class CaseDistributionService {
       // 3. Calcular distância (se ambos têm coordenadas)
       let distanciaKm: number | null = null
       if (
-        caso.cidadao.latitude &&
-        caso.cidadao.longitude &&
+        caso.cidadaos.latitude &&
+        caso.cidadaos.longitude &&
         advogado.latitude &&
         advogado.longitude
       ) {
         distanciaKm = this.calculateDistance(
-          caso.cidadao.latitude,
-          caso.cidadao.longitude,
+          caso.cidadaos.latitude,
+          caso.cidadaos.longitude,
           advogado.latitude,
           advogado.longitude
         )
@@ -194,7 +197,7 @@ export class CaseDistributionService {
         }
       } else {
         // Se não tem coordenadas, verificar se está no mesmo estado
-        if (caso.cidadao.estado !== advogado.estado) {
+        if (caso.cidadaos.estado !== advogado.estado) {
           continue
         }
       }
@@ -226,8 +229,8 @@ export class CaseDistributionService {
 
     // 1. Especialidade (0-40 pontos)
     if (caso.especialidadeId) {
-      const temEspecialidade = advogado.especialidades.some(
-        (e: any) => e.especialidadeId === caso.especialidadeId
+      const temEspecialidade = advogado.advogado_especialidades.some(
+        (e: any) => e.especialidades.id === caso.especialidadeId
       )
       if (temEspecialidade) {
         score += 40 // Match perfeito
@@ -239,10 +242,10 @@ export class CaseDistributionService {
     }
 
     // 2. Localização (0-30 pontos)
-    if (caso.cidadao.estado === advogado.estado) {
+    if (caso.cidadaos.estado === advogado.estado) {
       score += 20 // Mesmo estado
 
-      if (caso.cidadao.cidade === advogado.cidade) {
+      if (caso.cidadaos.cidade === advogado.cidade) {
         score += 10 // Mesma cidade = bonus
       }
     }
@@ -313,7 +316,7 @@ export class CaseDistributionService {
       return 0
     }
 
-    const result = await prisma.match.updateMany({
+    const result = await prisma.matches.updateMany({
       where: {
         status: {
           in: ['PENDENTE', 'VISUALIZADO'],
@@ -342,7 +345,7 @@ export class CaseDistributionService {
     const now = new Date()
 
     // Buscar advogados que precisam de reset (último reset foi há mais de 30 dias)
-    const advogadosParaResetar = await prisma.advogado.findMany({
+    const advogadosParaResetar = await prisma.advogados.findMany({
       where: {
         ultimoResetLeads: {
           lte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), // 30 dias atrás
@@ -356,12 +359,13 @@ export class CaseDistributionService {
       if (advogado.plano === 'BASIC') novoLimite = 10
       if (advogado.plano === 'PREMIUM') novoLimite = 50
 
-      await prisma.advogado.update({
+      await prisma.advogados.update({
         where: { id: advogado.id },
         data: {
           leadsRecebidosMes: 0,
           leadsLimiteMes: novoLimite,
           ultimoResetLeads: now,
+          updatedAt: now,
         },
       })
     }
