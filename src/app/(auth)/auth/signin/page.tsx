@@ -2,14 +2,17 @@
 
 import { signIn } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Scale, Loader2 } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Scale, Loader2, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
 
@@ -19,87 +22,222 @@ export default function SignInPage() {
       await signIn('google', { callbackUrl })
     } catch (error) {
       console.error('Error signing in:', error)
-    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    try {
+      // Por enquanto, redireciona para Google OAuth
+      // Em produção, você pode implementar login com email/senha
+      await signIn('google', { callbackUrl })
+    } catch (error) {
+      console.error('Error signing in:', error)
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex items-center justify-center mb-4">
-            <Scale className="h-8 w-8 text-primary" />
-          </div>
-          <CardTitle className="text-2xl font-bold">Bem-vindo de volta</CardTitle>
-          <CardDescription>
-            Entre na sua conta para continuar
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Entrando...
-              </>
-            ) : (
-              <>
-                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-                Continuar com Google
-              </>
-            )}
-          </Button>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+    <div className="flex min-h-screen">
+      {/* Left Side - Branding (2/3 width) */}
+      <div className="hidden lg:flex lg:w-2/3 bg-gradient-to-br from-primary/5 via-background to-background">
+        <div className="flex flex-col justify-center w-full px-12 py-16">
+          <div className="max-w-lg mx-auto">
+            {/* Logo */}
+            <div className="flex items-center gap-3 mb-16">
+              <Scale className="h-8 w-8 text-primary" />
+              <span className="text-2xl font-bold text-foreground">LegalConnect</span>
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Ou
-              </span>
-            </div>
-          </div>
 
-          <div className="text-center text-sm space-y-2">
-            <p className="text-muted-foreground">
-              Não tem uma conta?{' '}
-              <Link href="/signup" className="text-primary hover:underline font-medium">
-                Criar conta
-              </Link>
-            </p>
-            <p className="text-muted-foreground">
-              <Link href="/" className="text-primary hover:underline">
-                Voltar para a página inicial
-              </Link>
+            {/* Main Heading */}
+            <h1 className="text-5xl font-bold mb-6 leading-tight text-foreground">
+              Resolva
+              <br />
+              seu caso
+              <br />
+              jurídico
+              <br />
+              com o
+              <br />
+              advogado
+              <br />
+              certo
+            </h1>
+
+            {/* Description */}
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              Plataforma jurídica inteligente que conecta você ao advogado ideal em minutos.
             </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* Right Side - Login Form (1/3 width) */}
+      <div className="flex-1 lg:w-1/3 flex flex-col bg-background">
+        <div className="flex flex-col justify-center flex-1 px-6 py-12 sm:px-8 lg:px-12">
+          <div className="w-full max-w-sm mx-auto">
+            {/* Mobile Logo */}
+            <div className="lg:hidden flex items-center justify-center gap-2 mb-6">
+              <Scale className="h-6 w-6 text-primary" />
+              <span className="text-xl font-bold text-foreground">LegalConnect</span>
+            </div>
+            <div className="lg:hidden text-center mb-8">
+              <p className="text-sm text-muted-foreground">Conecte-se ao advogado ideal</p>
+            </div>
+
+            {/* Form Header */}
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold mb-2 text-foreground">Entrar</h2>
+              <p className="text-muted-foreground">
+                Não tem uma conta?{' '}
+                <Link
+                  href="/signup"
+                  className="text-primary hover:underline font-medium"
+                >
+                  Criar conta
+                </Link>
+              </p>
+            </div>
+
+            {/* Google Sign In Button */}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-11 mb-6 border-2 hover:bg-muted/50 transition-colors"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Entrando...
+                </>
+              ) : (
+                <>
+                  <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">
+                    <path
+                      fill="currentColor"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                  </svg>
+                  Continuar com Google
+                </>
+              )}
+            </Button>
+
+            {/* Divider */}
+            <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground font-medium">
+                  Ou continue com email
+                </span>
+              </div>
+            </div>
+
+            {/* Email Form */}
+            <form onSubmit={handleEmailSubmit} className="space-y-5">
+              {/* Email Field */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                  Endereço de email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-11"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              {/* Password Field */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                    Senha
+                  </Label>
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-sm text-primary hover:underline font-medium"
+                  >
+                    Esqueceu a senha?
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-11"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                className="w-full h-11 text-base font-medium"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Entrando...
+                  </>
+                ) : (
+                  <>
+                    Entrar
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </form>
+
+            {/* Footer Links */}
+            <div className="mt-8 pt-6 border-t">
+              <div className="text-center text-sm text-muted-foreground space-y-3">
+                <p>
+                  Ao continuar, você concorda com nossos{' '}
+                  <Link href="/termos" className="text-primary hover:underline">
+                    Termos de Serviço
+                  </Link>{' '}
+                  e{' '}
+                  <Link href="/privacidade" className="text-primary hover:underline">
+                    Política de Privacidade
+                  </Link>
+                </p>
+                <p>
+                  <Link href="/" className="text-primary hover:underline">
+                    Voltar para a página inicial
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
