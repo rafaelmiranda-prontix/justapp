@@ -6,8 +6,8 @@
 
 ## 📋 Resumo do Projeto
 
-**Nome:** LegalMatch (provisório)  
-**Conceito:** "Uber dos Processos" — marketplace que conecta cidadãos com problemas jurídicos a advogados especializados  
+**Nome:** LegalConnect  
+**Conceito:** Plataforma jurídica inteligente — marketplace que conecta cidadãos com problemas jurídicos a advogados especializados  
 **Estágio:** MVP em desenvolvimento  
 **Desenvolvedor:** Solo (Rafa)
 
@@ -46,7 +46,7 @@ Maps:         OpenStreetMap + Nominatim (MVP) ou Google Maps (se necessário)
 ## 📁 Estrutura de Pastas (sugestão)
 
 ```
-legal-match/
+legal-connect/
 ├── apps/
 │   ├── web/                 # Next.js app (web + API)
 │   │   ├── app/
@@ -400,7 +400,7 @@ async function buscarAdvogadosProximos(
 
 ```bash
 # Criar projeto
-npx create-next-app@latest legal-match --typescript --tailwind --app
+npx create-next-app@latest legal-connect --typescript --tailwind --app
 
 # Dependências principais
 pnpm add @prisma/client @clerk/nextjs

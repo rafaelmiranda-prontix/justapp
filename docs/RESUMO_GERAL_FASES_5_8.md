@@ -277,4 +277,4 @@ Todas as funcionalidades principais foram implementadas. O projeto está pronto 
 
 ---
 
-**Parabéns! O LegalMatch está pronto para validação! 🎊**
+**Parabéns! O LegalConnect está pronto para validação! 🎊**

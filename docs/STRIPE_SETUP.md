@@ -1,4 +1,4 @@
-# 🔧 Setup do Stripe - LegalMatch
+# 🔧 Setup do Stripe - LegalConnect
 
 ## Passo a Passo
 
@@ -12,13 +12,13 @@
 
 #### Produto: Plano Básico
 1. Vá em **Products** → **Add product**
-2. Nome: "Plano Básico - LegalMatch"
+2. Nome: "Plano Básico - LegalConnect"
 3. Preço: R$ 99,00 / mês (recurring)
 4. Copie o **Price ID** (começa com `price_...`)
 
 #### Produto: Plano Premium
 1. Vá em **Products** → **Add product**
-2. Nome: "Plano Premium - LegalMatch"
+2. Nome: "Plano Premium - LegalConnect"
 3. Preço: R$ 299,00 / mês (recurring)
 4. Copie o **Price ID** (começa com `price_...`)
 

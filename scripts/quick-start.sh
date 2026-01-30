@@ -10,7 +10,7 @@ clear
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "  🚀 LegalMatch MVP - Quick Start"
+echo "  🚀 LegalConnect MVP - Quick Start"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""

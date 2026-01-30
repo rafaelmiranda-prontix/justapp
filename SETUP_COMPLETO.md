@@ -1,4 +1,4 @@
-# ✅ Setup Completo - LegalMatch MVP
+# ✅ Setup Completo - LegalConnect MVP
 
 ## Status: PRONTO PARA DESENVOLVIMENTO
 
@@ -52,7 +52,7 @@ npm run db:studio    # Abrir Prisma Studio
 ## Estrutura Criada
 
 ```
-legal-match/
+legal-connect/
 ├── docs/                     # 📚 Documentação completa
 │   ├── ARCHITECTURE.md       # Arquitetura e padrões
 │   ├── COMANDOS_UTEIS.md     # Comandos úteis

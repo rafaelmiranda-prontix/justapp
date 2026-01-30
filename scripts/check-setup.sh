@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🔍 Verificando setup do projeto LegalMatch..."
+echo "🔍 Verificando setup do projeto LegalConnect..."
 echo ""
 
 # Cores

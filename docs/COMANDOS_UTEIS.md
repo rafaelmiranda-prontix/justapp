@@ -1,4 +1,4 @@
-# Comandos Úteis - LegalMatch
+# Comandos Úteis - LegalConnect
 
 ## Desenvolvimento
 
@@ -146,12 +146,12 @@ npm install
 
 ### Criar banco
 ```bash
-createdb legalmatch
+createdb legalconnect
 ```
 
 ### Conectar ao banco
 ```bash
-psql legalmatch
+psql legalconnect
 ```
 
 ### Ver tabelas
@@ -166,12 +166,12 @@ psql legalmatch
 
 ### Backup
 ```bash
-pg_dump legalmatch > backup.sql
+pg_dump legalconnect > backup.sql
 ```
 
 ### Restore
 ```bash
-psql legalmatch < backup.sql
+psql legalconnect < backup.sql
 ```
 
 ## Testes (Futuro)
@@ -213,12 +213,12 @@ npx lighthouse http://localhost:3000 --view
 
 ### Build
 ```bash
-docker build -t legalmatch .
+docker build -t legalconnect .
 ```
 
 ### Run
 ```bash
-docker run -p 3000:3000 legalmatch
+docker run -p 3000:3000 legalconnect
 ```
 
 ### Docker Compose
@@ -247,7 +247,7 @@ kubectl logs -f <pod-name>
 
 ### Port forward
 ```bash
-kubectl port-forward svc/legalmatch 3000:3000
+kubectl port-forward svc/legalconnect 3000:3000
 ```
 
 ## Utilitários

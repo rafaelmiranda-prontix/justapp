@@ -6,7 +6,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=postgresql://legalmatch:password@db:5432/legalmatch
+      - DATABASE_URL=postgresql://legalconnect:password@db:5432/legalconnect
       - NODE_ENV=production
     depends_on:
       - db
@@ -17,9 +17,9 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=legalmatch
+      - POSTGRES_USER=legalconnect
       - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=legalmatch
+      - POSTGRES_DB=legalconnect
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped

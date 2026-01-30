@@ -2,7 +2,7 @@
 
 ## 🎯 Objetivo Alcançado
 
-Criar uma **base sólida, escalável e production-ready** para o desenvolvimento do MVP do LegalMatch.
+Criar uma **base sólida, escalável e production-ready** para o desenvolvimento do MVP do LegalConnect.
 
 **Status:** ✅ **100% COMPLETO**
 

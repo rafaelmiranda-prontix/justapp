@@ -21,11 +21,11 @@ import {
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'LegalMatch - O Uber dos Processos | Encontre seu Advogado em Minutos',
+  title: 'LegalConnect - Plataforma Jurídica Inteligente | Encontre seu Advogado em Minutos',
   description:
     'Conectamos pessoas com problemas jurídicos a advogados especializados. Chat inteligente, matching automático e 100% online. Comece agora!',
   openGraph: {
-    title: 'LegalMatch - O Uber dos Processos',
+    title: 'LegalConnect - Plataforma Jurídica Inteligente',
     description:
       'Encontre o advogado ideal para seu caso em minutos. Plataforma inteligente que conecta você ao profissional certo.',
     type: 'website',
@@ -256,7 +256,7 @@ export default function LandingPage() {
               A solução é simples
             </h2>
             <p className="text-xl text-muted-foreground">
-              LegalMatch conecta você ao advogado ideal de forma rápida e inteligente
+              LegalConnect conecta você ao advogado ideal de forma rápida e inteligente
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
@@ -445,7 +445,7 @@ export default function LandingPage() {
               </h2>
               <p className="text-xl text-muted-foreground mb-8">
                 Junte-se a milhares de pessoas que já resolveram seus problemas jurídicos
-                através do LegalMatch. Comece agora, é grátis!
+                através do LegalConnect. Comece agora, é grátis!
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" className="text-lg px-8 py-6 h-auto" asChild>

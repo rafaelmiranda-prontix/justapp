@@ -1,19 +1,19 @@
 # Configuração do Google OAuth
 
-Este guia explica como configurar o Google OAuth para autenticação na plataforma LegalMatch.
+Este guia explica como configurar o Google OAuth para autenticação na plataforma LegalConnect.
 
 ## 1. Criar Projeto no Google Cloud Console
 
 1. Acesse [Google Cloud Console](https://console.cloud.google.com)
 2. Crie um novo projeto ou selecione um existente
-3. Nomeie o projeto (ex: "LegalMatch")
+3. Nomeie o projeto (ex: "LegalConnect")
 
 ## 2. Configurar Tela de Consentimento OAuth
 
 1. No menu lateral, vá em **APIs & Services** → **OAuth consent screen**
 2. Escolha **External** como tipo de usuário
 3. Preencha as informações obrigatórias:
-   - **App name:** LegalMatch
+   - **App name:** LegalConnect
    - **User support email:** seu-email@gmail.com
    - **Developer contact information:** seu-email@gmail.com
 4. Clique em **Save and Continue**
@@ -30,7 +30,7 @@ Este guia explica como configurar o Google OAuth para autenticação na platafor
 2. Clique em **Create Credentials** → **OAuth client ID**
 3. Escolha **Web application** como tipo
 4. Configure:
-   - **Name:** LegalMatch Web Client
+   - **Name:** LegalConnect Web Client
    - **Authorized JavaScript origins:**
      - `http://localhost:3000` (desenvolvimento)
      - `https://seu-dominio.com` (produção)

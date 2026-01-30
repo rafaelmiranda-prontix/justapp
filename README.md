@@ -1,6 +1,6 @@
-# LegalMatch - MVP
+# LegalConnect - MVP
 
-> "Uber dos Processos" — Conectando pessoas com problemas jurídicos a advogados especializados.
+> Plataforma jurídica inteligente — Conectando pessoas com problemas jurídicos a advogados especializados.
 
 ## Stack Técnica
 
@@ -97,7 +97,7 @@ Veja detalhes em [SETUP_COMPLETO.md](SETUP_COMPLETO.md)
 ## Estrutura do Projeto
 
 ```
-legal-match/
+legal-connect/
 ├── prisma/
 │   ├── schema.prisma
 │   └── seed.ts

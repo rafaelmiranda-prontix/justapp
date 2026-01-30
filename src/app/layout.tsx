@@ -8,8 +8,8 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: {
-    default: 'LegalMatch - Conecte-se ao advogado ideal',
-    template: '%s | LegalMatch',
+    default: 'LegalConnect - Conecte-se ao advogado ideal',
+    template: '%s | LegalConnect',
   },
   description:
     'Plataforma que conecta pessoas com problemas jurídicos a advogados especializados. Encontre o advogado ideal para o seu caso.',
@@ -21,20 +21,20 @@ export const metadata: Metadata = {
     'advogado online',
     'Rio de Janeiro',
   ],
-  authors: [{ name: 'LegalMatch' }],
-  creator: 'LegalMatch',
+  authors: [{ name: 'LegalConnect' }],
+  creator: 'LegalConnect',
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
-    url: process.env.NEXT_PUBLIC_APP_URL || 'https://legalmatch.com.br',
-    siteName: 'LegalMatch',
-    title: 'LegalMatch - Conecte-se ao advogado ideal',
+    url: process.env.NEXT_PUBLIC_APP_URL || 'https://legalconnect.com.br',
+    siteName: 'LegalConnect',
+    title: 'LegalConnect - Conecte-se ao advogado ideal',
     description:
       'Plataforma que conecta pessoas com problemas jurídicos a advogados especializados',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LegalMatch - Conecte-se ao advogado ideal',
+    title: 'LegalConnect - Conecte-se ao advogado ideal',
     description:
       'Plataforma que conecta pessoas com problemas jurídicos a advogados especializados',
   },

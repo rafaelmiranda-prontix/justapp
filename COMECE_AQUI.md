@@ -1,4 +1,4 @@
-# 🚀 Comece Aqui - LegalMatch MVP
+# 🚀 Comece Aqui - LegalConnect MVP
 
 > Guia rápido para começar a desenvolver após o setup completo.
 

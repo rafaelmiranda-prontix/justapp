@@ -1,6 +1,6 @@
-# PRD — LegalMatch (MVP)
+# PRD — LegalConnect (MVP)
 
-> "Uber dos Processos" — Conectando pessoas com problemas jurídicos a advogados especializados.
+> Plataforma jurídica inteligente — Conectando pessoas com problemas jurídicos a advogados especializados.
 
 ---
 

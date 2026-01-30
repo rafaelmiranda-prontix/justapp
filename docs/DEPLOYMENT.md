@@ -1,4 +1,4 @@
-# 🚀 Guia de Deployment - LegalMatch
+# 🚀 Guia de Deployment - LegalConnect
 
 ## Opções de Deployment
 
@@ -158,27 +158,27 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: legalmatch-app
+  name: legalconnect-app
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: legalmatch
+      app: legalconnect
   template:
     metadata:
       labels:
-        app: legalmatch
+        app: legalconnect
     spec:
       containers:
       - name: app
-        image: legalmatch:latest
+        image: legalconnect:latest
         ports:
         - containerPort: 3000
         env:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: legalmatch-secrets
+              name: legalconnect-secrets
               key: database-url
         # ... outras variáveis
         resources:
@@ -195,10 +195,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: legalmatch-service
+  name: legalconnect-service
 spec:
   selector:
-    app: legalmatch
+    app: legalconnect
   ports:
   - protocol: TCP
     port: 80

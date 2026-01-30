@@ -1,7 +1,7 @@
-# Estrutura do Projeto LegalMatch
+# Estrutura do Projeto LegalConnect
 
 ```
-legal-match/
+legal-connect/
 │
 ├── 📄 Configuração Base
 │   ├── package.json              # Dependências e scripts

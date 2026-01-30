@@ -1,8 +1,8 @@
-# Arquitetura do Projeto LegalMatch
+# Arquitetura do Projeto LegalConnect
 
 ## Visão Geral
 
-O LegalMatch é construído com Next.js 14 usando o App Router, seguindo princípios de Clean Architecture e melhores práticas de desenvolvimento React/TypeScript.
+O LegalConnect é construído com Next.js 14 usando o App Router, seguindo princípios de Clean Architecture e melhores práticas de desenvolvimento React/TypeScript.
 
 ## Princípios Arquiteturais
 

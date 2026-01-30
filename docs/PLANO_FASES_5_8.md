@@ -1,6 +1,6 @@
 # 📋 Plano Detalhado - Fases 5 a 8
 
-> Plano de implementação para as fases finais do MVP LegalMatch
+> Plano de implementação para as fases finais do MVP LegalConnect
 
 **Status:** Planejamento  
 **Última atualização:** 2026-01-29
@@ -1299,4 +1299,4 @@ Fase 7 → Fase 8 (Deploy deve estar funcionando antes do soft launch)
 ---
 
 **Documento criado em:** 2026-01-29  
-**Autor:** Planejamento LegalMatch MVP
+**Autor:** Planejamento LegalConnect MVP
