@@ -25,13 +25,19 @@ const ToastViewport = React.forwardRef<
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName
 
 const toastVariants = cva(
-  'group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full',
+  'group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-lg border-l-4 p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full backdrop-blur-sm',
   {
     variants: {
       variant: {
-        default: 'border bg-background text-foreground',
+        default: 'border-l-primary bg-background/95 text-foreground border border-border',
         destructive:
-          'destructive group border-destructive bg-destructive text-destructive-foreground',
+          'destructive group border-l-red-500 bg-red-50/95 dark:bg-red-950/95 text-red-900 dark:text-red-50 border border-red-200 dark:border-red-900',
+        success:
+          'border-l-green-500 bg-green-50/95 dark:bg-green-950/95 text-green-900 dark:text-green-50 border border-green-200 dark:border-green-900',
+        warning:
+          'border-l-yellow-500 bg-yellow-50/95 dark:bg-yellow-950/95 text-yellow-900 dark:text-yellow-50 border border-yellow-200 dark:border-yellow-900',
+        info:
+          'border-l-blue-500 bg-blue-50/95 dark:bg-blue-950/95 text-blue-900 dark:text-blue-50 border border-blue-200 dark:border-blue-900',
       },
     },
     defaultVariants: {

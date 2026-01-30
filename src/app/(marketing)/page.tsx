@@ -23,7 +23,7 @@ import { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'LegalConnect - Plataforma Jurídica Inteligente | Encontre seu Advogado em Minutos',
   description:
-    'Conectamos pessoas com problemas jurídicos a advogados especializados. Chat inteligente, matching automático e 100% online. Comece agora!',
+    'Conectamos pessoas com problemas jurídicos a advogados especializados. Chat inteligente, conexão automática e 100% online. Comece agora!',
   openGraph: {
     title: 'LegalConnect - Plataforma Jurídica Inteligente',
     description:
@@ -61,7 +61,7 @@ const solutions = [
   },
   {
     icon: Zap,
-    title: 'Matching Automático',
+    title: 'Conexão Automática',
     description:
       'Sistema inteligente conecta você ao advogado certo: especialidade + localização + avaliações.',
     color: 'text-purple-500',
@@ -96,7 +96,7 @@ const benefitsCidadao = [
 
 const benefitsAdvogado = [
   'Leads qualificados na sua área',
-  'Matching inteligente reduz perda de tempo',
+  'Conexão inteligente reduz perda de tempo',
   'Dashboard com métricas de performance',
   'Plano flexível: gratuito ou premium',
   'Foco em Direito do Consumidor (RJ)',
@@ -159,7 +159,7 @@ export default function LandingPage() {
               Conectamos pessoas com problemas jurídicos a advogados especializados.
               <br />
               <span className="font-semibold text-foreground">
-                Chat inteligente • Matching automático • 100% online
+                Chat inteligente • Conexão automática • 100% online
               </span>
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">

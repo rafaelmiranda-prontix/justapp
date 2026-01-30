@@ -99,7 +99,7 @@ export default function SignupPage() {
                   <div className="space-y-2">
                     {[
                       'Análise gratuita do seu caso',
-                      'Matching com especialistas',
+                      'Conecte-se com especialistas',
                       'Chat direto com advogados',
                     ].map((feature, index) => (
                       <div key={index} className="flex items-center gap-2 text-sm">

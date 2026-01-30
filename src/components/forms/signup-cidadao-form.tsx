@@ -59,11 +59,12 @@ export function SignupCidadaoForm() {
       }
 
       toast({
+        variant: 'success',
         title: 'Conta criada com sucesso!',
         description: 'Faça login para continuar',
       })
 
-      router.push('/signin')
+      router.push('/auth/signin')
     } catch (error) {
       toast({
         title: 'Erro ao criar conta',

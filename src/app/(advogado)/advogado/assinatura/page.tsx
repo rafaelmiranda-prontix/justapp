@@ -88,6 +88,7 @@ export default function AssinaturaPage() {
     const params = new URLSearchParams(window.location.search)
     if (params.get('success') === 'true') {
       toast({
+        variant: 'success',
         title: 'Sucesso!',
         description: 'Assinatura ativada com sucesso',
       })
@@ -96,9 +97,9 @@ export default function AssinaturaPage() {
       window.history.replaceState({}, '', window.location.pathname)
     } else if (params.get('canceled') === 'true') {
       toast({
+        variant: 'warning',
         title: 'Cancelado',
         description: 'Assinatura cancelada',
-        variant: 'destructive',
       })
       // Remove parâmetro da URL
       window.history.replaceState({}, '', window.location.pathname)

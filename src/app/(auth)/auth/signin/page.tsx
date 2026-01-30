@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Scale, Loader2, Mail, Lock, CheckCircle2 } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -16,6 +17,7 @@ export default function SignInPage() {
   const [password, setPassword] = useState('')
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
+  const { toast } = useToast()
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
@@ -23,6 +25,11 @@ export default function SignInPage() {
       await signIn('google', { callbackUrl })
     } catch (error) {
       console.error('Error signing in:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao fazer login',
+        description: 'Não foi possível conectar com o Google. Tente novamente.',
+      })
       setIsLoading(false)
     }
   }
@@ -31,11 +38,51 @@ export default function SignInPage() {
     e.preventDefault()
     setIsLoading(true)
     try {
-      // Por enquanto, redireciona para Google OAuth
-      // TODO: Implementar login com credentials quando NextAuth estiver configurado
-      await signIn('google', { callbackUrl })
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao fazer login',
+          description: result.error,
+        })
+        setIsLoading(false)
+      } else if (result?.ok) {
+        // Buscar a sessão para saber o role do usuário
+        const response = await fetch('/api/auth/session')
+        const session = await response.json()
+
+        // Redirecionar baseado no role
+        let redirectUrl = callbackUrl
+        if (callbackUrl === '/' && session?.user?.role) {
+          if (session.user.role === 'CIDADAO') {
+            redirectUrl = '/cidadao/dashboard'
+          } else if (session.user.role === 'ADVOGADO') {
+            redirectUrl = '/advogado/dashboard'
+          } else if (session.user.role === 'ADMIN') {
+            redirectUrl = '/admin'
+          }
+        }
+
+        toast({
+          variant: 'success',
+          title: 'Login realizado com sucesso!',
+          description: 'Redirecionando...',
+        })
+
+        window.location.href = redirectUrl
+      }
     } catch (error) {
       console.error('Error signing in:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao fazer login',
+        description: 'Algo deu errado. Tente novamente.',
+      })
       setIsLoading(false)
     }
   }
@@ -73,7 +120,7 @@ export default function SignInPage() {
             <div className="space-y-4">
               {[
                 'Análise inteligente do seu caso',
-                'Matching com advogados especializados',
+                'Conecte-se com advogados especializados',
                 'Comunicação direta e segura',
                 'Avaliações verificadas',
               ].map((feature, index) => (

@@ -51,6 +51,7 @@ export async function POST(req: Request) {
         email: data.email,
         name: data.name,
         phone: data.phone,
+        password: hashedPassword,
         role: 'ADVOGADO',
         advogado: {
           create: {

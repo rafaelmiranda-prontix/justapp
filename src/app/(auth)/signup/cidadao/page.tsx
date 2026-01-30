@@ -45,7 +45,7 @@ export default function SignupCidadaoPage() {
               <h3 className="font-semibold text-lg">O que você ganha:</h3>
               {[
                 'Análise gratuita e inteligente do seu caso',
-                'Matching automático com advogados especializados',
+                'Encontre automaticamente advogados especializados',
                 'Chat direto e seguro com profissionais',
                 'Avaliações verificadas de outros clientes',
                 'Sem compromisso até encontrar o profissional ideal',
