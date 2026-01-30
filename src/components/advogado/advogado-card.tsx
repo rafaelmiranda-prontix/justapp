@@ -2,7 +2,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MapPin, Star, Award, Video } from 'lucide-react'
+import { MapPin, Star, Award, Video, MessageSquare } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
 import { ContactAdvogadoDialog } from '@/components/advogado/contact-advogado-dialog'
@@ -22,6 +22,7 @@ interface AdvogadoCardProps {
   distanciaKm: number | null
   score: number
   casoId?: string
+  matchId?: string
 }
 
 export function AdvogadoCard({
@@ -39,6 +40,7 @@ export function AdvogadoCard({
   distanciaKm,
   score,
   casoId,
+  matchId,
 }: AdvogadoCardProps) {
   // Pega as iniciais do nome para o avatar fallback
   const initials = nome
@@ -136,14 +138,23 @@ export function AdvogadoCard({
       </CardContent>
 
       <CardFooter className="flex gap-2">
-        <Button asChild className="flex-1">
+        <Button asChild variant="outline" className="flex-1">
           <Link href={`/advogados/${id}`}>Ver Perfil</Link>
         </Button>
-        <ContactAdvogadoDialog
-          advogadoId={id}
-          advogadoNome={nome}
-          casoId={casoId}
-        />
+        {matchId ? (
+          <Button asChild className="flex-1">
+            <Link href={`/chat/${matchId}`}>
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Abrir Chat
+            </Link>
+          </Button>
+        ) : (
+          <ContactAdvogadoDialog
+            advogadoId={id}
+            advogadoNome={nome}
+            casoId={casoId}
+          />
+        )}
       </CardFooter>
     </Card>
   )
