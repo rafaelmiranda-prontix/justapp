@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
 const updateMatchSchema = z.object({
-  status: z.enum(['VISUALIZADO', 'ACEITO', 'RECUSADO']),
+  status: z.enum(['ACEITO', 'RECUSADO']),
 })
 
 export async function PATCH(req: Request, { params }: { params: { matchId: string } }) {
@@ -25,7 +25,7 @@ export async function PATCH(req: Request, { params }: { params: { matchId: strin
       include: {
         advogados: {
           include: {
-            user: true,
+            users: true,
           },
         },
       },
@@ -45,7 +45,6 @@ export async function PATCH(req: Request, { params }: { params: { matchId: strin
       where: { id: params.matchId },
       data: {
         status,
-        visualizadoEm: status === 'VISUALIZADO' ? new Date() : match.visualizadoEm,
         respondidoEm: status === 'ACEITO' || status === 'RECUSADO' ? new Date() : match.respondidoEm,
       },
     })
@@ -53,7 +52,7 @@ export async function PATCH(req: Request, { params }: { params: { matchId: strin
     // Se aceito, atualiza o status do caso
     if (status === 'ACEITO') {
       await prisma.casos.update({
-        where: { id: match.casoId },
+        where: { id: match.casos.id },
         data: { status: 'EM_ANDAMENTO' },
       })
     }

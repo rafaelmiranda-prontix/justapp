@@ -23,12 +23,12 @@ export async function GET(req: Request, { params }: { params: { matchId: string 
       where: { id: params.matchId },
       include: {
         advogados: {
-          include: { user: true },
+          include: { users: true },
         },
         casos: {
           include: {
             cidadaos: {
-              include: { user: true },
+              include: { users: true },
             },
           },
         },
@@ -101,12 +101,12 @@ export async function POST(req: Request, { params }: { params: { matchId: string
       where: { id: params.matchId },
       include: {
         advogados: {
-          include: { user: true },
+          include: { users: true },
         },
         casos: {
           include: {
             cidadaos: {
-              include: { user: true },
+              include: { users: true },
             },
           },
         },

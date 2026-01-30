@@ -104,12 +104,12 @@ export async function POST(req: Request) {
         status: 'PENDENTE',
       },
       include: {
-        advogado: {
+        advogados: {
           include: {
-            user: true,
+            users: true,
           },
         },
-        caso: true,
+        casos: true,
       },
     })
 
@@ -169,7 +169,7 @@ export async function GET(req: Request) {
         include: {
           advogados: {
             include: {
-              user: true,
+              users: true,
               advogado_especialidades: {
                 include: {
                   especialidades: true,
@@ -207,7 +207,7 @@ export async function GET(req: Request) {
             include: {
               cidadaos: {
                 include: {
-                  user: true,
+                  users: true,
                 },
               },
               especialidades: true,

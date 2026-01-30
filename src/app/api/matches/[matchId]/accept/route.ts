@@ -30,7 +30,7 @@ export async function POST(
       include: {
         advogados: {
           include: {
-            user: true,
+            users: true,
           },
         },
         casos: true,
@@ -77,7 +77,7 @@ export async function POST(
     // Aceitar match
     const updatedMatch = await prisma.$transaction(async (tx) => {
       // Atualizar match para ACEITO
-      const updated = await tx.match.update({
+      const updated = await tx.matches.update({
         where: { id: matchId },
         data: {
           status: 'ACEITO',
@@ -86,8 +86,8 @@ export async function POST(
       })
 
       // Atualizar caso para EM_ANDAMENTO (se for o primeiro aceite)
-      const caso = await tx.caso.findUnique({
-        where: { id: match.casoId },
+      const caso = await tx.casos.findUnique({
+        where: { id: match.casos.id },
         include: {
           matches: {
             where: { status: 'ACEITO' },
@@ -96,8 +96,8 @@ export async function POST(
       })
 
       if (caso && caso.status === 'ABERTO' && caso.matches.length === 0) {
-        await tx.caso.update({
-          where: { id: match.casoId },
+        await tx.casos.update({
+          where: { id: match.casos.id },
           data: { status: 'EM_ANDAMENTO' },
         })
       }

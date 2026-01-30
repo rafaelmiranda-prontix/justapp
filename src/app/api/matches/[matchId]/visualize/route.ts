@@ -29,7 +29,7 @@ export async function POST(
       include: {
         advogados: {
           include: {
-            user: true,
+            users: true,
           },
         },
       },

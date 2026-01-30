@@ -17,19 +17,19 @@ import Link from 'next/link'
 interface Match {
   id: string
   score: number
-  status: 'PENDENTE' | 'VISUALIZADO' | 'ACEITO' | 'RECUSADO' | 'CONTRATADO' | 'EXPIRADO'
+  status: 'PENDENTE' | 'ACEITO' | 'RECUSADO' | 'CONTRATADO' | 'EXPIRADO'
   enviadoEm: string
   visualizadoEm: string | null
   respondidoEm: string | null
-  caso: {
+  casos: {
     id: string
     descricao: string
     urgencia: 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE'
-    especialidade: {
+    especialidades: {
       nome: string
     } | null
-    cidadao: {
-      user: {
+    cidadaos: {
+      users: {
         name: string
       }
       cidade: string | null
@@ -47,7 +47,6 @@ const urgenciaColors = {
 
 const statusLabels: Record<string, string> = {
   PENDENTE: 'Novo',
-  VISUALIZADO: 'Visualizado',
   ACEITO: 'Aceito',
   RECUSADO: 'Recusado',
   CONTRATADO: 'Contratado',
@@ -62,7 +61,7 @@ export default function AdvogadoDashboardPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [especialidadeFilter, setEspecialidadeFilter] = useState('all')
   const [urgenciaFilter, setUrgenciaFilter] = useState('all')
-  const { visualizeMatch, respondMatch, isLoading: isActing } = useMatchActions()
+  const { respondMatch, isLoading: isActing } = useMatchActions()
 
   useEffect(() => {
     fetchMatches()
@@ -84,11 +83,10 @@ export default function AdvogadoDashboardPage() {
     }
   }
 
-  const handleVisualize = async (matchId: string) => {
-    const success = await visualizeMatch(matchId)
-    if (success) {
-      fetchMatches()
-    }
+  const handleViewDetails = (matchId: string) => {
+    // TODO: Implementar modal ou página de detalhes do caso
+    // Por enquanto, apenas log para evoluções futuras
+    console.log('Ver detalhes do match:', matchId)
   }
 
   const handleRespond = async (matchId: string, accepted: boolean) => {
@@ -102,8 +100,8 @@ export default function AdvogadoDashboardPage() {
   const especialidades = useMemo(() => {
     const unique = new Set<string>()
     matches.forEach((m) => {
-      if (m.caso.especialidade?.nome) {
-        unique.add(m.caso.especialidade.nome)
+      if (m.casos.especialidades?.nome) {
+        unique.add(m.casos.especialidades.nome)
       }
     })
     return Array.from(unique)
@@ -114,8 +112,8 @@ export default function AdvogadoDashboardPage() {
       // Busca por texto
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
-        const matchesDescricao = match.caso.descricao.toLowerCase().includes(query)
-        const matchesCliente = match.caso.cidadao.user.name.toLowerCase().includes(query)
+        const matchesDescricao = match.casos.descricao.toLowerCase().includes(query)
+        const matchesCliente = match.casos.cidadaos.users.name.toLowerCase().includes(query)
         if (!matchesDescricao && !matchesCliente) {
           return false
         }
@@ -129,13 +127,13 @@ export default function AdvogadoDashboardPage() {
       // Filtro por especialidade
       if (
         especialidadeFilter !== 'all' &&
-        match.caso.especialidade?.nome !== especialidadeFilter
+        match.casos.especialidades?.nome !== especialidadeFilter
       ) {
         return false
       }
 
       // Filtro por urgência
-      if (urgenciaFilter !== 'all' && match.caso.urgencia !== urgenciaFilter) {
+      if (urgenciaFilter !== 'all' && match.casos.urgencia !== urgenciaFilter) {
         return false
       }
 
@@ -144,7 +142,6 @@ export default function AdvogadoDashboardPage() {
   }, [matches, searchQuery, statusFilter, especialidadeFilter, urgenciaFilter])
 
   const pendingMatches = filteredMatches.filter((m) => m.status === 'PENDENTE')
-  const visualizedMatches = filteredMatches.filter((m) => m.status === 'VISUALIZADO')
   const acceptedMatches = filteredMatches.filter((m) => m.status === 'ACEITO')
   const rejectedMatches = filteredMatches.filter((m) => m.status === 'RECUSADO')
 
@@ -155,7 +152,7 @@ export default function AdvogadoDashboardPage() {
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <CardTitle className="text-lg line-clamp-1">
-                {match.caso.descricao.substring(0, 60) + '...'}
+                {match.casos.descricao.substring(0, 60) + '...'}
               </CardTitle>
               <Badge
                 variant={match.status === 'ACEITO' ? 'default' : 'secondary'}
@@ -172,10 +169,10 @@ export default function AdvogadoDashboardPage() {
                   locale: ptBR,
                 })}
               </span>
-              {match.caso.cidadao.cidade && (
+              {match.casos.cidadaos.cidade && (
                 <span className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
-                  {match.caso.cidadao.cidade}, {match.caso.cidadao.estado}
+                  {match.casos.cidadaos.cidade}, {match.casos.cidadaos.estado}
                 </span>
               )}
             </div>
@@ -186,11 +183,11 @@ export default function AdvogadoDashboardPage() {
         {/* Badges de informação */}
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline" className="flex items-center gap-1">
-            <div className={`h-2 w-2 rounded-full ${urgenciaColors[match.caso.urgencia]}`} />
-            Urgência: {match.caso.urgencia}
+            <div className={`h-2 w-2 rounded-full ${urgenciaColors[match.casos.urgencia]}`} />
+            Urgência: {match.casos.urgencia}
           </Badge>
-          {match.caso.especialidade && (
-            <Badge variant="outline">{match.caso.especialidade.nome}</Badge>
+          {match.casos.especialidades && (
+            <Badge variant="outline">{match.casos.especialidades.nome}</Badge>
           )}
           <Badge variant="secondary" className="font-semibold">
             {match.score}% compatibilidade
@@ -200,13 +197,13 @@ export default function AdvogadoDashboardPage() {
         {/* Descrição do caso */}
         <div>
           <p className="text-sm font-medium mb-1">Descrição do caso:</p>
-          <p className="text-sm text-muted-foreground line-clamp-3">{match.caso.descricao}</p>
+          <p className="text-sm text-muted-foreground line-clamp-3">{match.casos.descricao}</p>
         </div>
 
         {/* Cliente */}
         <div>
           <p className="text-sm font-medium">Cliente:</p>
-          <p className="text-sm text-muted-foreground">{match.caso.cidadao.user.name}</p>
+          <p className="text-sm text-muted-foreground">{match.casos.cidadaos.users.name}</p>
         </div>
 
         {/* Ações */}
@@ -216,12 +213,11 @@ export default function AdvogadoDashboardPage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleVisualize(match.id)}
-                disabled={isActing}
+                onClick={() => handleViewDetails(match.id)}
                 className="flex-1"
               >
                 <Eye className="h-4 w-4 mr-2" />
-                Visualizar
+                Ver Detalhes
               </Button>
               <Button
                 size="sm"
@@ -241,29 +237,6 @@ export default function AdvogadoDashboardPage() {
               >
                 <XCircle className="h-4 w-4 mr-2" />
                 Recusar
-              </Button>
-            </>
-          )}
-          {match.status === 'VISUALIZADO' && (
-            <>
-              <Button
-                size="sm"
-                onClick={() => handleRespond(match.id, true)}
-                disabled={isActing}
-                className="flex-1"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Aceitar Caso
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => handleRespond(match.id, false)}
-                disabled={isActing}
-                className="flex-1"
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                Recusar Caso
               </Button>
             </>
           )}
@@ -304,12 +277,9 @@ export default function AdvogadoDashboardPage() {
 
       {/* Tabs de Leads */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pendentes">
             Pendentes ({pendingMatches.length})
-          </TabsTrigger>
-          <TabsTrigger value="visualizados">
-            Visualizados ({visualizedMatches.length})
           </TabsTrigger>
           <TabsTrigger value="aceitos">
             Aceitos ({acceptedMatches.length})
@@ -336,21 +306,6 @@ export default function AdvogadoDashboardPage() {
           ) : (
             <div className="grid md:grid-cols-2 gap-4">
               {pendingMatches.map(renderMatchCard)}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="visualizados" className="mt-6">
-          {visualizedMatches.length === 0 ? (
-            <Card>
-              <CardContent className="py-16 text-center">
-                <Eye className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Nenhum lead visualizado</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              {visualizedMatches.map(renderMatchCard)}
             </div>
           )}
         </TabsContent>
