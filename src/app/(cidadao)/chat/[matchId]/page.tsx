@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { ChatInterface } from '@/components/chat/chat-interface'
+import { ChatWindow } from '@/components/chat/chat-window'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
@@ -91,11 +91,13 @@ export default function ChatPage({ params }: { params: { matchId: string } }) {
         Voltar ao dashboard
       </Link>
 
-      <ChatInterface
+      <ChatWindow
         matchId={params.matchId}
         currentUserId={session.user.id}
-        otherUserName={otherUser.name}
-        otherUserImage={otherUser.image}
+        otherUser={{
+          name: otherUser.name,
+          image: otherUser.image,
+        }}
       />
     </div>
   )

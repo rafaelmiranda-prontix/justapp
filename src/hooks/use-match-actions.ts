@@ -11,10 +11,9 @@ export function useMatchActions() {
     setIsLoading(true)
 
     try {
-      const res = await fetch(`/api/matches/${matchId}`, {
-        method: 'PATCH',
+      const res = await fetch(`/api/matches/${matchId}/visualize`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'VISUALIZADO' }),
       })
 
       const result = await res.json()
@@ -45,10 +44,13 @@ export function useMatchActions() {
     setIsLoading(true)
 
     try {
-      const res = await fetch(`/api/matches/${matchId}`, {
-        method: 'PATCH',
+      const endpoint = accepted
+        ? `/api/matches/${matchId}/accept`
+        : `/api/matches/${matchId}/reject`
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: accepted ? 'ACEITO' : 'RECUSADO' }),
       })
 
       const result = await res.json()
