@@ -8,6 +8,7 @@ import { ChatMessage as ChatMessageType } from '@/lib/anonymous-session.service'
 import { ChatInput } from './chat-input'
 import { ChatMessage } from './chat-message'
 import { TypingIndicator } from './typing-indicator'
+import { LeadCaptureForm } from './lead-capture-form'
 
 interface AnonymousChatSheetProps {
   open: boolean
@@ -15,6 +16,14 @@ interface AnonymousChatSheetProps {
   messages: ChatMessageType[]
   onSendMessage: (message: string) => Promise<void>
   isTyping: boolean
+  shouldCaptureLeadData?: boolean
+  extractedData?: {
+    especialidade?: string
+    cidade?: string
+    estado?: string
+    score?: number
+  }
+  onSubmitLeadData?: (data: { name: string; email: string; phone?: string }) => Promise<void>
 }
 
 export function AnonymousChatSheet({
@@ -23,6 +32,9 @@ export function AnonymousChatSheet({
   messages,
   onSendMessage,
   isTyping,
+  shouldCaptureLeadData = false,
+  extractedData,
+  onSubmitLeadData,
 }: AnonymousChatSheetProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -71,6 +83,17 @@ export function AnonymousChatSheet({
                 <ChatMessage key={index} message={message} />
               ))}
               {isTyping && <TypingIndicator />}
+
+              {/* Lead Capture Form */}
+              {shouldCaptureLeadData && onSubmitLeadData && (
+                <div className="pt-2">
+                  <LeadCaptureForm
+                    onSubmit={onSubmitLeadData}
+                    extractedData={extractedData}
+                  />
+                </div>
+              )}
+
               <div ref={messagesEndRef} />
             </>
           )}

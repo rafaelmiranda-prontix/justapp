@@ -131,7 +131,17 @@ const testimonials = [
 ]
 
 export default function LandingPage() {
-  const { isOpen, openChat, closeChat, messages, sendMessage, isTyping } = useAnonymousChat()
+  const {
+    isOpen,
+    openChat,
+    closeChat,
+    messages,
+    sendMessage,
+    isTyping,
+    shouldCaptureLeadData,
+    extractedData,
+    submitLeadData,
+  } = useAnonymousChat()
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -476,6 +486,9 @@ export default function LandingPage() {
         messages={messages}
         onSendMessage={sendMessage}
         isTyping={isTyping}
+        shouldCaptureLeadData={shouldCaptureLeadData}
+        extractedData={extractedData}
+        onSubmitLeadData={submitLeadData}
       />
     </div>
   )
