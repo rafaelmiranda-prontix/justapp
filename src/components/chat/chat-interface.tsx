@@ -7,10 +7,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { FileUpload } from '@/components/ui/file-upload'
 import { Send, Paperclip, Loader2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/hooks/use-toast'
 
 interface Message {
   id: string
@@ -42,8 +44,10 @@ export function ChatInterface({
   const [newMessage, setNewMessage] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
+  const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pollingInterval = useRef<NodeJS.Timeout>()
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchMessages()
@@ -97,13 +101,17 @@ export function ChatInterface({
       const res = await fetch(`/api/matches/${matchId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conteudo: newMessage }),
+        body: JSON.stringify({
+          conteudo: newMessage,
+          anexoUrl: attachmentUrl,
+        }),
       })
 
       const result = await res.json()
 
       if (result.success) {
         setNewMessage('')
+        setAttachmentUrl(null)
         fetchMessages()
       }
     } catch (error) {
@@ -235,10 +243,31 @@ export function ChatInterface({
       </CardContent>
 
       <CardFooter className="border-t p-4">
-        <form onSubmit={handleSendMessage} className="flex gap-2 w-full">
-          <Textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+        <div className="w-full space-y-2">
+          {attachmentUrl && (
+            <div className="flex items-center gap-2 p-2 bg-muted rounded text-sm">
+              <span className="flex-1 truncate">Anexo adicionado</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setAttachmentUrl(null)}
+              >
+                Remover
+              </Button>
+            </div>
+          )}
+
+          <FileUpload
+            onUploadComplete={(url) => setAttachmentUrl(url)}
+            onUploadError={(error) => toast({ title: 'Erro', description: error, variant: 'destructive' })}
+            disabled={isSending}
+          />
+
+          <form onSubmit={handleSendMessage} className="flex gap-2 w-full">
+            <Textarea
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Digite sua mensagem..."
             className="min-h-[60px] max-h-[120px] resize-none"
@@ -246,15 +275,6 @@ export function ChatInterface({
             disabled={isSending}
           />
           <div className="flex flex-col gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              disabled={isSending}
-              title="Anexar arquivo (em breve)"
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
             <Button type="submit" size="icon" disabled={isSending || !newMessage.trim()}>
               {isSending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -263,10 +283,11 @@ export function ChatInterface({
               )}
             </Button>
           </div>
-        </form>
-        <p className="text-xs text-muted-foreground mt-2">
-          {newMessage.length}/2000 caracteres
-        </p>
+          </form>
+          <p className="text-xs text-muted-foreground">
+            {newMessage.length}/2000 caracteres
+          </p>
+        </div>
       </CardFooter>
     </Card>
   )
