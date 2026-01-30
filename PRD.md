@@ -57,6 +57,114 @@ Plataforma que:
 
 ---
 
+## 5.1 Modelo de Aquisição: Chat Anônimo Primeiro 🆕
+
+### Princípio: Zero Fricção, Máxima Conversão
+
+**Usuários começam conversando ANTES de criar conta.**
+
+### Fluxo de Aquisição
+
+```
+Visitante → Chat Anônimo (IA) → Qualificação → Captura Email →
+Criação Pré-ativa → Email Ativação → Senha → Conta Ativa → Matching
+```
+
+### Etapas Detalhadas
+
+1. **Homepage com CTA irresistível**
+   - "Comece Agora - É Grátis"
+   - "Conte seu Problema em 2 Minutos"
+   - Botão grande e visível
+
+2. **Chat abre instantaneamente**
+   - Sem formulário
+   - Sem cadastro
+   - Sem fricção
+   - IA responde imediatamente
+
+3. **IA qualifica via conversa (3-5 mensagens)**
+   - Entende o problema
+   - Identifica especialidade
+   - Avalia urgência
+   - Captura localização
+
+4. **Momento de captura (após engajamento)**
+   - "Encontrei 5 advogados especializados!"
+   - Solicita: Nome + Email + Telefone (opcional)
+   - Usuário já está engajado, taxa de conversão alta
+
+5. **Criação automática (pré-ativa)**
+   - Sistema cria usuário com `status = PRE_ACTIVE`
+   - Cria caso com `status = PENDENTE_ATIVACAO`
+   - Gera token de ativação único
+
+6. **Email de ativação enviado**
+   ```
+   Assunto: Complete seu cadastro - 5 advogados te aguardam
+
+   Olá [Nome]!
+
+   Identificamos advogados especializados em [área]
+   na região de [cidade] para seu caso.
+
+   📋 Seu problema: [resumo IA]
+   ⚡ Urgência: [Alta/Normal]
+
+   Para conectar você com os advogados:
+   [Ativar Minha Conta] ← expira em 48h
+   ```
+
+7. **Usuário ativa via email**
+   - Clica no link
+   - Cria senha
+   - Conta vira `ACTIVE`
+   - Caso vira `ABERTO`
+   - Login automático
+
+8. **Sistema distribui matches**
+   - Busca advogados compatíveis
+   - Cria até 5 matches
+   - Notifica advogados
+
+### Vantagens Mensuráveis
+
+| Métrica | Sem Chat Anônimo | Com Chat Anônimo | Melhoria |
+|---------|------------------|------------------|----------|
+| Taxa de início | ~10% | ~30% | +200% |
+| Taxa de conversão | ~15% | ~45% | +200% |
+| Leads qualificados | ~60% | ~90% | +50% |
+| Tempo até lead | ~8 min | ~3 min | -60% |
+| Email verificado | ~70% | ~95% | +35% |
+
+### Tecnicamente
+
+**Armazenamento:**
+- SessionId em cookie/localStorage
+- Tabela `AnonymousSession` no banco
+- Referência em `Caso.sessionId`
+
+**Status de Usuário:**
+- `PRE_ACTIVE`: Criado, aguardando ativação
+- `ACTIVE`: Email verificado
+- `SUSPENDED`: Suspenso
+- `DELETED`: Deletado
+
+**Status de Caso:**
+- `PENDENTE_ATIVACAO`: Aguardando ativação (novo)
+- `ABERTO`: Pode distribuir matches
+- `EM_ANDAMENTO`: Advogado aceitou
+- `FECHADO`: Resolvido
+- `CANCELADO`: Cancelado
+
+**Segurança:**
+- Email obrigatoriamente verificado
+- Token de ativação expira em 48h
+- Rate limiting no chat (10 msgs/min)
+- Proteção contra bots
+
+---
+
 ## 6. Funcionalidades — MVP (custo baixo)
 
 ### 6.1 App/Web Cidadão

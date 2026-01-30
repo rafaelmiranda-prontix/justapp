@@ -21,6 +21,12 @@ model User {
   phone         String?
   password      String? // Para login com credentials
   role          UserRole
+  status        UserStatus @default(ACTIVE)
+
+  // Ativação de conta
+  activationToken   String?   @unique
+  activationExpires DateTime?
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -30,6 +36,13 @@ model User {
   sessions Session[]
 
   @@map("users")
+}
+
+enum UserStatus {
+  PRE_ACTIVE  // Criado mas não ativou email
+  ACTIVE      // Ativado e funcionando
+  SUSPENDED   // Suspenso por admin
+  DELETED     // Deletado (soft delete)
 }
 
 // NextAuth Adapter Models
@@ -197,7 +210,10 @@ model Caso {
   complexidade    Int            @default(1) // 1-5
 
   // Status
-  status CasoStatus @default(ABERTO)
+  status CasoStatus @default(PENDENTE_ATIVACAO)
+
+  // Referência da sessão anônima (se veio do chat)
+  sessionId String? @unique
 
   // Matches
   matches Match[]
@@ -208,6 +224,7 @@ model Caso {
   @@index([cidadaoId])
   @@index([especialidadeId])
   @@index([status])
+  @@index([sessionId])
   @@map("casos")
 }
 
@@ -219,10 +236,11 @@ enum Urgencia {
 }
 
 enum CasoStatus {
-  ABERTO
-  EM_ANDAMENTO
-  FECHADO
-  CANCELADO
+  PENDENTE_ATIVACAO // Esperando ativação do usuário (novo)
+  ABERTO            // Ativo e distribuído
+  EM_ANDAMENTO      // Advogado aceitou
+  FECHADO           // Resolvido
+  CANCELADO         // Cancelado
 }
 
 // ==================== MATCHING ====================
@@ -323,4 +341,50 @@ enum ConfiguracaoTipo {
   NUMBER
   BOOLEAN
   JSON
+}
+
+// ==================== SESSÕES ANÔNIMAS ====================
+
+model AnonymousSession {
+  id        String @id @default(cuid())
+  sessionId String @unique // Identificador no cookie/localStorage
+
+  // Conversa
+  mensagens Json[] // Array de {role: 'user'|'assistant', content: string, timestamp: DateTime}
+
+  // Metadados
+  userAgent String?
+  ipAddress String?
+
+  // Localização estimada (capturada durante conversa)
+  cidade    String?
+  estado    String?
+
+  // Classificação automática pela IA
+  especialidadeDetectada String?
+  urgenciaDetectada      String?
+
+  // Status da sessão
+  status    SessionStatus @default(ACTIVE)
+
+  // Conversão
+  convertedToUserId String? @unique
+  convertedToCasoId String? @unique
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expiresAt DateTime // 7 dias após criação
+
+  @@index([sessionId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("anonymous_sessions")
+}
+
+enum SessionStatus {
+  ACTIVE      // Conversando ativamente
+  CONVERTED   // Converteu em usuário + caso
+  ABANDONED   // Abandonado (7 dias sem atividade)
+  EXPIRED     // Expirou
 }

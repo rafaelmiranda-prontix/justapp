@@ -1,12 +1,271 @@
 # Regras de Negócio - LegalConnect
 
 ## 📋 Índice
+- [🚀 Fluxo de Aquisição (Novo)](#-fluxo-de-aquisição-novo)
 - [Fluxo de Matching](#fluxo-de-matching)
 - [Permissões de Usuários](#permissões-de-usuários)
 - [Expiração de Matches](#expiração-de-matches)
 - [Sistema de Chat](#sistema-de-chat)
 - [Avaliações](#avaliações)
 - [Planos e Limites](#planos-e-limites)
+
+---
+
+## 🚀 Fluxo de Aquisição (Novo)
+
+### Princípio: Zero Fricção Inicial
+
+**Usuários começam conversando ANTES de se cadastrar, aumentando drasticamente a conversão.**
+
+### Jornada do Visitante ao Lead Qualificado
+
+#### Fase 1: Início Anônimo (0 fricção)
+
+1. **Visitante acessa a homepage**
+   - Vê CTA claro: "Comece Agora - É Grátis" ou "Conte seu Problema"
+   - Não precisa criar conta
+
+2. **Clica e inicia conversa**
+   - Chat abre instantaneamente (modal/sheet)
+   - Sistema gera `sessionId` único
+   - Armazena em cookie/localStorage
+   - Status: `ACTIVE`
+
+3. **Conversa com IA**
+   - Visitante descreve o problema livremente
+   - IA responde e faz perguntas qualificadoras:
+     - Entende o problema
+     - Classifica especialidade
+     - Avalia urgência e complexidade
+     - Captura localização (cidade/estado)
+   - Tudo armazenado em `AnonymousSession.mensagens[]`
+
+#### Fase 2: Qualificação e Captura (3-5 mensagens)
+
+4. **IA detecta momento ideal**
+   - Usuário enviou 3+ mensagens
+   - Problema bem entendido
+   - Especialidade identificada
+   - Localização capturada
+   - Matches potenciais estimados
+
+5. **Solicita dados de contato**
+   ```
+   "Encontrei 5 advogados especializados em [área]
+    na região de [cidade]!
+
+    Para conectar você com eles, preciso de:
+
+    📧 Seu email
+    📱 Nome completo
+    📞 Telefone (opcional)"
+   ```
+
+#### Fase 3: Conversão de Lead
+
+6. **Visitante fornece dados**
+   - Sistema valida email (formato real)
+   - Cria usuário com `status = PRE_ACTIVE`:
+     ```typescript
+     {
+       email: "usuario@email.com",
+       name: "João Silva",
+       phone: "11999999999",
+       role: "CIDADAO",
+       status: "PRE_ACTIVE",
+       password: null, // ainda não tem
+       emailVerified: null,
+       activationToken: "token_único",
+       activationExpires: now() + 48h
+     }
+     ```
+
+7. **Cria caso automaticamente**
+   ```typescript
+   {
+     cidadaoId: cidadao.id,
+     descricao: "Transcrição completa do chat",
+     descricaoIA: "Resumo gerado pela IA",
+     especialidadeId: "detectada_pela_ia",
+     urgencia: "ALTA/NORMAL/BAIXA",
+     status: "PENDENTE_ATIVACAO", // novo status
+     sessionId: "abc123" // referência da sessão
+   }
+   ```
+
+8. **Atualiza sessão anônima**
+   ```typescript
+   {
+     status: "CONVERTED",
+     convertedToUserId: user.id,
+     convertedToCasoId: caso.id
+   }
+   ```
+
+#### Fase 4: Ativação via Email
+
+9. **Sistema envia email de ativação**
+   ```
+   Assunto: Complete seu cadastro - LegalConnect
+
+   Olá João!
+
+   Identificamos 5 advogados especializados em
+   [área] na região de [cidade] para seu caso:
+
+   📋 Seu problema: [resumo]
+   ⚡ Urgência: Alta
+
+   Para conectar você com os advogados, confirme
+   seu email e crie uma senha:
+
+   [Ativar Minha Conta] ← link com token
+
+   Este link expira em 48 horas.
+   ```
+
+10. **Usuário clica no link**
+    - Redireciona para `/ativar-conta?token=xxx`
+    - Mostra formulário:
+      ```
+      Bem-vindo, João!
+
+      Crie uma senha para sua conta:
+
+      Senha: [________]
+      Confirmar: [________]
+
+      [Ativar e Ver Advogados]
+      ```
+
+11. **Usuário ativa a conta**
+    - Valida token (não expirado, um uso só)
+    - Cria hash da senha com bcrypt
+    - Atualiza usuário:
+      ```typescript
+      {
+        status: "ACTIVE",
+        emailVerified: now(),
+        password: hash(senha),
+        activationToken: null
+      }
+      ```
+    - Atualiza caso:
+      ```typescript
+      {
+        status: "ABERTO" // agora pode distribuir
+      }
+      ```
+    - Faz login automático (cria sessão NextAuth)
+    - Redireciona para `/cidadao/dashboard`
+
+#### Fase 5: Distribuição Automática
+
+12. **Sistema executa matching**
+    - Busca advogados compatíveis
+    - Cria até 5 matches
+    - Notifica advogados
+    - Cidadão vê no dashboard: "Seu caso foi enviado!"
+
+### Diagrama de Fluxo
+
+```
+VISITANTE (anônimo)
+    ↓
+Clica "Comece Agora"
+    ↓
+CHAT ANÔNIMO ABRE
+    ↓
+Conversa com IA (3-5 msgs)
+    ↓
+IA detecta momento ideal
+    ↓
+SOLICITA EMAIL + NOME
+    ↓
+Visitante fornece dados
+    ↓
+┌─────────────────────────────┐
+│ Sistema cria:               │
+│ • User (PRE_ACTIVE)         │
+│ • Cidadao                   │
+│ • Caso (PENDENTE_ATIVACAO)  │
+└─────────────────────────────┘
+    ↓
+EMAIL DE ATIVAÇÃO ENVIADO
+    ↓
+Usuário clica no link
+    ↓
+CRIA SENHA
+    ↓
+┌─────────────────────────────┐
+│ Sistema atualiza:           │
+│ • User (ACTIVE)             │
+│ • Caso (ABERTO)             │
+│ • Login automático          │
+└─────────────────────────────┘
+    ↓
+DASHBOARD DO CIDADÃO
+    ↓
+Sistema distribui matches
+    ↓
+ADVOGADOS RECEBEM
+```
+
+### Estados da Sessão Anônima
+
+```
+AnonymousSession.status:
+
+ACTIVE      → Conversando ativamente
+CONVERTED   → Virou usuário + caso
+ABANDONED   → 7 dias sem atividade
+EXPIRED     → Passou do prazo (7 dias)
+```
+
+### Estados do Usuário
+
+```
+User.status:
+
+PRE_ACTIVE  → Criado, aguardando ativação
+ACTIVE      → Email verificado, funcionando
+SUSPENDED   → Suspenso por admin
+DELETED     → Deletado (soft delete)
+```
+
+### Estados do Caso
+
+```
+Caso.status:
+
+PENDENTE_ATIVACAO → Aguardando ativação do usuário (NOVO)
+ABERTO            → Ativo e sendo distribuído
+EM_ANDAMENTO      → Advogado aceitou
+FECHADO           → Resolvido
+CANCELADO         → Cancelado
+```
+
+### Vantagens deste Fluxo
+
+**Para o Usuário:**
+- ✅ Zero fricção - começa conversando
+- ✅ Não precisa entender categorias jurídicas
+- ✅ IA guia e qualifica automaticamente
+- ✅ Só fornece dados quando engajado (3-5 msgs)
+- ✅ Email de ativação evita spam/bots
+
+**Para o Negócio:**
+- ✅ Taxa de conversão 3-5x maior
+- ✅ Leads mais qualificados (já conversaram)
+- ✅ Menos abandono no cadastro
+- ✅ Dados ricos sobre o problema
+- ✅ Email verificado garantido
+
+**Para os Advogados:**
+- ✅ Recebem casos com contexto completo
+- ✅ Histórico da conversa disponível
+- ✅ Leads já qualificados e engajados
+- ✅ Maior taxa de conversão em clientes
 
 ---
 
@@ -17,10 +276,9 @@
 
 ### Processo Detalhado
 
-1. **Cidadão cria um caso**
-   - Descreve seu problema jurídico
-   - IA analisa e classifica (especialidade, urgência, complexidade)
-   - Status inicial: `ABERTO`
+1. **Caso fica ABERTO** (após ativação do cidadão)
+   - IA já analisou e classificou durante chat anônimo
+   - Status: `ABERTO`
 
 2. **Sistema cria matches automaticamente**
    - Busca advogados compatíveis baseado em:
