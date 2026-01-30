@@ -47,9 +47,9 @@ export class CaseDistributionService {
     console.log(`[Distribution] Localização: ${caso.cidadaos.cidade}, ${caso.cidadaos.estado}`)
 
     // Buscar configurações
-    const maxMatches = await ConfigService.getNumber('max_matches_per_caso', 5)
-    const minScore = await ConfigService.getNumber('min_match_score', 60)
-    const expirationHours = await ConfigService.getNumber('match_expiration_hours', 48)
+    const maxMatches = await ConfigService.get<number>('max_matches_per_caso', 5)
+    const minScore = await ConfigService.get<number>('min_match_score', 60)
+    const expirationHours = await ConfigService.get<number>('match_expiration_hours', 48)
 
     // Buscar advogados compatíveis
     const advogadosCompativeis = await this.findCompatibleLawyers(caso, minScore)
@@ -310,7 +310,7 @@ export class CaseDistributionService {
    * Executado por cron job
    */
   static async expireOldMatches(): Promise<number> {
-    const autoExpire = await ConfigService.getBoolean('auto_expire_matches', true)
+    const autoExpire = await ConfigService.get<boolean>('auto_expire_matches', true)
 
     if (!autoExpire) {
       return 0

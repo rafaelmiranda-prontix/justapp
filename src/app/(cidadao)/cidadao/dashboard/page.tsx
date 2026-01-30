@@ -31,10 +31,10 @@ interface Match {
   score: number
   status: 'PENDENTE' | 'VISUALIZADO' | 'ACEITO' | 'RECUSADO' | 'CONTRATADO' | 'EXPIRADO'
   enviadoEm: string
-  advogado: {
+  advogados: {
     id: string
     fotoUrl: string | null
-    user: {
+    users: {
       name: string
     }
   }
@@ -282,15 +282,15 @@ export default function CidadaoDashboardPage() {
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-10 w-10">
                                   <AvatarImage
-                                    src={match.advogado.fotoUrl || undefined}
-                                    alt={match.advogado.user.name}
+                                    src={match.advogados.fotoUrl || undefined}
+                                    alt={match.advogados.users.name}
                                   />
                                   <AvatarFallback>
-                                    {getInitials(match.advogado.user.name)}
+                                    {getInitials(match.advogados.users.name)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <p className="font-medium text-sm">{match.advogado.user.name}</p>
+                                  <p className="font-medium text-sm">{match.advogados.users.name}</p>
                                   <p className="text-xs text-muted-foreground">
                                     {match.score}% compatibilidade
                                   </p>
