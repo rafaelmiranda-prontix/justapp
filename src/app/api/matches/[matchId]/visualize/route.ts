@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { matchId: string } }
+  { params }: { params: Promise<{ matchId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -21,7 +21,7 @@ export async function POST(
       )
     }
 
-    const { matchId } = params
+    const { matchId } = await params
 
     // Buscar match
     const match = await prisma.matches.findUnique({

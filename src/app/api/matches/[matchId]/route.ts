@@ -8,7 +8,7 @@ const updateMatchSchema = z.object({
   status: z.enum(['ACEITO', 'RECUSADO']),
 })
 
-export async function PATCH(req: Request, { params }: { params: { matchId: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ matchId: string }> }) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -16,12 +16,13 @@ export async function PATCH(req: Request, { params }: { params: { matchId: strin
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
     }
 
+    const { matchId } = await params
     const body = await req.json()
     const { status } = updateMatchSchema.parse(body)
 
     // Busca o match
     const match = await prisma.matches.findUnique({
-      where: { id: params.matchId },
+      where: { id: matchId },
       include: {
         advogados: {
           include: {
@@ -42,7 +43,7 @@ export async function PATCH(req: Request, { params }: { params: { matchId: strin
 
     // Atualiza o match
     const updatedMatch = await prisma.matches.update({
-      where: { id: params.matchId },
+      where: { id: matchId },
       data: {
         status,
         respondidoEm: status === 'ACEITO' || status === 'RECUSADO' ? new Date() : match.respondidoEm,

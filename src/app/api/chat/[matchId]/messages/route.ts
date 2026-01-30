@@ -9,7 +9,7 @@ import { ChatService } from '@/lib/chat.service'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { matchId: string } }
+  { params }: { params: Promise<{ matchId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,7 +18,7 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 })
     }
 
-    const { matchId } = params
+    const { matchId } = await params
     const searchParams = request.nextUrl.searchParams
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
@@ -62,7 +62,7 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { matchId: string } }
+  { params }: { params: Promise<{ matchId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -71,7 +71,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 })
     }
 
-    const { matchId } = params
+    const { matchId } = await params
     const body = await request.json()
     const { conteudo, anexoUrl } = body
 

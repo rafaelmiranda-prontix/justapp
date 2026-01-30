@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { ChatWindow } from '@/components/chat/chat-window'
@@ -10,16 +10,16 @@ import Link from 'next/link'
 
 interface Match {
   id: string
-  advogado: {
-    user: {
+  advogados: {
+    users: {
       id: string
       name: string
       image: string | null
     }
   }
-  caso: {
-    cidadao: {
-      user: {
+  casos: {
+    cidadaos: {
+      users: {
         id: string
         name: string
         image: string | null
@@ -28,7 +28,8 @@ interface Match {
   }
 }
 
-export default function AdvogadoChatPage({ params }: { params: { matchId: string } }) {
+export default function AdvogadoChatPage({ params }: { params: Promise<{ matchId: string }> }) {
+  const { matchId } = use(params)
   const { data: session, status } = useSession()
   const router = useRouter()
   const [match, setMatch] = useState<Match | null>(null)
@@ -40,7 +41,7 @@ export default function AdvogadoChatPage({ params }: { params: { matchId: string
     } else if (status === 'authenticated') {
       fetchMatch()
     }
-  }, [status])
+  }, [status, matchId])
 
   const fetchMatch = async () => {
     try {
@@ -48,7 +49,7 @@ export default function AdvogadoChatPage({ params }: { params: { matchId: string
       const result = await res.json()
 
       if (result.success) {
-        const foundMatch = result.data.find((m: Match) => m.id === params.matchId)
+        const foundMatch = result.data.find((m: Match) => m.id === matchId)
         if (foundMatch) {
           setMatch(foundMatch)
         } else {
@@ -79,7 +80,7 @@ export default function AdvogadoChatPage({ params }: { params: { matchId: string
   }
 
   const otherUser =
-    session.user.role === 'CIDADAO' ? match.advogado.user : match.caso.cidadao.user
+    session.user.role === 'CIDADAO' ? match.advogados.users : match.casos.cidadaos.users
 
   return (
     <div className="container max-w-4xl py-8">
@@ -92,7 +93,7 @@ export default function AdvogadoChatPage({ params }: { params: { matchId: string
       </Link>
 
       <ChatWindow
-        matchId={params.matchId}
+        matchId={matchId}
         currentUserId={session.user.id}
         otherUser={{
           name: otherUser.name,

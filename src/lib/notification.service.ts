@@ -13,7 +13,7 @@ export class NotificationService {
    * Notifica advogado sobre novo match criado
    */
   static async notifyLawyerNewMatch(matchId: string): Promise<void> {
-    const shouldNotify = await ConfigService.getBoolean('notify_match_created', true)
+    const shouldNotify = await ConfigService.shouldNotifyMatchCreated()
     if (!shouldNotify) return
 
     const match = await prisma.matches.findUnique({
@@ -21,14 +21,14 @@ export class NotificationService {
       include: {
         advogados: {
           include: {
-            user: true,
+            users: true,
           },
         },
         casos: {
           include: {
             cidadaos: {
               include: {
-                user: true,
+                users: true,
               },
             },
             especialidades: true,
@@ -45,12 +45,12 @@ export class NotificationService {
     try {
       await resend.emails.send({
         from: process.env.EMAIL_FROM || 'LegalConnect <noreply@legalconnect.com>',
-        to: advogado.user.email,
-        subject: `Novo Caso: ${caso.especialidade?.nome || 'Consulta Jurídica'}`,
+        to: advogado.users.email,
+        subject: `Novo Caso: ${caso.especialidades?.nome || 'Consulta Jurídica'}`,
         html: this.getNewMatchEmailTemplate(match, advogado, caso),
       })
 
-      console.log(`[Notification] New match email sent to ${advogado.user.email}`)
+      console.log(`[Notification] New match email sent to ${advogado.users.email}`)
     } catch (error) {
       console.error('[Notification] Failed to send new match email:', error)
       // Não lança erro - notificação não deve impedir o fluxo
@@ -61,22 +61,22 @@ export class NotificationService {
    * Notifica cidadão que advogado aceitou o caso
    */
   static async notifyCitizenMatchAccepted(matchId: string): Promise<void> {
-    const shouldNotify = await ConfigService.getBoolean('notify_match_accepted', true)
+    const shouldNotify = await ConfigService.shouldNotifyMatchAccepted()
     if (!shouldNotify) return
 
     const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
-        advogado: {
+        advogados: {
           include: {
-            user: true,
+            users: true,
           },
         },
-        caso: {
+        casos: {
           include: {
-            cidadao: {
+            cidadaos: {
               include: {
-                user: true,
+                users: true,
               },
             },
           },
@@ -87,17 +87,17 @@ export class NotificationService {
     if (!match) return
 
     const cidadao = match.casos.cidadaos
-    const advogado = match.advogado
+    const advogado = match.advogados
 
     try {
       await resend.emails.send({
         from: process.env.EMAIL_FROM || 'LegalConnect <noreply@legalconnect.com>',
-        to: cidadao.user.email,
+        to: cidadao.users.email,
         subject: 'Um advogado aceitou seu caso! 🎉',
         html: this.getMatchAcceptedEmailTemplate(match, cidadao, advogado),
       })
 
-      console.log(`[Notification] Match accepted email sent to ${cidadao.user.email}`)
+      console.log(`[Notification] Match accepted email sent to ${cidadao.users.email}`)
     } catch (error) {
       console.error('[Notification] Failed to send match accepted email:', error)
     }
@@ -149,7 +149,7 @@ export class NotificationService {
    * Template de email para novo match
    */
   private static getNewMatchEmailTemplate(match: any, advogado: any, caso: any): string {
-    const firstName = advogado.user.name.split(' ')[0]
+    const firstName = advogado.users.name.split(' ')[0]
     const matchUrl = `${process.env.NEXTAUTH_URL}/advogado/dashboard`
     const expiresDate = match.expiresAt
       ? new Date(match.expiresAt).toLocaleDateString('pt-BR', {
@@ -202,13 +202,13 @@ export class NotificationService {
                       <tr>
                         <td style="padding: 8px 0;">
                           <strong style="color: #374151;">📂 Área:</strong>
-                          <span style="color: #6b7280; margin-left: 8px;">${caso.especialidade?.nome || 'Não especificada'}</span>
+                          <span style="color: #6b7280; margin-left: 8px;">${caso.especialidades?.nome || 'Não especificada'}</span>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding: 8px 0;">
                           <strong style="color: #374151;">📍 Localização:</strong>
-                          <span style="color: #6b7280; margin-left: 8px;">${caso.cidadao.cidade || 'Não especificada'}, ${caso.cidadao.estado || ''}</span>
+                          <span style="color: #6b7280; margin-left: 8px;">${caso.cidadaos.cidade || 'Não especificada'}, ${caso.cidadaos.estado || ''}</span>
                         </td>
                       </tr>
                       <tr>
@@ -293,7 +293,7 @@ export class NotificationService {
     cidadao: any,
     advogado: any
   ): string {
-    const firstName = cidadao.user.name.split(' ')[0]
+    const firstName = cidadao.users.name.split(' ')[0]
     const dashboardUrl = `${process.env.NEXTAUTH_URL}/cidadao/dashboard`
 
     return `
@@ -319,7 +319,7 @@ export class NotificationService {
             <td style="padding: 40px;">
               <h3 style="color: #1f2937; margin: 0 0 16px 0; font-size: 20px;">Olá, ${firstName}!</h3>
               <p style="color: #4b5563; margin: 0 0 24px 0; line-height: 1.6;">
-                <strong>${advogado.user.name}</strong> aceitou seu caso e está pronto para ajudar!
+                <strong>${advogado.users.name}</strong> aceitou seu caso e está pronto para ajudar!
               </p>
 
               <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 4px; margin-bottom: 24px;">

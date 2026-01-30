@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { ConfigService } from '@/lib/config-service'
+import { nanoid } from 'nanoid'
 
 /**
  * Serviço de Chat
@@ -35,16 +36,16 @@ export class ChatService {
     const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
-        advogado: {
+        advogados: {
           include: {
-            user: true,
+            users: true,
           },
         },
-        caso: {
+        casos: {
           include: {
-            cidadao: {
+            cidadaos: {
               include: {
-                user: true,
+                users: true,
               },
             },
           },
@@ -65,13 +66,10 @@ export class ChatService {
     }
 
     // REGRA: Chat só liberado após match ser ACEITO
-    const chatOnlyAfterAccept = await ConfigService.getBoolean('chat_only_after_accept', true)
+    const chatOnlyAfterAccept = await ConfigService.isChatOnlyAfterAccept()
 
     if (chatOnlyAfterAccept && match.status !== 'ACEITO' && match.status !== 'CONTRATADO') {
-      // Advogado pode enviar mensagem inicial antes de aceitar (opcional)
-      if (isAdvogado && match.status === 'VISUALIZADO') {
-        // Permitir
-      } else if (isCidadao) {
+      if (isCidadao) {
         return {
           success: false,
           error: 'Chat será liberado quando o advogado aceitar o caso',
@@ -97,6 +95,7 @@ export class ChatService {
     // Criar mensagem
     const mensagem = await prisma.mensagens.create({
       data: {
+        id: nanoid(),
         matchId,
         remetenteId,
         conteudo: conteudo.trim(),
@@ -104,11 +103,11 @@ export class ChatService {
         lida: false,
       },
       include: {
-        match: {
+        matches: {
           include: {
-            advogado: {
+            advogados: {
               include: {
-                user: {
+                users: {
                   select: {
                     id: true,
                     name: true,
@@ -117,11 +116,11 @@ export class ChatService {
                 },
               },
             },
-            caso: {
+            casos: {
               include: {
-                cidadao: {
+                cidadaos: {
                   include: {
-                    user: {
+                    users: {
                       select: {
                         id: true,
                         name: true,
@@ -167,16 +166,16 @@ export class ChatService {
     const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
-        advogado: {
+        advogados: {
           include: {
-            user: true,
+            users: true,
           },
         },
-        caso: {
+        casos: {
           include: {
-            cidadao: {
+            cidadaos: {
               include: {
-                user: true,
+                users: true,
               },
             },
           },
@@ -268,7 +267,7 @@ export class ChatService {
     canSend: boolean
     error?: string
   }> {
-    const maxSizeMB = await ConfigService.getNumber('max_attachment_size_mb', 20)
+    const maxSizeMB = await ConfigService.getMaxAttachmentSizeMb()
     const maxSizeBytes = maxSizeMB * 1024 * 1024
 
     if (fileSize > maxSizeBytes) {
@@ -301,7 +300,7 @@ export class ChatService {
     const match = await prisma.matches.findFirst({
       where: {
         advogadoId: advogado.id,
-        caso: {
+        casos: {
           cidadaoId: cidadao.id,
         },
         status: {

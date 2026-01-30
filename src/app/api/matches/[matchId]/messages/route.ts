@@ -10,7 +10,7 @@ const createMessageSchema = z.object({
 })
 
 // GET - Lista mensagens de um match
-export async function GET(req: Request, { params }: { params: { matchId: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ matchId: string }> }) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -18,9 +18,11 @@ export async function GET(req: Request, { params }: { params: { matchId: string 
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { matchId } = await params
+
     // Busca o match para verificar autorização
     const match = await prisma.matches.findUnique({
-      where: { id: params.matchId },
+      where: { id: matchId },
       include: {
         advogados: {
           include: { users: true },
@@ -49,7 +51,7 @@ export async function GET(req: Request, { params }: { params: { matchId: string 
 
     // Busca as mensagens
     const mensagens = await prisma.mensagens.findMany({
-      where: { matchId: params.matchId },
+      where: { matchId },
       include: {
         remetente: {
           select: {
@@ -85,7 +87,7 @@ export async function GET(req: Request, { params }: { params: { matchId: string 
 }
 
 // POST - Cria nova mensagem
-export async function POST(req: Request, { params }: { params: { matchId: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ matchId: string }> }) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -93,12 +95,13 @@ export async function POST(req: Request, { params }: { params: { matchId: string
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { matchId } = await params
     const body = await req.json()
     const { conteudo, anexoUrl } = createMessageSchema.parse(body)
 
     // Busca o match para verificar autorização
     const match = await prisma.matches.findUnique({
-      where: { id: params.matchId },
+      where: { id: matchId },
       include: {
         advogados: {
           include: { users: true },
@@ -136,7 +139,7 @@ export async function POST(req: Request, { params }: { params: { matchId: string
     // Rate limiting simples - verifica mensagens recentes do usuário
     const recentMessages = await prisma.mensagens.count({
       where: {
-        matchId: params.matchId,
+        matchId,
         remetenteId: session.user.id,
         criadoEm: {
           gte: new Date(Date.now() - 60000), // Últimos 60 segundos
@@ -154,7 +157,7 @@ export async function POST(req: Request, { params }: { params: { matchId: string
     // Cria a mensagem
     const mensagem = await prisma.mensagens.create({
       data: {
-        matchId: params.matchId,
+        matchId,
         remetenteId: session.user.id,
         conteudo,
         anexoUrl,
