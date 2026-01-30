@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { EmailService } from '@/lib/email.service'
+import { CaseDistributionService } from '@/lib/case-distribution.service'
+import { NotificationService } from '@/lib/notification.service'
 import { hash } from 'bcrypt'
 
 /**
@@ -99,6 +101,36 @@ export async function POST(request: NextRequest) {
     console.log(
       `[Activate] Cases activated: ${user.cidadao?.casos.length || 0} case(s) moved to ABERTO`
     )
+
+    // Distribuir casos para advogados (em background)
+    if (user.cidadao && user.cidadao.casos.length > 0) {
+      // Disparar distribuição para cada caso ativado
+      for (const caso of user.cidadao.casos) {
+        CaseDistributionService.distributeCase(caso.id)
+          .then(async (result) => {
+            console.log(
+              `[Activate] Case ${caso.id} distributed: ${result.matchesCreated} matches created`
+            )
+
+            // Notificar advogados sobre matches criados
+            const matches = await prisma.match.findMany({
+              where: {
+                casoId: caso.id,
+                status: 'PENDENTE',
+              },
+            })
+
+            for (const match of matches) {
+              NotificationService.notifyLawyerNewMatch(match.id).catch((err) =>
+                console.error('[Activate] Notification failed:', err)
+              )
+            }
+          })
+          .catch((err) => {
+            console.error(`[Activate] Distribution failed for case ${caso.id}:`, err)
+          })
+      }
+    }
 
     // Enviar email de boas-vindas (não espera completar)
     EmailService.sendWelcomeEmail(user.email, user.name).catch((err) =>

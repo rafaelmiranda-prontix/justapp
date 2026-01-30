@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/expire-matches",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/reset-lead-counters",
+      "schedule": "0 0 1 * *"
+    }
+  ]
+}
