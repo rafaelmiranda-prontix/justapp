@@ -19,19 +19,19 @@ export class NotificationService {
     const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
-        advogado: {
+        advogados: {
           include: {
             user: true,
           },
         },
-        caso: {
+        casos: {
           include: {
-            cidadao: {
+            cidadaos: {
               include: {
                 user: true,
               },
             },
-            especialidade: true,
+            especialidades: true,
           },
         },
       },
@@ -39,8 +39,8 @@ export class NotificationService {
 
     if (!match) return
 
-    const advogado = match.advogado
-    const caso = match.caso
+    const advogado = match.advogados
+    const caso = match.casos
 
     try {
       await resend.emails.send({
@@ -86,7 +86,7 @@ export class NotificationService {
 
     if (!match) return
 
-    const cidadao = match.caso.cidadao
+    const cidadao = match.casos.cidadaos
     const advogado = match.advogado
 
     try {
@@ -134,12 +134,12 @@ export class NotificationService {
     try {
       await resend.emails.send({
         from: process.env.EMAIL_FROM || 'LegalConnect <noreply@legalconnect.com>',
-        to: match.advogado.user.email,
+        to: match.advogados.user.email,
         subject: `⏰ Caso expira em ${hoursLeft}h`,
         html: this.getMatchExpiringEmailTemplate(match, hoursLeft),
       })
 
-      console.log(`[Notification] Match expiring email sent to ${match.advogado.user.email}`)
+      console.log(`[Notification] Match expiring email sent to ${match.advogados.user.email}`)
     } catch (error) {
       console.error('[Notification] Failed to send match expiring email:', error)
     }

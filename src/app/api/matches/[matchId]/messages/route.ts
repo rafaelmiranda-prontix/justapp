@@ -22,12 +22,12 @@ export async function GET(req: Request, { params }: { params: { matchId: string 
     const match = await prisma.matches.findUnique({
       where: { id: params.matchId },
       include: {
-        advogado: {
+        advogados: {
           include: { user: true },
         },
-        caso: {
+        casos: {
           include: {
-            cidadao: {
+            cidadaos: {
               include: { user: true },
             },
           },
@@ -40,8 +40,8 @@ export async function GET(req: Request, { params }: { params: { matchId: string 
     }
 
     // Verifica se o usuário é parte do match
-    const isAdvogado = match.advogado.userId === session.user.id
-    const isCidadao = match.caso.cidadao.userId === session.user.id
+    const isAdvogado = match.advogados.userId === session.user.id
+    const isCidadao = match.casos.cidadaos.userId === session.user.id
 
     if (!isAdvogado && !isCidadao) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
@@ -100,12 +100,12 @@ export async function POST(req: Request, { params }: { params: { matchId: string
     const match = await prisma.matches.findUnique({
       where: { id: params.matchId },
       include: {
-        advogado: {
+        advogados: {
           include: { user: true },
         },
-        caso: {
+        casos: {
           include: {
-            cidadao: {
+            cidadaos: {
               include: { user: true },
             },
           },
@@ -126,8 +126,8 @@ export async function POST(req: Request, { params }: { params: { matchId: string
     }
 
     // Verifica se o usuário é parte do match
-    const isAdvogado = match.advogado.userId === session.user.id
-    const isCidadao = match.caso.cidadao.userId === session.user.id
+    const isAdvogado = match.advogados.userId === session.user.id
+    const isCidadao = match.casos.cidadaos.userId === session.user.id
 
     if (!isAdvogado && !isCidadao) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })

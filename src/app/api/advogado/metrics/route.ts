@@ -26,9 +26,9 @@ export async function GET() {
         advogadoId: advogado.id,
       },
       include: {
-        caso: {
+        casos: {
           include: {
-            especialidade: {
+            especialidades: {
               select: {
                 nome: true,
               },
@@ -79,7 +79,7 @@ export async function GET() {
     // Leads por especialidade
     const leadsPorEspecialidade = matches.reduce((acc, match) => {
       const especialidade =
-        match.caso.especialidade?.nome || 'Sem especialidade'
+        match.casos.especialidades?.nome || 'Sem especialidade'
       acc[especialidade] = (acc[especialidade] || 0) + 1
       return acc
     }, {} as Record<string, number>)
@@ -87,7 +87,7 @@ export async function GET() {
     // Taxa de aceitação por especialidade
     const aceitacaoPorEspecialidade = matches.reduce((acc, match) => {
       const especialidade =
-        match.caso.especialidade?.nome || 'Sem especialidade'
+        match.casos.especialidades?.nome || 'Sem especialidade'
       if (!acc[especialidade]) {
         acc[especialidade] = { total: 0, aceitos: 0 }
       }

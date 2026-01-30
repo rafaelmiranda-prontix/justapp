@@ -29,7 +29,7 @@ export async function POST(
     const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
-        advogado: {
+        advogados: {
           include: {
             user: true,
           },
@@ -45,7 +45,7 @@ export async function POST(
     }
 
     // Verificar se o advogado logado é o dono do match
-    if (match.advogado.userId !== session.user.id) {
+    if (match.advogados.userId !== session.user.id) {
       return NextResponse.json(
         { success: false, error: 'Você não tem permissão para recusar este match' },
         { status: 403 }
@@ -69,7 +69,7 @@ export async function POST(
       },
     })
 
-    console.log(`[Match] Match ${matchId} rejected by lawyer ${match.advogado.id}`)
+    console.log(`[Match] Match ${matchId} rejected by lawyer ${match.advogados.id}`)
     if (motivo) {
       console.log(`[Match] Rejection reason: ${motivo}`)
     }

@@ -57,8 +57,8 @@ export class ChatService {
     }
 
     // Verificar se remetente faz parte do match
-    const isCidadao = match.caso.cidadao.userId === remetenteId
-    const isAdvogado = match.advogado.userId === remetenteId
+    const isCidadao = match.casos.cidadaos.userId === remetenteId
+    const isAdvogado = match.advogados.userId === remetenteId
 
     if (!isCidadao && !isAdvogado) {
       return { success: false, error: 'Você não tem permissão para enviar mensagens neste chat' }
@@ -189,8 +189,8 @@ export class ChatService {
     }
 
     // Verificar se usuário faz parte do match
-    const isCidadao = match.caso.cidadao.userId === userId
-    const isAdvogado = match.advogado.userId === userId
+    const isCidadao = match.casos.cidadaos.userId === userId
+    const isAdvogado = match.advogados.userId === userId
 
     if (!isCidadao && !isAdvogado) {
       return { success: false, error: 'Você não tem permissão para ver este chat' }

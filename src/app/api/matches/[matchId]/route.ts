@@ -23,7 +23,7 @@ export async function PATCH(req: Request, { params }: { params: { matchId: strin
     const match = await prisma.matches.findUnique({
       where: { id: params.matchId },
       include: {
-        advogado: {
+        advogados: {
           include: {
             user: true,
           },
@@ -36,7 +36,7 @@ export async function PATCH(req: Request, { params }: { params: { matchId: strin
     }
 
     // Verifica se o advogado é o dono do match
-    if (match.advogado.userId !== session.user.id) {
+    if (match.advogados.userId !== session.user.id) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
     }
 

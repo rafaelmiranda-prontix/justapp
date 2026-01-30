@@ -162,22 +162,22 @@ export async function GET(req: Request) {
 
       matches = await prisma.matches.findMany({
         where: {
-          caso: {
+          casos: {
             cidadaoId: cidadao.id,
           },
         },
         include: {
-          advogado: {
+          advogados: {
             include: {
               user: true,
-              especialidades: {
+              advogado_especialidades: {
                 include: {
-                  especialidade: true,
+                  especialidades: true,
                 },
               },
             },
           },
-          caso: true,
+          casos: true,
           mensagens: {
             orderBy: {
               createdAt: 'desc',
@@ -203,14 +203,14 @@ export async function GET(req: Request) {
           advogadoId: advogado.id,
         },
         include: {
-          caso: {
+          casos: {
             include: {
-              cidadao: {
+              cidadaos: {
                 include: {
                   user: true,
                 },
               },
-              especialidade: true,
+              especialidades: true,
             },
           },
           mensagens: {

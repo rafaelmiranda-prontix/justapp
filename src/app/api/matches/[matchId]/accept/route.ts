@@ -28,12 +28,12 @@ export async function POST(
     const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
-        advogado: {
+        advogados: {
           include: {
             user: true,
           },
         },
-        caso: true,
+        casos: true,
       },
     })
 
@@ -45,7 +45,7 @@ export async function POST(
     }
 
     // Verificar se o advogado logado é o dono do match
-    if (match.advogado.userId !== session.user.id) {
+    if (match.advogados.userId !== session.user.id) {
       return NextResponse.json(
         { success: false, error: 'Você não tem permissão para aceitar este match' },
         { status: 403 }
@@ -105,7 +105,7 @@ export async function POST(
       return updated
     })
 
-    console.log(`[Match] Match ${matchId} accepted by lawyer ${match.advogado.id}`)
+    console.log(`[Match] Match ${matchId} accepted by lawyer ${match.advogados.id}`)
 
     // Notificar cidadão (em background)
     NotificationService.notifyCitizenMatchAccepted(matchId).catch((err) =>
