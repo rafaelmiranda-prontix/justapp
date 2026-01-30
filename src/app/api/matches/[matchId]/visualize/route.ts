@@ -24,7 +24,7 @@ export async function POST(
     const { matchId } = params
 
     // Buscar match
-    const match = await prisma.match.findUnique({
+    const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
         advogado: {
@@ -63,7 +63,7 @@ export async function POST(
     }
 
     // Atualizar para VISUALIZADO
-    const updatedMatch = await prisma.match.update({
+    const updatedMatch = await prisma.matches.update({
       where: { id: matchId },
       data: {
         status: 'VISUALIZADO',

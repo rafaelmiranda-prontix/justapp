@@ -32,7 +32,7 @@ export class ChatService {
     }
 
     // Buscar match com detalhes
-    const match = await prisma.match.findUnique({
+    const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
         advogado: {
@@ -95,7 +95,7 @@ export class ChatService {
     }
 
     // Criar mensagem
-    const mensagem = await prisma.mensagem.create({
+    const mensagem = await prisma.mensagens.create({
       data: {
         matchId,
         remetenteId,
@@ -164,7 +164,7 @@ export class ChatService {
     const { matchId, userId, limit = 50, offset = 0 } = data
 
     // Buscar match para validar permissões
-    const match = await prisma.match.findUnique({
+    const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
         advogado: {
@@ -197,17 +197,17 @@ export class ChatService {
     }
 
     // Buscar mensagens
-    const mensagens = await prisma.mensagem.findMany({
+    const mensagens = await prisma.mensagens.findMany({
       where: { matchId },
       orderBy: { createdAt: 'asc' },
       take: limit,
       skip: offset,
     })
 
-    const total = await prisma.mensagem.count({ where: { matchId } })
+    const total = await prisma.mensagens.count({ where: { matchId } })
 
     // Marcar mensagens como lidas (que não são do remetente)
-    await prisma.mensagem.updateMany({
+    await prisma.mensagens.updateMany({
       where: {
         matchId,
         remetenteId: { not: userId },
@@ -224,7 +224,7 @@ export class ChatService {
    */
   static async getUnreadCount(userId: string): Promise<number> {
     // Buscar matches do usuário (como cidadão ou advogado)
-    const cidadao = await prisma.cidadao.findUnique({
+    const cidadao = await prisma.cidadaos.findUnique({
       where: { userId },
     })
 
@@ -235,7 +235,7 @@ export class ChatService {
     let matchIds: string[] = []
 
     if (cidadao) {
-      const casos = await prisma.caso.findMany({
+      const casos = await prisma.casos.findMany({
         where: { cidadaoId: cidadao.id },
         include: { matches: true },
       })
@@ -243,14 +243,14 @@ export class ChatService {
     }
 
     if (advogado) {
-      const matches = await prisma.match.findMany({
+      const matches = await prisma.matches.findMany({
         where: { advogadoId: advogado.id },
       })
       matchIds.push(...matches.map((m) => m.id))
     }
 
     // Contar mensagens não lidas que não são do próprio usuário
-    const unreadCount = await prisma.mensagem.count({
+    const unreadCount = await prisma.mensagens.count({
       where: {
         matchId: { in: matchIds },
         remetenteId: { not: userId },
@@ -288,7 +288,7 @@ export class ChatService {
     cidadaoUserId: string,
     advogadoUserId: string
   ): Promise<string | null> {
-    const cidadao = await prisma.cidadao.findUnique({
+    const cidadao = await prisma.cidadaos.findUnique({
       where: { userId: cidadaoUserId },
     })
 
@@ -298,7 +298,7 @@ export class ChatService {
 
     if (!cidadao || !advogado) return null
 
-    const match = await prisma.match.findFirst({
+    const match = await prisma.matches.findFirst({
       where: {
         advogadoId: advogado.id,
         caso: {

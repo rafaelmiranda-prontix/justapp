@@ -19,7 +19,7 @@ export async function GET(req: Request, { params }: { params: { matchId: string 
     }
 
     // Busca o match para verificar autorização
-    const match = await prisma.match.findUnique({
+    const match = await prisma.matches.findUnique({
       where: { id: params.matchId },
       include: {
         advogado: {
@@ -48,7 +48,7 @@ export async function GET(req: Request, { params }: { params: { matchId: string 
     }
 
     // Busca as mensagens
-    const mensagens = await prisma.mensagem.findMany({
+    const mensagens = await prisma.mensagens.findMany({
       where: { matchId: params.matchId },
       include: {
         remetente: {
@@ -68,7 +68,7 @@ export async function GET(req: Request, { params }: { params: { matchId: string 
       .map((m) => m.id)
 
     if (messageIdsToMarkAsRead.length > 0) {
-      await prisma.mensagem.updateMany({
+      await prisma.mensagens.updateMany({
         where: { id: { in: messageIdsToMarkAsRead } },
         data: { lido: true },
       })
@@ -97,7 +97,7 @@ export async function POST(req: Request, { params }: { params: { matchId: string
     const { conteudo, anexoUrl } = createMessageSchema.parse(body)
 
     // Busca o match para verificar autorização
-    const match = await prisma.match.findUnique({
+    const match = await prisma.matches.findUnique({
       where: { id: params.matchId },
       include: {
         advogado: {
@@ -134,7 +134,7 @@ export async function POST(req: Request, { params }: { params: { matchId: string
     }
 
     // Rate limiting simples - verifica mensagens recentes do usuário
-    const recentMessages = await prisma.mensagem.count({
+    const recentMessages = await prisma.mensagens.count({
       where: {
         matchId: params.matchId,
         remetenteId: session.user.id,
@@ -152,7 +152,7 @@ export async function POST(req: Request, { params }: { params: { matchId: string
     }
 
     // Cria a mensagem
-    const mensagem = await prisma.mensagem.create({
+    const mensagem = await prisma.mensagens.create({
       data: {
         matchId: params.matchId,
         remetenteId: session.user.id,

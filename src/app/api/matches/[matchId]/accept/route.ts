@@ -25,7 +25,7 @@ export async function POST(
     const { matchId } = params
 
     // Buscar match
-    const match = await prisma.match.findUnique({
+    const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
         advogado: {
@@ -63,7 +63,7 @@ export async function POST(
     // Verificar se expirou
     if (match.expiresAt && new Date() > match.expiresAt) {
       // Atualizar para EXPIRADO
-      await prisma.match.update({
+      await prisma.matches.update({
         where: { id: matchId },
         data: { status: 'EXPIRADO' },
       })

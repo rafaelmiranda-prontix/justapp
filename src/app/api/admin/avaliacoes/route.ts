@@ -15,7 +15,7 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get('limit') || '20')
 
     const [avaliacoes, total] = await Promise.all([
-      prisma.avaliacao.findMany({
+      prisma.avaliacoes.findMany({
         include: {
           cidadao: {
             include: {
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.avaliacao.count(),
+      prisma.avaliacoes.count(),
     ])
 
     return NextResponse.json({

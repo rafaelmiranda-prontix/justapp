@@ -21,7 +21,7 @@ export async function GET(
 
     // Busca avaliações
     const [avaliacoes, total] = await Promise.all([
-      prisma.avaliacao.findMany({
+      prisma.avaliacoes.findMany({
         where: {
           advogadoId: params.advogadoId,
         },
@@ -42,7 +42,7 @@ export async function GET(
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.avaliacao.count({
+      prisma.avaliacoes.count({
         where: {
           advogadoId: params.advogadoId,
         },
@@ -50,7 +50,7 @@ export async function GET(
     ])
 
     // Calcula estatísticas
-    const todasAvaliacoes = await prisma.avaliacao.findMany({
+    const todasAvaliacoes = await prisma.avaliacoes.findMany({
       where: {
         advogadoId: params.advogadoId,
       },

@@ -16,7 +16,7 @@ export class NotificationService {
     const shouldNotify = await ConfigService.getBoolean('notify_match_created', true)
     if (!shouldNotify) return
 
-    const match = await prisma.match.findUnique({
+    const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
         advogado: {
@@ -64,7 +64,7 @@ export class NotificationService {
     const shouldNotify = await ConfigService.getBoolean('notify_match_accepted', true)
     if (!shouldNotify) return
 
-    const match = await prisma.match.findUnique({
+    const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
         advogado: {
@@ -107,7 +107,7 @@ export class NotificationService {
    * Lembra advogado que match está prestes a expirar
    */
   static async notifyLawyerMatchExpiring(matchId: string): Promise<void> {
-    const match = await prisma.match.findUnique({
+    const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
         advogado: {

@@ -21,7 +21,7 @@ export async function GET() {
     }
 
     // Busca todos os matches do advogado
-    const matches = await prisma.match.findMany({
+    const matches = await prisma.matches.findMany({
       where: {
         advogadoId: advogado.id,
       },
@@ -99,7 +99,7 @@ export async function GET() {
     }, {} as Record<string, { total: number; aceitos: number }>)
 
     // Busca avaliações
-    const avaliacoes = await prisma.avaliacao.findMany({
+    const avaliacoes = await prisma.avaliacoes.findMany({
       where: {
         advogadoId: advogado.id,
       },

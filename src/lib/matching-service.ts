@@ -40,7 +40,7 @@ export async function findMatchingAdvogados(
   limit: number = 10
 ): Promise<AdvogadoMatch[]> {
   // Busca especialidade no banco
-  const especialidade = await prisma.especialidade.findFirst({
+  const especialidade = await prisma.especialidades.findFirst({
     where: {
       OR: [
         { nome: { contains: criteria.especialidade, mode: 'insensitive' } },

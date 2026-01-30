@@ -35,22 +35,22 @@ export async function GET() {
     // Estatísticas de casos
     const [totalCasos, casosAbertos, casosEmAndamento, casosFechados] =
       await Promise.all([
-        prisma.caso.count(),
-        prisma.caso.count({ where: { status: 'ABERTO' } }),
-        prisma.caso.count({ where: { status: 'EM_ANDAMENTO' } }),
-        prisma.caso.count({ where: { status: 'FECHADO' } }),
+        prisma.casos.count(),
+        prisma.casos.count({ where: { status: 'ABERTO' } }),
+        prisma.casos.count({ where: { status: 'EM_ANDAMENTO' } }),
+        prisma.casos.count({ where: { status: 'FECHADO' } }),
       ])
 
     // Estatísticas de matches
     const [totalMatches, matchesAceitos, matchesRecusados] = await Promise.all([
-      prisma.match.count(),
-      prisma.match.count({ where: { status: 'ACEITO' } }),
-      prisma.match.count({ where: { status: 'RECUSADO' } }),
+      prisma.matches.count(),
+      prisma.matches.count({ where: { status: 'ACEITO' } }),
+      prisma.matches.count({ where: { status: 'RECUSADO' } }),
     ])
 
     // Estatísticas de avaliações
     const [totalAvaliacoes, avaliacoesReportadas] = await Promise.all([
-      prisma.avaliacao.count(),
+      prisma.avaliacoes.count(),
       // Por enquanto não temos campo de reportado, usar 0
       0,
     ])

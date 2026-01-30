@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     const data = createAvaliacaoSchema.parse(body)
 
     // Busca o cidadão
-    const cidadao = await prisma.cidadao.findUnique({
+    const cidadao = await prisma.cidadaos.findUnique({
       where: { userId: session.user.id },
     })
 
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     }
 
     // Validação: verifica se já existe avaliação deste cidadão para este advogado
-    const existingAvaliacao = await prisma.avaliacao.findUnique({
+    const existingAvaliacao = await prisma.avaliacoes.findUnique({
       where: {
         cidadaoId_advogadoId: {
           cidadaoId: cidadao.id,
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
 
     // Validação opcional: verifica se existe match aceito entre eles
     if (data.matchId) {
-      const match = await prisma.match.findFirst({
+      const match = await prisma.matches.findFirst({
         where: {
           id: data.matchId,
           caso: {
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     }
 
     // Cria a avaliação
-    const avaliacao = await prisma.avaliacao.create({
+    const avaliacao = await prisma.avaliacoes.create({
       data: {
         cidadaoId: cidadao.id,
         advogadoId: data.advogadoId,
@@ -136,7 +136,7 @@ export async function GET(req: Request) {
     }
 
     const [avaliacoes, total] = await Promise.all([
-      prisma.avaliacao.findMany({
+      prisma.avaliacoes.findMany({
         where,
         include: {
           cidadao: {
@@ -155,7 +155,7 @@ export async function GET(req: Request) {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.avaliacao.count({ where }),
+      prisma.avaliacoes.count({ where }),
     ])
 
     return NextResponse.json({

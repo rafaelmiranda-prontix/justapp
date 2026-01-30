@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
             })
 
             // Notificar advogados sobre matches criados
-            const matches = await prisma.match.findMany({
+            const matches = await prisma.matches.findMany({
               where: {
                 casoId: caso.id,
                 status: 'PENDENTE',

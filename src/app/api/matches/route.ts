@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     const data = createMatchSchema.parse(body)
 
     // Busca o cidadao
-    const cidadao = await prisma.cidadao.findUnique({
+    const cidadao = await prisma.cidadaos.findUnique({
       where: { userId: session.user.id },
     })
 
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
     }
 
     // Verifica se já existe match entre esse caso e advogado
-    const existingMatch = await prisma.match.findUnique({
+    const existingMatch = await prisma.matches.findUnique({
       where: {
         casoId_advogadoId: {
           casoId: caso.id,
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
     }
 
     // Cria o match com score simulado (depois calcular real)
-    const match = await prisma.match.create({
+    const match = await prisma.matches.create({
       data: {
         casoId: caso.id,
         advogadoId: data.advogadoId,
@@ -152,7 +152,7 @@ export async function GET(req: Request) {
     let matches
 
     if (role === 'CIDADAO') {
-      const cidadao = await prisma.cidadao.findUnique({
+      const cidadao = await prisma.cidadaos.findUnique({
         where: { userId: session.user.id },
       })
 
@@ -160,7 +160,7 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: 'Cidadão não encontrado' }, { status: 404 })
       }
 
-      matches = await prisma.match.findMany({
+      matches = await prisma.matches.findMany({
         where: {
           caso: {
             cidadaoId: cidadao.id,
@@ -198,7 +198,7 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: 'Advogado não encontrado' }, { status: 404 })
       }
 
-      matches = await prisma.match.findMany({
+      matches = await prisma.matches.findMany({
         where: {
           advogadoId: advogado.id,
         },

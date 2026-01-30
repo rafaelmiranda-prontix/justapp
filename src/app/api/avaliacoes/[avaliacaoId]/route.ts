@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: { avaliacaoId: string } }
 ) {
   try {
-    const avaliacao = await prisma.avaliacao.findUnique({
+    const avaliacao = await prisma.avaliacoes.findUnique({
       where: { id: params.avaliacaoId },
       include: {
         cidadao: {
@@ -61,7 +61,7 @@ export async function PUT(
     const { nota, comentario } = body
 
     // Busca a avaliação
-    const avaliacao = await prisma.avaliacao.findUnique({
+    const avaliacao = await prisma.avaliacoes.findUnique({
       where: { id: params.avaliacaoId },
       include: {
         cidadao: {
@@ -85,7 +85,7 @@ export async function PUT(
     }
 
     // Atualiza a avaliação
-    const updated = await prisma.avaliacao.update({
+    const updated = await prisma.avaliacoes.update({
       where: { id: params.avaliacaoId },
       data: {
         nota: nota ?? avaliacao.nota,
@@ -115,7 +115,7 @@ export async function DELETE(
     }
 
     // Busca a avaliação
-    const avaliacao = await prisma.avaliacao.findUnique({
+    const avaliacao = await prisma.avaliacoes.findUnique({
       where: { id: params.avaliacaoId },
       include: {
         cidadao: {
@@ -139,7 +139,7 @@ export async function DELETE(
     }
 
     // Deleta a avaliação
-    await prisma.avaliacao.delete({
+    await prisma.avaliacoes.delete({
       where: { id: params.avaliacaoId },
     })
 

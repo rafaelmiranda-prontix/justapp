@@ -20,7 +20,7 @@ export async function PATCH(req: Request, { params }: { params: { matchId: strin
     const { status } = updateMatchSchema.parse(body)
 
     // Busca o match
-    const match = await prisma.match.findUnique({
+    const match = await prisma.matches.findUnique({
       where: { id: params.matchId },
       include: {
         advogado: {
@@ -41,7 +41,7 @@ export async function PATCH(req: Request, { params }: { params: { matchId: strin
     }
 
     // Atualiza o match
-    const updatedMatch = await prisma.match.update({
+    const updatedMatch = await prisma.matches.update({
       where: { id: params.matchId },
       data: {
         status,
@@ -52,7 +52,7 @@ export async function PATCH(req: Request, { params }: { params: { matchId: strin
 
     // Se aceito, atualiza o status do caso
     if (status === 'ACEITO') {
-      await prisma.caso.update({
+      await prisma.casos.update({
         where: { id: match.casoId },
         data: { status: 'EM_ANDAMENTO' },
       })

@@ -26,7 +26,7 @@ export async function POST(
     const { motivo } = body // Motivo opcional da recusa
 
     // Buscar match
-    const match = await prisma.match.findUnique({
+    const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
         advogado: {
@@ -61,7 +61,7 @@ export async function POST(
     }
 
     // Recusar match
-    const updatedMatch = await prisma.match.update({
+    const updatedMatch = await prisma.matches.update({
       where: { id: matchId },
       data: {
         status: 'RECUSADO',
