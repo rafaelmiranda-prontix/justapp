@@ -118,12 +118,14 @@ export function ChatInterfaceOptimized({
   useEffect(() => {
     const canSend = !isSending && !isUploading && (!!newMessage.trim() || !!selectedFile)
     console.log('[Chat] State update:', {
-      selectedFile: selectedFile?.name || 'null',
+      selectedFile: selectedFile ? { name: selectedFile.name, size: selectedFile.size, type: selectedFile.type } : 'null',
+      selectedFileExists: !!selectedFile,
       newMessage: newMessage.trim() || 'empty',
       isSending,
       isUploading,
       canSend,
       buttonDisabled: !canSend,
+      buttonShouldBeEnabled: canSend,
     })
   }, [selectedFile, newMessage, isSending, isUploading])
 
@@ -413,9 +415,12 @@ export function ChatInterfaceOptimized({
           <FileUpload
             matchId={matchId}
             selectedFile={selectedFile}
+            controlled={true}
             onFileSelect={(file) => {
-              console.log('[Chat] File selected:', file.name)
+              console.log('[Chat] onFileSelect called with file:', file.name, file.size)
+              console.log('[Chat] Current selectedFile before update:', selectedFile?.name || 'null')
               setSelectedFile(file)
+              console.log('[Chat] setSelectedFile called, should trigger re-render')
               setAttachmentUrl(null) // Limpar URL anterior quando novo arquivo é selecionado
             }}
             onClear={() => {

@@ -30,18 +30,19 @@ export function ChatWrapper({
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Buscar configuração do chat
-    fetch('/api/admin/chat-config')
+    // Buscar configuração do chat (API pública)
+    fetch('/api/chat/mode')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) {
+        if (data.success && data.currentMode) {
           setChatMode(data.currentMode)
         } else {
           // Fallback para MVP em caso de erro
           setChatMode('MVP')
         }
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Error fetching chat mode:', error)
         // Fallback para MVP em caso de erro
         setChatMode('MVP')
       })

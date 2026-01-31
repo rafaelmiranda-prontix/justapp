@@ -15,25 +15,65 @@ interface FileUploadProps {
   matchId?: string // ID do match para upload em bucket privado
   selectedFile?: File | null // Arquivo selecionado (controlado pelo pai)
   onClear?: () => void // Callback para limpar arquivo
+  // Flag explícita para indicar se o componente é controlado
+  controlled?: boolean
 }
 
-export function FileUpload({
-  onFileSelect,
-  onUploadError,
-  maxSize = 20 * 1024 * 1024, // 20MB
-  accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx',
-  disabled = false,
-  className,
-  matchId,
-  selectedFile: externalSelectedFile,
-  onClear,
-}: FileUploadProps) {
+export function FileUpload(props: FileUploadProps) {
+  const {
+    onFileSelect,
+    onUploadError,
+    maxSize = 20 * 1024 * 1024, // 20MB
+    accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx',
+    disabled = false,
+    className,
+    matchId,
+    selectedFile: externalSelectedFile,
+    onClear,
+    controlled = false, // Por padrão, assume não controlado
+  } = props
+
   const [internalSelectedFile, setInternalSelectedFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Usar arquivo externo se fornecido, senão usar interno
-  const selectedFile = externalSelectedFile !== undefined ? externalSelectedFile : internalSelectedFile
+  // Determinar se é controlado: 
+  // - Se controlled=true (explícito)
+  // - OU se onFileSelect existe (indica que o pai quer controlar via callback)
+  const isControlled = controlled || !!onFileSelect
+  
+  // Debug imediato das props recebidas - verificar diretamente do objeto props
+  console.log('[FileUpload] Props object keys:', Object.keys(props))
+  console.log('[FileUpload] Props received (from destructuring):', {
+    controlled,
+    hasOnFileSelect: !!onFileSelect,
+    onFileSelectType: typeof onFileSelect,
+    externalSelectedFile: externalSelectedFile?.name || 'null/undefined',
+    externalSelectedFileType: typeof externalSelectedFile,
+  })
+  console.log('[FileUpload] Props received (from props object):', {
+    controlled: props.controlled,
+    hasOnFileSelect: !!props.onFileSelect,
+    onFileSelectType: typeof props.onFileSelect,
+    externalSelectedFile: props.selectedFile?.name || 'null/undefined',
+    externalSelectedFileType: typeof props.selectedFile,
+  })
+  
+  // Usar arquivo externo se controlado, senão usar interno
+  const selectedFile = isControlled ? (externalSelectedFile ?? null) : internalSelectedFile
+  
+  // Debug: Log do estado no render
+  useEffect(() => {
+    console.log('[FileUpload] Render state:', {
+      isControlled,
+      controlled,
+      hasOnFileSelect: !!onFileSelect,
+      onFileSelectType: typeof onFileSelect,
+      externalSelectedFile: externalSelectedFile?.name || 'null',
+      internalSelectedFile: internalSelectedFile?.name || 'null',
+      selectedFile: selectedFile?.name || 'null',
+    })
+  }, [isControlled, controlled, onFileSelect, externalSelectedFile, internalSelectedFile, selectedFile])
 
   // Limpar preview quando selectedFile mudar para null
   useEffect(() => {
@@ -44,22 +84,33 @@ export function FileUpload({
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file) {
+      console.log('[FileUpload] No file selected')
+      return
+    }
+
+    console.log('[FileUpload] File selected:', file.name, 'Size:', file.size, 'Type:', file.type)
+    console.log('[FileUpload] Is controlled:', isControlled, 'externalSelectedFile:', externalSelectedFile)
 
     // Valida tamanho
     if (file.size > maxSize) {
+      console.log('[FileUpload] File too large:', file.size, 'Max:', maxSize)
       onUploadError?.(`Arquivo muito grande. Máximo: ${maxSize / 1024 / 1024}MB`)
       return
     }
 
-    // Se não for controlado externamente, atualizar estado interno
-    if (externalSelectedFile === undefined) {
-      setInternalSelectedFile(file)
-    }
-
-    // Notificar componente pai
-    console.log('[FileUpload] Notifying parent of file selection:', file.name)
+    // SEMPRE notificar componente pai primeiro (se for controlado, o pai atualiza o estado)
+    console.log('[FileUpload] Calling onFileSelect callback...')
     onFileSelect?.(file)
+    console.log('[FileUpload] onFileSelect callback completed')
+
+    // Se não for controlado, atualizar estado interno DEPOIS
+    if (!isControlled) {
+      console.log('[FileUpload] Updating internal state (uncontrolled)')
+      setInternalSelectedFile(file)
+    } else {
+      console.log('[FileUpload] Component is controlled, waiting for parent to update state')
+    }
 
     // Gera preview para imagens
     if (file.type.startsWith('image/')) {
@@ -74,7 +125,7 @@ export function FileUpload({
   }
 
   const handleClear = () => {
-    if (externalSelectedFile === undefined) {
+    if (!isControlled) {
       setInternalSelectedFile(null)
     }
     setPreview(null)
