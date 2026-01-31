@@ -61,9 +61,8 @@ export async function GET(req: NextRequest) {
       missingFields.push('Pelo menos uma especialidade')
     }
     
-    if (!advogado.onboardingCompleted) {
-      missingFields.push('Completar onboarding')
-    }
+    // Nota: onboardingCompleted é marcado automaticamente quando todos os campos acima estão preenchidos
+    // Não precisa aparecer como campo faltando separado
     
     if (advogado.users.status !== 'ACTIVE') {
       missingFields.push('Conta ativada')
