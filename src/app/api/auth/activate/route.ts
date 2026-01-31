@@ -4,6 +4,8 @@ import { EmailService } from '@/lib/email.service'
 import { CaseDistributionService } from '@/lib/case-distribution.service'
 import { NotificationService } from '@/lib/notification.service'
 import { hash } from 'bcryptjs'
+import { checkRateLimit, getClientIP, RateLimitPresets } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
 /**
  * POST /api/auth/activate
@@ -11,6 +13,28 @@ import { hash } from 'bcryptjs'
  */
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting por IP
+    const clientIP = getClientIP(request)
+    const rateLimit = checkRateLimit(`activate:${clientIP}`, RateLimitPresets.ACTIVATE)
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Muitas tentativas. Aguarde antes de tentar novamente.',
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimit.resetAt - Date.now()) / 1000).toString(),
+            'X-RateLimit-Limit': RateLimitPresets.ACTIVATE.maxRequests.toString(),
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': new Date(rateLimit.resetAt).toISOString(),
+          },
+        }
+      )
+    }
+
     const body = await request.json()
     const { token, password } = body
 
@@ -98,15 +122,14 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    console.log(`[Activate] User activated: ${user.id} (${user.email})`)
-    console.log(
+    logger.info(`[Activate] User activated: ${user.id}`)
+    logger.info(
       `[Activate] Cases activated: ${user.cidadaos?.casos.length || 0} case(s) moved to ABERTO`
     )
 
     // Analytics: Ativação completada (server-side log)
-    console.log('[Analytics] activation_completed', {
+    logger.debug('[Analytics] activation_completed', {
       userId: user.id,
-      email: user.email,
       casosCount: user.cidadaos?.casos.length || 0,
     })
 
@@ -118,12 +141,12 @@ export async function POST(request: NextRequest) {
 
         CaseDistributionService.distributeCase(caso.id)
           .then(async (result) => {
-            console.log(
+            logger.info(
               `[Activate] Case ${caso.id} distributed: ${result.matchesCreated} matches created`
             )
 
             // Analytics: Matching disparado (server-side log)
-            console.log('[Analytics] activation_matching_triggered', {
+            logger.debug('[Analytics] activation_matching_triggered', {
               userId: user.id,
               casoId: caso.id,
               matchesCreated: result.matchesCreated,
@@ -139,19 +162,19 @@ export async function POST(request: NextRequest) {
 
             for (const match of matches) {
               NotificationService.notifyLawyerNewMatch(match.id).catch((err) =>
-                console.error('[Activate] Notification failed:', err)
+                logger.error('[Activate] Notification failed:', err)
               )
             }
           })
           .catch((err) => {
-            console.error(`[Activate] Distribution failed for case ${caso.id}:`, err)
+            logger.error(`[Activate] Distribution failed for case ${caso.id}:`, err)
           })
       }
     }
 
     // Enviar email de boas-vindas (não espera completar)
     EmailService.sendWelcomeEmail(user.email, user.name).catch((err) =>
-      console.error('[Activate] Welcome email failed:', err)
+      logger.error('[Activate] Welcome email failed:', err)
     )
 
     return NextResponse.json({
@@ -163,7 +186,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error: any) {
-    console.error('Error activating account:', error)
+    logger.error('Error activating account:', error)
     return NextResponse.json(
       { success: false, error: 'Erro ao ativar conta' },
       { status: 500 }

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { hash } from 'bcryptjs'
 import { nanoid } from 'nanoid'
@@ -7,6 +7,8 @@ import { validateOAB } from '@/lib/utils'
 import { EmailService } from '@/lib/email.service'
 import { getPlanLimits } from '@/lib/plans'
 import { createSubscriptionHistory } from '@/lib/subscription-history.service'
+import { checkRateLimit, getClientIP, RateLimitPresets } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
 const signupSchema = z.object({
   name: z.string().min(2),
@@ -20,8 +22,29 @@ const signupSchema = z.object({
   password: z.string().min(6),
 })
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    // Rate limiting por IP
+    const clientIP = getClientIP(req)
+    const rateLimit = checkRateLimit(`signup:advogado:${clientIP}`, RateLimitPresets.SIGNUP)
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Muitas tentativas de cadastro. Aguarde antes de tentar novamente.',
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimit.resetAt - Date.now()) / 1000).toString(),
+            'X-RateLimit-Limit': RateLimitPresets.SIGNUP.maxRequests.toString(),
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': new Date(rateLimit.resetAt).toISOString(),
+          },
+        }
+      )
+    }
+
     const body = await req.json()
     const data = signupSchema.parse(body)
 
@@ -105,22 +128,22 @@ export async function POST(req: Request) {
           precoPago: 0,
           leadsLimite: leadsLimiteMes,
         })
-        console.log(`[Signup] Subscription history created for: ${user.email}`)
+        logger.info(`[Signup] Subscription history created`)
       }
     } catch (historyError) {
-      console.error('[Signup] Failed to create subscription history:', historyError)
+      logger.error('[Signup] Failed to create subscription history:', historyError)
       // Não falha a request - apenas log
     }
 
     // Enviar email de ativação
     try {
       await EmailService.sendActivationEmail(user.email, user.name, activationToken)
-      console.log(`[Signup] Activation email sent to: ${user.email}`)
+      logger.info(`[Signup] Activation email sent`)
     } catch (emailError) {
       // Log mas não falha a request - usuário foi criado com sucesso
-      console.error('[Signup] Email send failed:', emailError)
-      console.log(
-        `[Signup] Activation link: ${process.env.NEXTAUTH_URL}/auth/activate?token=${activationToken}`
+      logger.error('[Signup] Email send failed:', emailError)
+      logger.debug(
+        `[Signup] Activation link: ${process.env.NEXTAUTH_URL}/auth/activate?token=[REDACTED]`
       )
     }
 
@@ -143,7 +166,7 @@ export async function POST(req: Request) {
       },
     })
   } catch (error) {
-    console.error('Erro ao criar advogado:', error)
+    logger.error('Erro ao criar advogado:', error)
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

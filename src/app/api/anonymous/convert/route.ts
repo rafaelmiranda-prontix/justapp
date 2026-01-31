@@ -4,6 +4,35 @@ import { EmailService } from '@/lib/email.service'
 import { prisma } from '@/lib/prisma'
 import { nanoid } from 'nanoid'
 import { hash } from 'bcryptjs'
+import { z } from 'zod'
+import { checkRateLimit, getClientIP, RateLimitPresets } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
+
+// Schema de validação para conversão de sessão
+const convertSessionSchema = z.object({
+  sessionId: z.string().min(1, 'sessionId é obrigatório'),
+  name: z
+    .string()
+    .min(2, 'Nome deve ter pelo menos 2 caracteres')
+    .refine(
+      (val) => val.trim().split(' ').length >= 2,
+      'Por favor, informe seu nome completo'
+    ),
+  email: z.string().email('Email inválido').toLowerCase(),
+  phone: z
+    .string()
+    .regex(/^[0-9]{10,11}$/, 'Telefone inválido (apenas números, 10 ou 11 dígitos)')
+    .optional()
+    .nullable()
+    .transform((val) => (val === '' || val === null ? undefined : val)),
+  cidade: z.string().min(2, 'Cidade deve ter pelo menos 2 caracteres').optional().nullable(),
+  estado: z
+    .string()
+    .length(2, 'Estado deve ter 2 caracteres')
+    .regex(/^[A-Z]{2}$/, 'Estado inválido (use sigla em maiúsculas)')
+    .optional()
+    .nullable(),
+})
 
 /**
  * POST /api/anonymous/convert
@@ -12,32 +41,42 @@ import { hash } from 'bcryptjs'
  */
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting por IP
+    const clientIP = getClientIP(request)
+    const rateLimit = checkRateLimit(`convert:${clientIP}`, RateLimitPresets.CONVERT)
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Muitas tentativas. Aguarde antes de tentar novamente.',
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimit.resetAt - Date.now()) / 1000).toString(),
+            'X-RateLimit-Limit': RateLimitPresets.CONVERT.maxRequests.toString(),
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': new Date(rateLimit.resetAt).toISOString(),
+          },
+        }
+      )
+    }
+
     const body = await request.json()
-    const { sessionId, name, email, phone, cidade, estado } = body
 
-    // Validações
-    if (!sessionId || !name || !email) {
+    // Validar entrada com Zod
+    const validationResult = convertSessionSchema.safeParse(body)
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.map((err) => err.message).join(', ')
       return NextResponse.json(
-        { success: false, error: 'sessionId, name e email são obrigatórios' },
+        { success: false, error: `Dados inválidos: ${errors}` },
         { status: 400 }
       )
     }
 
-    // Validar formato de email
-    if (!email.includes('@')) {
-      return NextResponse.json(
-        { success: false, error: 'Email inválido' },
-        { status: 400 }
-      )
-    }
-
-    // Validar nome completo
-    if (name.trim().split(' ').length < 2) {
-      return NextResponse.json(
-        { success: false, error: 'Por favor, informe seu nome completo' },
-        { status: 400 }
-      )
-    }
+    const { sessionId, name, email, phone, cidade, estado } = validationResult.data
 
     // Buscar sessão
     const session = await AnonymousSessionService.findBySessionId(sessionId)
@@ -153,7 +192,7 @@ export async function POST(request: NextRequest) {
         audioUrl: msg.audioUrl || undefined, // Incluir audioUrl se existir
       }))
 
-      console.log('[Convert] Histórico completo:', {
+      logger.debug('[Convert] Histórico completo:', {
         totalMensagens: historicoCompleto.length,
         mensagensComAudio: historicoCompleto.filter((m) => m.audioUrl).length,
       })
@@ -181,9 +220,9 @@ export async function POST(request: NextRequest) {
 
     const { user, cidadao, caso } = result
 
-    console.log(`[Convert] User created: ${user.id} (${user.email}) - PRE_ACTIVE`)
-    console.log(`[Convert] Cidadao created: ${cidadao.id}`)
-    console.log(`[Convert] Case created: ${caso.id} - Status: ${caso.status}`)
+    logger.info(`[Convert] User created: ${user.id} - PRE_ACTIVE`)
+    logger.debug(`[Convert] Cidadao created: ${cidadao.id}`)
+    logger.info(`[Convert] Case created: ${caso.id} - Status: ${caso.status}`)
 
     // Atualizar sessão para CONVERTED
     await prisma.anonymousSession.update({
@@ -200,9 +239,9 @@ export async function POST(request: NextRequest) {
       await EmailService.sendActivationEmail(user.email, user.name, activationToken)
     } catch (emailError) {
       // Log mas não falha a request - usuário foi criado com sucesso
-      console.error('[Convert] Email send failed:', emailError)
-      console.log(
-        `[Convert] Activation link: ${process.env.NEXTAUTH_URL}/auth/activate?token=${activationToken}`
+      logger.error('[Convert] Email send failed:', emailError)
+      logger.debug(
+        `[Convert] Activation link: ${process.env.NEXTAUTH_URL}/auth/activate?token=[REDACTED]`
       )
     }
 
@@ -216,7 +255,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error: any) {
-    console.error('Error converting anonymous session:', error)
+    logger.error('Error converting anonymous session:', error)
     return NextResponse.json(
       { success: false, error: error.message || 'Erro ao processar conversão' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AnonymousSessionService, ChatMessage } from '@/lib/anonymous-session.service'
 import { HybridChatService } from '@/lib/hybrid-chat.service'
+import { logger } from '@/lib/logger'
 
 /**
  * POST /api/anonymous/message
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
     // Processar com sistema híbrido (decide automaticamente se usa IA ou não)
     const response = await HybridChatService.processMessage(sessionId, message)
 
-    console.log(
+    logger.debug(
       `[API] ${session.useAI ? 'IA' : 'Pré-qualificação'} | Score: ${session.preQualificationScore || 'N/A'} | Completed: ${response.preQualificationCompleted}`
     )
 
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error: any) {
-    console.error('Error sending message:', error)
+    logger.error('Error sending message:', error)
     return NextResponse.json(
       { success: false, error: error.message || 'Erro ao enviar mensagem' },
       { status: 500 }

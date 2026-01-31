@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getChatAttachmentFile } from '@/lib/supabase-storage'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 /**
  * GET /api/chat/attachments/[path]
@@ -99,7 +100,7 @@ export async function GET(
       },
     })
   } catch (error: any) {
-    console.error('Error serving attachment:', error)
+    logger.error('Error serving attachment:', error)
     return NextResponse.json(
       { error: 'Erro ao servir anexo' },
       { status: 500 }

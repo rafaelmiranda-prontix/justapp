@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 /**
  * POST /api/auth/validate-token
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
       userName: user.name.split(' ')[0],
     })
   } catch (error: any) {
-    console.error('Error validating token:', error)
+    logger.error('Error validating token:', error)
     return NextResponse.json(
       { success: false, error: 'Erro ao validar token' },
       { status: 500 }

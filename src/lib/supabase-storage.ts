@@ -261,10 +261,55 @@ export async function uploadChatAttachmentToSupabase(
   }
 
   try {
+    // Validar tamanho do arquivo (20MB máximo)
+    const MAX_SIZE = 20 * 1024 * 1024
+    if (file.size > MAX_SIZE) {
+      return {
+        success: false,
+        error: `Arquivo muito grande. Tamanho máximo: ${MAX_SIZE / 1024 / 1024}MB`,
+      }
+    }
+
+    // Validar tipo MIME
+    const ALLOWED_TYPES = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain',
+    ]
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return {
+        success: false,
+        error: 'Tipo de arquivo não permitido',
+      }
+    }
+
+    // Sanitizar nome do arquivo
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 255)
+
     // Gerar nome único para o arquivo
     const timestamp = Date.now()
     const randomId = Math.random().toString(36).substring(2, 15)
-    const fileExtension = file.name.split('.').pop() || 'bin'
+    const fileExtension = sanitizedName.split('.').pop() || 'bin'
+    
+    // Validar extensão
+    const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt']
+    const ext = `.${fileExtension}`.toLowerCase()
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      return {
+        success: false,
+        error: 'Extensão de arquivo não permitida',
+      }
+    }
+
     const filename = `${matchId}/${userId}/${timestamp}-${randomId}.${fileExtension}`
 
     // Converter File para ArrayBuffer
