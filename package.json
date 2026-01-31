@@ -15,6 +15,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "seed": "tsx scripts/seed-all.ts",
     "seed:configs": "tsx scripts/seed-configs.ts",
+    "seed:especialidades": "tsx scripts/seed-especialidades.ts",
     "seed:lawyers": "tsx scripts/seed-lawyers.ts",
     "check:distribution": "tsx scripts/check-distribution.ts",
     "clean": "tsx scripts/clean-database.ts",

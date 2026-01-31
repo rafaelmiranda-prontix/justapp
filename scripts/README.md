@@ -12,8 +12,9 @@ npx tsx scripts/seed-all.ts
 ```
 
 Executa todos os seeds em ordem:
-1. ✅ Configurações padrão
-2. ✅ Advogados de teste
+1. ✅ Configurações padrão (21 configs)
+2. ✅ Especialidades jurídicas (15 áreas)
+3. ✅ Advogados de teste (4 advogados)
 
 ### Seeds Individuais
 
@@ -22,7 +23,7 @@ Executa todos os seeds em ordem:
 npm run seed:configs
 ```
 
-Cria 21 configurações do sistema:
+Cria **21 configurações** do sistema:
 - **Matching**: max_matches_per_caso, min_match_score, match_expiration_hours
 - **Planos**: Limites de leads (FREE: 3, BASIC: 10, PREMIUM: 50)
 - **Notificações**: Configurações de emails e alertas
@@ -31,6 +32,30 @@ Cria 21 configurações do sistema:
 - **Sistema**: Modo beta, manutenção
 - **Chat Anônimo**: Configurações do fluxo anônimo
 - **Email**: Expiração de ativação
+
+#### Especialidades Jurídicas
+```bash
+npm run seed:especialidades
+```
+
+Cria **15 especialidades** com palavras-chave para matching:
+- Direito Civil (13 palavras-chave)
+- Direito Trabalhista (14 palavras-chave)
+- Direito Penal (14 palavras-chave)
+- Direito do Consumidor (14 palavras-chave)
+- Direito Imobiliário (14 palavras-chave)
+- Direito Previdenciário (12 palavras-chave)
+- Direito de Família (12 palavras-chave)
+- Direito Tributário (14 palavras-chave)
+- Direito Empresarial (12 palavras-chave)
+- Direito Digital (12 palavras-chave)
+- Direito Médico e da Saúde (12 palavras-chave)
+- Direito Administrativo (9 palavras-chave)
+- Direito Ambiental (10 palavras-chave)
+- Direito Bancário (10 palavras-chave)
+- Direito de Trânsito (11 palavras-chave)
+
+**Palavras-chave**: Usadas para detectar especialidade no chat anônimo
 
 #### Advogados de Teste
 ```bash
@@ -158,8 +183,9 @@ Atualiza casos sem cidade/estado para São Paulo, SP.
 scripts/
 ├── README.md                      # Este arquivo
 ├── seed-all.ts                    # Executa todos os seeds
-├── seed-configs.ts                # Cria configurações padrão
-├── seed-lawyers.ts                # Cria advogados de teste
+├── seed-configs.ts                # Cria 21 configurações
+├── seed-especialidades.ts         # Cria 15 especialidades jurídicas
+├── seed-lawyers.ts                # Cria 4 advogados de teste
 ├── check-distribution.ts          # Diagnóstico completo
 ├── distribute-open-cases.ts       # Distribuição manual
 ├── update-case-location.ts        # Atualizar localização

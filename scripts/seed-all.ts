@@ -18,6 +18,11 @@ const scripts = [
     description: 'Configurações do sistema (matching, planos, notificações)',
   },
   {
+    name: 'Especialidades',
+    file: 'seed-especialidades.ts',
+    description: 'Especialidades jurídicas (15 áreas do direito)',
+  },
+  {
     name: 'Advogados',
     file: 'seed-lawyers.ts',
     description: 'Advogados de teste com diferentes planos',
