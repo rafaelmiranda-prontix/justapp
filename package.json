@@ -17,6 +17,7 @@
     "seed:configs": "tsx scripts/seed-configs.ts",
     "seed:lawyers": "tsx scripts/seed-lawyers.ts",
     "check:distribution": "tsx scripts/check-distribution.ts",
+    "clean": "tsx scripts/clean-database.ts",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },

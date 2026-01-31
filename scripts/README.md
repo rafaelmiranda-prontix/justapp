@@ -47,6 +47,50 @@ Cria 4 advogados com diferentes planos:
 
 ---
 
+## 🗑️ Limpeza do Banco de Dados
+
+### Limpar Dados (Interativo)
+```bash
+npm run clean
+# ou
+npx tsx scripts/clean-database.ts
+```
+
+**Menu Interativo**:
+1. 🧪 Limpar TUDO (reset completo)
+2. 👨‍⚖️  Limpar apenas Advogados de teste
+3. 📋 Limpar apenas Casos e Matches
+4. 💬 Limpar apenas Sessões Anônimas
+5. ⚙️  Limpar apenas Configurações
+6. ❌ Cancelar
+
+**Segurança**:
+- ⚠️ Requer confirmação digitando "SIM"
+- Respeita ordem de foreign keys
+- Mostra estatísticas do que foi deletado
+- Não pode ser desfeito!
+
+**Exemplo de Uso**:
+```bash
+$ npm run clean
+
+⚠️  ATENÇÃO: LIMPEZA DO BANCO DE DADOS
+
+Escolha o que deseja limpar:
+1. 🧪 Limpar TUDO (reset completo)
+2. 👨‍⚖️  Limpar apenas Advogados de teste
+...
+
+Escolha uma opção (1-6): 2
+
+⚠️  Deletar todos os advogados e seus dados? (digite "SIM" para confirmar): SIM
+
+✅ 4 advogados deletados
+✅ 1 matches deletados
+```
+
+---
+
 ## 🔍 Diagnóstico
 
 ### Verificar Distribuição de Casos
@@ -118,7 +162,8 @@ scripts/
 ├── seed-lawyers.ts                # Cria advogados de teste
 ├── check-distribution.ts          # Diagnóstico completo
 ├── distribute-open-cases.ts       # Distribuição manual
-└── update-case-location.ts        # Atualizar localização
+├── update-case-location.ts        # Atualizar localização
+└── clean-database.ts              # Limpar banco (interativo)
 ```
 
 ---
@@ -192,8 +237,31 @@ npm run db:push
 # Criar migration
 npm run db:migrate
 
+# Limpar banco de dados (interativo)
+npm run clean
+
 # Executar qualquer script
 npx tsx scripts/[nome-do-script].ts
+```
+
+### 🔄 Workflows Comuns
+
+**Reset Completo (Desenvolvimento)**:
+```bash
+npm run clean          # Escolher opção 1 (Limpar TUDO)
+npm run seed           # Popular novamente
+npm run check:distribution
+```
+
+**Recriar Apenas Advogados**:
+```bash
+npm run clean          # Escolher opção 2 (Limpar advogados)
+npm run seed:lawyers   # Criar novamente
+```
+
+**Limpar Sessões Antigas**:
+```bash
+npm run clean          # Escolher opção 4 (Limpar sessões anônimas)
 ```
 
 ---
