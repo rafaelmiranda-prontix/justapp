@@ -70,7 +70,7 @@ export function SpeechRecorder({ onTranscriptReady, disabled }: SpeechRecorderPr
             Mensagem gravada:
           </p>
           <p className="text-sm text-muted-foreground italic line-clamp-2">
-            "{savedTranscript}"
+            &quot;{savedTranscript}&quot;
           </p>
         </div>
 
@@ -120,7 +120,7 @@ export function SpeechRecorder({ onTranscriptReady, disabled }: SpeechRecorderPr
           </span>
           {transcript && (
             <span className="text-sm text-muted-foreground italic truncate">
-              "{transcript}"
+              &quot;{transcript}&quot;
             </span>
           )}
         </div>

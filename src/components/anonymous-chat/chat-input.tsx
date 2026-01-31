@@ -209,7 +209,7 @@ export function ChatInput({ onSend, disabled, sessionId }: ChatInputProps) {
             </span>
             {speechTranscript && (
               <span className="text-xs text-muted-foreground italic truncate">
-                "{speechTranscript}"
+                &quot;{speechTranscript}&quot;
               </span>
             )}
           </div>

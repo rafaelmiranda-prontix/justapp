@@ -113,7 +113,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 </div>
                 {message.content && message.content !== '🎤 Mensagem de áudio' && (
                   <p className={cn('text-xs italic line-clamp-1', isAssistant ? 'text-muted-foreground' : 'text-white/80')}>
-                    "{message.content}"
+                    &quot;{message.content}&quot;
                   </p>
                 )}
               </div>

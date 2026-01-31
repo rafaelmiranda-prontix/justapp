@@ -145,7 +145,7 @@ function MessageWithAudio({ message, isUser }: { message: Message; isUser: boole
                 isUser ? 'text-primary-foreground/80' : 'text-muted-foreground'
               }`}
             >
-              "{message.content}"
+              &quot;{message.content}&quot;
             </p>
           )}
         </div>

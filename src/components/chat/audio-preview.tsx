@@ -107,7 +107,7 @@ export function AudioPreview({
           </div>
           {transcript ? (
             <p className="text-xs text-green-700 dark:text-green-400 italic line-clamp-1">
-              "{transcript}"
+              &quot;{transcript}&quot;
             </p>
           ) : (
             <p className="text-xs text-muted-foreground">Áudio gravado</p>
