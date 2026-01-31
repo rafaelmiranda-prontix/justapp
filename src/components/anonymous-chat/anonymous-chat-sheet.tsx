@@ -21,8 +21,9 @@ interface AnonymousChatSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   messages: ChatMessageType[]
-  onSendMessage: (message: string) => Promise<void>
+  onSendMessage: (message: string, audioUrl?: string) => Promise<void>
   isTyping: boolean
+  sessionId?: string | null
   shouldCaptureLeadData?: boolean
   extractedData?: {
     especialidade?: string
@@ -40,6 +41,7 @@ export function AnonymousChatSheet({
   messages,
   onSendMessage,
   isTyping,
+  sessionId,
   shouldCaptureLeadData = false,
   extractedData,
   onSubmitLeadData,
@@ -152,7 +154,7 @@ export function AnonymousChatSheet({
 
         {/* Input Area */}
         <div className="p-4 border-t bg-white">
-          <ChatInput onSend={onSendMessage} disabled={isTyping} />
+          <ChatInput onSend={onSendMessage} disabled={isTyping} sessionId={sessionId || undefined} />
         </div>
       </SheetContent>
     </Sheet>

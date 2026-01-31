@@ -144,11 +144,24 @@ export async function POST(request: NextRequest) {
       }
 
       // Criar Caso PENDENTE_ATIVACAO
+      // Garantir que o histórico inclui audioUrl de todas as mensagens
+      const historicoCompleto = session.mensagens.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp instanceof Date ? msg.timestamp.toISOString() : msg.timestamp,
+        audioUrl: msg.audioUrl || undefined, // Incluir audioUrl se existir
+      }))
+
+      console.log('[Convert] Histórico completo:', {
+        totalMensagens: historicoCompleto.length,
+        mensagensComAudio: historicoCompleto.filter((m) => m.audioUrl).length,
+      })
+
       const caso = await tx.casos.create({
         data: {
           id: nanoid(),
           descricao: descricaoProblema, // Descrição do problema (não saudação)
-          conversaHistorico: session.mensagens, // Histórico completo do chat
+          conversaHistorico: historicoCompleto, // Histórico completo do chat com audioUrl
           urgencia:
             session.urgenciaDetectada === 'ALTA'
               ? 'ALTA'

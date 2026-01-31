@@ -9,11 +9,12 @@ import { AudioPreview } from '@/components/chat/audio-preview'
 import { Send, Loader2, Mic, Square, X } from 'lucide-react'
 
 interface ChatInputProps {
-  onSend: (message: string) => Promise<void>
+  onSend: (message: string, audioUrl?: string) => Promise<void>
   disabled?: boolean
+  sessionId?: string
 }
 
-export function ChatInput({ onSend, disabled }: ChatInputProps) {
+export function ChatInput({ onSend, disabled, sessionId }: ChatInputProps) {
   const [message, setMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
@@ -123,23 +124,49 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
   const handleSendAudio = async () => {
     if (!audioBlob || isSending || disabled) return
 
-    console.log('[ChatInput] Sending audio:', {
-      blob: audioBlob,
-      size: audioBlob.size,
-      type: audioBlob.type,
-    })
+    setIsSending(true)
 
-    // Por enquanto, apenas console.log
-    // TODO: Implementar envio de áudio quando a API estiver pronta
-    // setIsSending(true)
-    // try {
-    //   await onSendAudio(audioBlob)
-    //   cancelRecording()
-    // } catch (error) {
-    //   console.error('Error sending audio:', error)
-    // } finally {
-    //   setIsSending(false)
-    // }
+    try {
+      // 1. Fazer upload do áudio para Supabase
+      const formData = new FormData()
+      const audioFile = new File([audioBlob], 'audio.webm', {
+        type: 'audio/webm;codecs=opus',
+      })
+      formData.append('audio', audioFile)
+      
+      // Obter sessionId
+      if (!sessionId) {
+        throw new Error('Session ID não encontrado')
+      }
+      formData.append('sessionId', sessionId)
+
+      const uploadResponse = await fetch('/api/anonymous/audio', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!uploadResponse.ok) {
+        const error = await uploadResponse.json()
+        throw new Error(error.error || 'Erro ao fazer upload do áudio')
+      }
+
+      const uploadData = await uploadResponse.json()
+      const audioUrl = uploadData.data.url
+
+      console.log('[ChatInput] Audio uploaded:', audioUrl)
+
+      // 2. Enviar mensagem com áudio e transcrição
+      await onSend(transcript || '🎤 Mensagem de áudio', audioUrl)
+
+      // 3. Limpar estado
+      handleCancelRecording()
+      setAudioUrl(null)
+    } catch (error) {
+      console.error('[ChatInput] Error sending audio:', error)
+      alert(error instanceof Error ? error.message : 'Erro ao enviar áudio')
+    } finally {
+      setIsSending(false)
+    }
   }
 
   const handleCancelAudio = () => {

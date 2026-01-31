@@ -39,7 +39,7 @@ export async function GET(
             users: {
               select: {
                 name: true,
-                email: true,
+                // Email e outros dados sensíveis não são compartilhados com o advogado
               },
             },
           },
@@ -80,7 +80,15 @@ export async function GET(
         status: caso.status,
         createdAt: caso.createdAt.toISOString(),
         especialidades: caso.especialidades,
-        cidadaos: caso.cidadaos,
+        cidadaos: {
+          id: caso.cidadaos.id,
+          cidade: caso.cidadaos.cidade,
+          estado: caso.cidadaos.estado,
+          users: {
+            name: caso.cidadaos.users.name,
+            // Email e outros dados sensíveis não são compartilhados com o advogado
+          },
+        },
       },
     })
   } catch (error) {

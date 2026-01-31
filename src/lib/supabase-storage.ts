@@ -1,0 +1,225 @@
+import { createClient } from '@supabase/supabase-js'
+
+// Inicializar cliente Supabase com service role key (bypassa RLS)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.warn(
+    '[Supabase Storage] Variáveis de ambiente não configuradas. Upload de áudio não funcionará.'
+  )
+}
+
+// Verificar se a service role key está correta
+if (supabaseServiceKey && !supabaseServiceKey.startsWith('eyJ')) {
+  console.error(
+    '[Supabase Storage] ⚠️ ERRO: A service role key deve ser um JWT token que começa com "eyJ". ' +
+    'Verifique se está usando a service_role key (não a anon key) em SUPABASE_SERVICE_ROLE_KEY. ' +
+    'Encontre em: Settings → API → service_role'
+  )
+}
+
+// Criar cliente com service role key que bypassa RLS
+// IMPORTANTE: A service role key deve bypassar RLS automaticamente
+// Se ainda houver erro, pode ser necessário desabilitar RLS no bucket ou ajustar as políticas
+const supabase = supabaseUrl && supabaseServiceKey 
+  ? createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+      },
+    })
+  : null
+
+// Nome do bucket - Supabase Storage é case-sensitive
+// IMPORTANTE: Use o nome exato do bucket criado no Supabase
+const AUDIO_BUCKET = 'audio-messages'
+
+interface UploadAudioResult {
+  success: boolean
+  url?: string
+  path?: string
+  error?: string
+}
+
+/**
+ * Verifica se o bucket existe
+ */
+async function ensureBucketExists(): Promise<{ exists: boolean; buckets?: string[] }> {
+  if (!supabase) {
+    return { exists: false }
+  }
+
+  try {
+    const { data, error } = await supabase.storage.listBuckets()
+    
+    if (error) {
+      console.error('[Supabase Storage] Error listing buckets:', error)
+      // Se der erro ao listar, assumir que o bucket existe e tentar fazer upload
+      // (pode ser problema de permissão na listagem, mas upload pode funcionar)
+      return { exists: true }
+    }
+
+    const bucketNames = data?.map(bucket => bucket.name) || []
+    const bucketExists = bucketNames.includes(AUDIO_BUCKET)
+    
+    if (!bucketExists) {
+      console.warn(`[Supabase Storage] Bucket "${AUDIO_BUCKET}" não encontrado na lista.`)
+      console.log('[Supabase Storage] Buckets disponíveis:', bucketNames)
+      console.log('[Supabase Storage] Tentando fazer upload mesmo assim...')
+    }
+
+    return { exists: bucketExists, buckets: bucketNames }
+  } catch (error) {
+    console.error('[Supabase Storage] Error checking bucket:', error)
+    // Em caso de erro, assumir que existe e tentar fazer upload
+    return { exists: true }
+  }
+}
+
+/**
+ * Faz upload de áudio para o Supabase Storage
+ */
+export async function uploadAudioToSupabase(
+  audioBlob: Blob,
+  sessionId: string
+): Promise<UploadAudioResult> {
+  if (!supabase) {
+    return {
+      success: false,
+      error: 'Supabase não configurado. Configure NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY',
+    }
+  }
+
+  // Debug: Verificar configuração
+  const serviceKeyPrefix = supabaseServiceKey ? supabaseServiceKey.substring(0, 20) + '...' : 'Não configurado'
+  const isServiceKeyValid = supabaseServiceKey?.startsWith('eyJ') || false
+  
+  console.log('[Supabase Storage] Config:', {
+    url: supabaseUrl ? '✅ Configurado' : '❌ Não configurado',
+    serviceKey: supabaseServiceKey ? `✅ ${serviceKeyPrefix}` : '❌ Não configurado',
+    serviceKeyValid: isServiceKeyValid ? '✅ JWT válido' : '❌ NÃO É JWT (deve começar com "eyJ")',
+    bucket: AUDIO_BUCKET,
+  })
+  
+  if (!isServiceKeyValid && supabaseServiceKey) {
+    return {
+      success: false,
+      error: 'A service role key está incorreta. Ela deve ser um JWT token que começa com "eyJ". Verifique se está usando a service_role key (não a anon key) em SUPABASE_SERVICE_ROLE_KEY. Encontre em: Settings → API → service_role',
+    }
+  }
+
+  // Verificar se o bucket existe (mas não bloquear se a verificação falhar)
+  const bucketCheck = await ensureBucketExists()
+  if (!bucketCheck.exists && bucketCheck.buckets) {
+    console.warn(`[Supabase Storage] Bucket "${AUDIO_BUCKET}" não encontrado. Buckets disponíveis: ${bucketCheck.buckets.join(', ')}`)
+    // Não bloquear, apenas avisar - pode ser problema na listagem mas o upload pode funcionar
+  }
+
+  try {
+    // Gerar nome único para o arquivo
+    const timestamp = Date.now()
+    const randomId = Math.random().toString(36).substring(2, 15)
+    const filename = `${sessionId}/${timestamp}-${randomId}.webm`
+
+    // Converter Blob para ArrayBuffer
+    const arrayBuffer = await audioBlob.arrayBuffer()
+    const file = new File([arrayBuffer], filename, { type: 'audio/webm;codecs=opus' })
+
+    // Fazer upload
+    console.log('[Supabase Storage] Uploading audio:', {
+      bucket: AUDIO_BUCKET,
+      filename,
+      size: file.size,
+      type: file.type,
+    })
+
+    // Tentar fazer upload
+    const { data, error } = await supabase.storage
+      .from(AUDIO_BUCKET)
+      .upload(filename, file, {
+        contentType: 'audio/webm;codecs=opus',
+        upsert: false,
+        cacheControl: '3600',
+      })
+
+    if (error) {
+      console.error('[Supabase Storage] Upload error:', {
+        message: error.message,
+        statusCode: error.statusCode,
+        name: error.name,
+        error: JSON.stringify(error, null, 2),
+      })
+      
+      // Mensagens de erro mais específicas
+      if (error.message?.includes('row-level security') || 
+          error.message?.includes('RLS') || 
+          error.message?.includes('policy') ||
+          error.statusCode === 403) {
+        return {
+          success: false,
+          error: `Erro de permissão (RLS). Verifique:
+1. O bucket "${AUDIO_BUCKET}" existe
+2. As políticas RLS estão configuradas corretamente para o bucket "${AUDIO_BUCKET}"
+3. A service role key está sendo usada (não a anon key)
+4. A política de INSERT para service_role está ativa
+
+Erro detalhado: ${error.message}`,
+        }
+      }
+      
+      if (error.message?.includes('Bucket not found') || error.statusCode === 404) {
+        return {
+          success: false,
+          error: `Bucket "${AUDIO_BUCKET}" não encontrado. Verifique se o nome do bucket está correto no Supabase Dashboard.`,
+        }
+      }
+      
+      return {
+        success: false,
+        error: `Erro ao fazer upload: ${error.message || 'Erro desconhecido'}`,
+      }
+    }
+
+    // Obter URL pública
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(AUDIO_BUCKET).getPublicUrl(data.path)
+
+    return {
+      success: true,
+      url: publicUrl,
+      path: data.path,
+    }
+  } catch (error: any) {
+    console.error('[Supabase Storage] Error:', error)
+    return {
+      success: false,
+      error: error.message || 'Erro ao fazer upload do áudio',
+    }
+  }
+}
+
+/**
+ * Deleta áudio do Supabase Storage
+ */
+export async function deleteAudioFromSupabase(path: string): Promise<boolean> {
+  if (!supabase) {
+    return false
+  }
+
+  try {
+    const { error } = await supabase.storage.from(AUDIO_BUCKET).remove([path])
+
+    if (error) {
+      console.error('[Supabase Storage] Delete error:', error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('[Supabase Storage] Error deleting:', error)
+    return false
+  }
+}

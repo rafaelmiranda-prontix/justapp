@@ -12,6 +12,7 @@ import { ptBR } from 'date-fns/locale'
 import { useMatchActions } from '@/hooks/use-match-actions'
 import { LeadStats } from '@/components/advogado/lead-stats'
 import { LeadFilters } from '@/components/advogado/lead-filters'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 interface Match {
@@ -62,6 +63,7 @@ export default function AdvogadoDashboardPage() {
   const [especialidadeFilter, setEspecialidadeFilter] = useState('all')
   const [urgenciaFilter, setUrgenciaFilter] = useState('all')
   const { respondMatch, isLoading: isActing } = useMatchActions()
+  const router = useRouter()
 
   useEffect(() => {
     fetchMatches()
@@ -98,7 +100,7 @@ export default function AdvogadoDashboardPage() {
 
   const handleViewDetails = (match: Match) => {
     // Redirecionar para página de detalhes do caso
-    window.location.href = `/advogado/casos/${match.casos.id}`
+    router.push(`/advogado/casos/${match.casos.id}`)
   }
 
   const handleRespond = async (matchId: string, accepted: boolean) => {

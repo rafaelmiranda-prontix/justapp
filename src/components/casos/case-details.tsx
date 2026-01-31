@@ -1,16 +1,19 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Button } from '@/components/ui/button'
 import { formatDate } from '@/lib/utils'
-import { Clock, MapPin, AlertCircle, MessageSquare, User, Bot } from 'lucide-react'
+import { Clock, MapPin, AlertCircle, MessageSquare, User, Bot, Play, Pause } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant' | 'system'
   content: string
   timestamp?: string
+  audioUrl?: string
 }
 
 interface CaseDetailsProps {
@@ -28,7 +31,7 @@ interface CaseDetailsProps {
     cidadaos: {
       users: {
         name: string
-        email?: string
+        // Email e outros dados sensíveis não são compartilhados
       }
       cidade?: string | null
       estado?: string | null
@@ -50,6 +53,114 @@ const statusLabels: Record<string, string> = {
   EM_NEGOCIACAO: 'Em Negociação',
   FECHADO: 'Fechado',
   CANCELADO: 'Cancelado',
+}
+
+// Componente para exibir mensagem com áudio
+function MessageWithAudio({ message, isUser }: { message: Message; isUser: boolean }) {
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const audioRef = useRef<HTMLAudioElement>(null)
+
+  useEffect(() => {
+    if (message.audioUrl && audioRef.current) {
+      audioRef.current.src = message.audioUrl
+    }
+  }, [message.audioUrl])
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause()
+      } else {
+        audioRef.current.play()
+      }
+      setIsPlaying(!isPlaying)
+    }
+  }
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime)
+    }
+  }
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration)
+    }
+  }
+
+  const handleEnded = () => {
+    setIsPlaying(false)
+    setCurrentTime(0)
+  }
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  if (message.audioUrl) {
+    return (
+      <div className="flex items-center gap-3 min-w-[200px]">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={togglePlay}
+          className={`h-10 w-10 rounded-full shrink-0 ${
+            isUser
+              ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground'
+              : 'bg-primary/10 hover:bg-primary/20 text-primary'
+          }`}
+        >
+          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
+        </Button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <div
+              className={`flex-1 h-1 rounded-full overflow-hidden ${
+                isUser ? 'bg-primary-foreground/20' : 'bg-primary/20'
+              }`}
+            >
+              <div
+                className={`h-full transition-all ${
+                  isUser ? 'bg-primary-foreground/50' : 'bg-primary/50'
+                }`}
+                style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+              />
+            </div>
+            <span
+              className={`text-xs font-mono min-w-[40px] ${
+                isUser ? 'text-primary-foreground/80' : 'text-muted-foreground'
+              }`}
+            >
+              {formatTime(currentTime)}
+            </span>
+          </div>
+          {message.content && message.content !== '🎤 Mensagem de áudio' && (
+            <p
+              className={`text-xs italic line-clamp-1 ${
+                isUser ? 'text-primary-foreground/80' : 'text-muted-foreground'
+              }`}
+            >
+              "{message.content}"
+            </p>
+          )}
+        </div>
+        <audio
+          ref={audioRef}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onEnded={handleEnded}
+          style={{ display: 'none' }}
+        />
+      </div>
+    )
+  }
+
+  return <p className="text-sm whitespace-pre-wrap">{message.content}</p>
 }
 
 export function CaseDetails({ caso, showCidadaoInfo = false }: CaseDetailsProps) {
@@ -104,11 +215,7 @@ export function CaseDetails({ caso, showCidadaoInfo = false }: CaseDetailsProps)
                   <p className="text-sm">
                     <span className="font-medium">Nome:</span> {caso.cidadaos.users.name}
                   </p>
-                  {caso.cidadaos.users.email && (
-                    <p className="text-sm">
-                      <span className="font-medium">Email:</span> {caso.cidadaos.users.email}
-                    </p>
-                  )}
+                  {/* Email e outros dados de contato não são compartilhados com o advogado */}
                 </div>
               </div>
             </>
@@ -185,13 +292,24 @@ export function CaseDetails({ caso, showCidadaoInfo = false }: CaseDetailsProps)
                             : 'bg-muted/50 text-muted-foreground text-xs italic'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      <MessageWithAudio message={msg} isUser={msg.role === 'user'} />
                       {msg.timestamp && (
-                        <p className="text-xs opacity-70 mt-1">
-                          {new Date(msg.timestamp).toLocaleTimeString('pt-BR', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                        <p className={`text-xs mt-1 ${msg.role === 'user' ? 'opacity-70' : 'opacity-70'}`}>
+                          {(() => {
+                            try {
+                              const date = typeof msg.timestamp === 'string' 
+                                ? new Date(msg.timestamp) 
+                                : msg.timestamp instanceof Date 
+                                  ? msg.timestamp 
+                                  : new Date()
+                              return date.toLocaleTimeString('pt-BR', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            } catch {
+                              return ''
+                            }
+                          })()}
                         </p>
                       )}
                     </div>

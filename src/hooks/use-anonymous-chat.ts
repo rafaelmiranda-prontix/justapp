@@ -11,7 +11,7 @@ interface UseAnonymousChatReturn {
   openChat: () => void
   closeChat: () => void
   messages: ChatMessage[]
-  sendMessage: (message: string) => Promise<void>
+  sendMessage: (message: string, audioUrl?: string) => Promise<void>
   isTyping: boolean
   sessionId: string | null
   shouldCaptureLeadData: boolean
@@ -175,7 +175,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
 
   // Enviar mensagem
   const sendMessage = useCallback(
-    async (message: string) => {
+    async (message: string, audioUrl?: string) => {
       if (!sessionId) {
         console.error('No session ID')
         return
@@ -186,6 +186,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
         role: 'user',
         content: message,
         timestamp: new Date(),
+        audioUrl: audioUrl,
       }
       setMessages((prev) => [...prev, userMessage])
 
@@ -201,6 +202,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
           body: JSON.stringify({
             sessionId,
             message,
+            audioUrl,
           }),
         })
 

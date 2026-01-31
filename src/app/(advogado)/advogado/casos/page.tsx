@@ -10,6 +10,7 @@ import { CheckCircle, XCircle, Eye, Clock, MapPin, Search } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useMatchActions } from '@/hooks/use-match-actions'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 interface Match {
@@ -55,6 +56,7 @@ export default function CasosRecebidosPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const { respondMatch, isLoading: isActing } = useMatchActions()
+  const router = useRouter()
 
   useEffect(() => {
     fetchMatches()
@@ -172,7 +174,7 @@ export default function CasosRecebidosPage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => console.log('Ver detalhes:', match.id)}
+                onClick={() => router.push(`/advogado/casos/${match.casos.id}`)}
                 className="flex-1"
               >
                 <Eye className="h-4 w-4 mr-2" />

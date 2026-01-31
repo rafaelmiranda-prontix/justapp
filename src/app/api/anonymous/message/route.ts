@@ -10,11 +10,19 @@ import { HybridChatService } from '@/lib/hybrid-chat.service'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { sessionId, message } = body
+    const { sessionId, message, audioUrl } = body
 
-    if (!sessionId || !message) {
+    if (!sessionId) {
       return NextResponse.json(
-        { success: false, error: 'sessionId e message são obrigatórios' },
+        { success: false, error: 'sessionId é obrigatório' },
+        { status: 400 }
+      )
+    }
+
+    // Deve ter mensagem OU áudio
+    if (!message && !audioUrl) {
+      return NextResponse.json(
+        { success: false, error: 'message ou audioUrl são obrigatórios' },
         { status: 400 }
       )
     }
@@ -46,8 +54,9 @@ export async function POST(request: NextRequest) {
     // Adicionar mensagem do usuário
     const userMessage: ChatMessage = {
       role: 'user',
-      content: message,
+      content: message || (audioUrl ? '🎤 Mensagem de áudio' : ''),
       timestamp: now,
+      audioUrl: audioUrl || undefined,
     }
 
     await AnonymousSessionService.addMessage(sessionId, userMessage)

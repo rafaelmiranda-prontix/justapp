@@ -207,7 +207,12 @@ export async function GET(req: Request) {
             include: {
               cidadaos: {
                 include: {
-                  users: true,
+                  users: {
+                    select: {
+                      name: true,
+                      // Email e outros dados sensíveis não são compartilhados com o advogado
+                    },
+                  },
                 },
               },
               especialidades: true,

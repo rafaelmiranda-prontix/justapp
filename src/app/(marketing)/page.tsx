@@ -139,6 +139,7 @@ export default function LandingPage() {
     sendMessage,
     isTyping,
     shouldCaptureLeadData,
+    sessionId,
     extractedData,
     submitLeadData,
     resetChat,
@@ -487,6 +488,7 @@ export default function LandingPage() {
         messages={messages}
         onSendMessage={sendMessage}
         isTyping={isTyping}
+        sessionId={sessionId}
         shouldCaptureLeadData={shouldCaptureLeadData}
         extractedData={extractedData}
         onSubmitLeadData={submitLeadData}
