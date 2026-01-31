@@ -167,7 +167,7 @@ export const PRE_QUALIFICATION_FLOW: QuestionFlow = {
 
   other_description: {
     id: 'other_description',
-    text: 'Por favor, descreva brevemente seu problema em poucas palavras.',
+    text: 'Por favor, descreva brevemente seu problema em poucas palavras. Você pode escrever ou enviar um áudio.',
     type: 'text',
     nextQuestion: 'urgency',
   },

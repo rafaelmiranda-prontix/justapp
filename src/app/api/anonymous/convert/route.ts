@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       const mensagensUsuario = session.mensagens.filter((m) => m.role === 'user')
 
       // Buscar a resposta do usuário após a pergunta sobre o problema
-      // A pergunta é: "Por favor, descreva brevemente seu problema em poucas palavras."
+      // A pergunta é: "Por favor, descreva brevemente seu problema em poucas palavras. Você pode escrever ou enviar um áudio."
       let descricaoProblema = 'Caso criado via chat anônimo'
 
       for (let i = 0; i < session.mensagens.length; i++) {
@@ -118,7 +118,8 @@ export async function POST(request: NextRequest) {
         // Encontrar a pergunta sobre descrição do problema
         if (
           msg.role === 'assistant' &&
-          msg.content.toLowerCase().includes('descreva brevemente seu problema')
+          (msg.content.toLowerCase().includes('descreva brevemente seu problema') ||
+           msg.content.toLowerCase().includes('descreva seu problema'))
         ) {
           // A próxima mensagem do usuário é a descrição do problema
           const proximaUsuario = session.mensagens
