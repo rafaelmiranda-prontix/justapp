@@ -15,9 +15,11 @@
     "db:seed": "tsx prisma/seed.ts",
     "seed": "tsx scripts/seed-all.ts",
     "seed:configs": "tsx scripts/seed-configs.ts",
+    "seed:planos": "tsx scripts/seed-planos.ts",
     "seed:especialidades": "tsx scripts/seed-especialidades.ts",
     "seed:lawyers": "tsx scripts/seed-lawyers.ts",
     "check:distribution": "tsx scripts/check-distribution.ts",
+    "fix:leads": "tsx scripts/fix-leads-limits.ts",
     "clean": "tsx scripts/clean-database.ts",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""

@@ -1,5 +1,10 @@
 import { prisma } from './prisma'
-import { PLANS, getPlanLimits, type PlanType } from './plans'
+import { getPlanLimits, getPlanConfig, type PlanType } from './plans'
+import {
+  createSubscriptionHistory,
+  finalizeCurrentSubscription,
+  type CanceladoPor,
+} from './subscription-history.service'
 
 /**
  * Reseta o contador de leads mensais se necessário
@@ -21,7 +26,7 @@ export async function resetMonthlyLeadsIfNeeded(advogadoId: string): Promise<voi
   const diffDays = diffMs / (1000 * 60 * 60 * 24)
 
   if (diffDays >= 30) {
-    const limits = getPlanLimits(advogado.plano)
+    const limits = await getPlanLimits(advogado.plano)
     const novoLimite = limits.isUnlimited ? -1 : limits.leadsPerMonth
 
     await prisma.advogados.update({
@@ -34,7 +39,7 @@ export async function resetMonthlyLeadsIfNeeded(advogadoId: string): Promise<voi
     })
   } else if (advogado.leadsLimiteMes === 0) {
     // Se o limite ainda não foi configurado, configura agora
-    const limits = getPlanLimits(advogado.plano)
+    const limits = await getPlanLimits(advogado.plano)
     const novoLimite = limits.isUnlimited ? -1 : limits.leadsPerMonth
 
     await prisma.advogados.update({
@@ -97,7 +102,7 @@ export async function canAdvogadoReceiveLead(advogadoId: string): Promise<{
     return { canReceive: false, reason: 'Erro ao buscar advogado' }
   }
 
-  const limits = getPlanLimits(advogadoAtualizado.plano)
+  const limits = await getPlanLimits(advogadoAtualizado.plano)
 
   // Se é ilimitado, pode receber
   if (limits.isUnlimited) {
@@ -123,18 +128,113 @@ export async function canAdvogadoReceiveLead(advogadoId: string): Promise<{
 export async function updateAdvogadoPlan(
   advogadoId: string,
   plano: PlanType,
-  planoExpira?: Date
+  planoExpira?: Date,
+  options?: {
+    stripeSubscriptionId?: string
+    stripePriceId?: string
+    precoPago?: number
+  }
 ): Promise<void> {
-  const limits = getPlanLimits(plano)
+  const limits = await getPlanLimits(plano)
   const novoLimite = limits.isUnlimited ? -1 : limits.leadsPerMonth
 
+  // Buscar advogado atual para saber o plano anterior
+  const advogado = await prisma.advogados.findUnique({
+    where: { id: advogadoId },
+  })
+
+  if (!advogado) {
+    throw new Error('Advogado não encontrado')
+  }
+
+  const planoAnterior = advogado.plano
+
+  // Buscar IDs dos planos no catálogo
+  const [planoCatalogo, planoAnteriorCatalogo] = await Promise.all([
+    prisma.planos.findUnique({ where: { codigo: plano } }),
+    planoAnterior !== plano
+      ? prisma.planos.findUnique({ where: { codigo: planoAnterior } })
+      : Promise.resolve(null),
+  ])
+
+  if (!planoCatalogo) {
+    throw new Error(`Plano ${plano} não encontrado no catálogo`)
+  }
+
+  // Atualizar plano do advogado
   await prisma.advogados.update({
     where: { id: advogadoId },
     data: {
       plano,
       planoExpira: planoExpira || null,
       leadsLimiteMes: novoLimite,
+      stripeSubscriptionId: options?.stripeSubscriptionId || advogado.stripeSubscriptionId,
       // Não reseta leadsRecebidosMes ao mudar de plano
     },
   })
+
+  // Se mudou de plano, registrar no histórico
+  if (planoAnterior !== plano) {
+    // Finalizar assinatura anterior
+    if (planoAnteriorCatalogo) {
+      await finalizeCurrentSubscription(
+        advogadoId,
+        planoAnterior === 'FREE'
+          ? 'Upgrade de plano gratuito'
+          : `Mudança de plano ${planoAnterior} → ${plano}`,
+        'USUARIO'
+      )
+    }
+
+    // Criar nova assinatura
+    await createSubscriptionHistory({
+      advogadoId,
+      planoId: planoCatalogo.id,
+      planoAnteriorId: planoAnteriorCatalogo?.id,
+      precoPago: options?.precoPago || planoCatalogo.preco,
+      leadsLimite: novoLimite,
+      stripeSubscriptionId: options?.stripeSubscriptionId,
+      stripePriceId: options?.stripePriceId || planoCatalogo.stripePriceId || undefined,
+    })
+  }
+}
+
+/**
+ * Cancela assinatura do advogado (volta para FREE)
+ */
+export async function cancelAdvogadoSubscription(
+  advogadoId: string,
+  motivo: string,
+  canceladoPor: CanceladoPor = 'USUARIO'
+): Promise<void> {
+  // Finalizar assinatura atual
+  await finalizeCurrentSubscription(advogadoId, motivo, canceladoPor)
+
+  // Voltar para plano FREE
+  const limits = await getPlanLimits('FREE')
+  const novoLimite = limits.isUnlimited ? -1 : limits.leadsPerMonth
+
+  await prisma.advogados.update({
+    where: { id: advogadoId },
+    data: {
+      plano: 'FREE',
+      planoExpira: null,
+      leadsLimiteMes: novoLimite,
+      stripeSubscriptionId: null,
+    },
+  })
+
+  // Criar entrada no histórico para o plano FREE
+  const planoFree = await prisma.planos.findUnique({
+    where: { codigo: 'FREE' },
+  })
+
+  if (planoFree) {
+    await createSubscriptionHistory({
+      advogadoId,
+      planoId: planoFree.id,
+      precoPago: 0,
+      leadsLimite: novoLimite,
+    })
+  }
 }

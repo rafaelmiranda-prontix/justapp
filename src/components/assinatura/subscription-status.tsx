@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Calendar, CreditCard, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { formatDate, formatCurrency } from '@/lib/utils'
-import { PLANS } from '@/lib/plans'
+import { PLANS_STATIC as PLANS } from '@/lib/plans'
 import { useRouter } from 'next/navigation'
 
 interface SubscriptionStatusProps {

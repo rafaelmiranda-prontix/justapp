@@ -15,7 +15,12 @@ const scripts = [
   {
     name: 'Configurações',
     file: 'seed-configs.ts',
-    description: 'Configurações do sistema (matching, planos, notificações)',
+    description: 'Configurações do sistema (matching, notificações)',
+  },
+  {
+    name: 'Planos',
+    file: 'seed-planos.ts',
+    description: 'Catálogo de planos de assinatura (FREE, BASIC, PREMIUM)',
   },
   {
     name: 'Especialidades',

@@ -8,7 +8,7 @@ import { SubscriptionStatus } from '@/components/assinatura/subscription-status'
 import { PlanComparison } from '@/components/assinatura/plan-comparison'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, AlertCircle } from 'lucide-react'
-import { PLANS } from '@/lib/plans'
+import { type PlanConfig } from '@/lib/plans'
 
 interface PlanData {
   plano: string
@@ -22,22 +22,35 @@ interface PlanData {
 
 export default function AssinaturaPage() {
   const [planData, setPlanData] = useState<PlanData | null>(null)
+  const [plans, setPlans] = useState<Record<string, PlanConfig>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [isSubscribing, setIsSubscribing] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
-    fetchPlanData()
+    loadData()
   }, [])
 
-  const fetchPlanData = async () => {
+  const loadData = async () => {
     setIsLoading(true)
     try {
-      const res = await fetch('/api/advogado/plano')
-      const result = await res.json()
+      // Buscar dados do plano atual e configs dos planos
+      const [planRes, plansRes] = await Promise.all([
+        fetch('/api/advogado/plano'),
+        fetch('/api/plans'),
+      ])
 
-      if (result.success) {
-        setPlanData(result.data)
+      const [planResult, plansResult] = await Promise.all([
+        planRes.json(),
+        plansRes.json(),
+      ])
+
+      if (planResult.success) {
+        setPlanData(planResult.data)
+      }
+
+      if (plansResult.success) {
+        setPlans(plansResult.data)
       }
     } catch (error) {
       console.error('Erro ao buscar plano:', error)
@@ -50,6 +63,8 @@ export default function AssinaturaPage() {
       setIsLoading(false)
     }
   }
+
+  const fetchPlanData = loadData // Alias para compatibilidade
 
   const handleSelectPlan = async (planId: string) => {
     if (planId === 'FREE') {
@@ -139,21 +154,30 @@ export default function AssinaturaPage() {
       <div className="mb-8">
         <h2 className="text-2xl font-bold mb-4">Escolha seu Plano</h2>
         <div className="grid md:grid-cols-3 gap-6">
-          {Object.entries(PLANS).map(([planId, plan]) => (
-            <PlanCard
-              key={planId}
-              plan={plan}
-              planId={planId}
-              currentPlan={planData?.plano}
-              onSelect={handleSelectPlan}
-              isLoading={isSubscribing}
-            />
-          ))}
+          {Object.keys(plans).length > 0 ? (
+            Object.entries(plans).map(([planId, plan]) => (
+              <PlanCard
+                key={planId}
+                plan={plan}
+                planId={planId}
+                currentPlan={planData?.plano}
+                onSelect={handleSelectPlan}
+                isLoading={isSubscribing}
+              />
+            ))
+          ) : (
+            // Skeleton dos planos enquanto carrega
+            <>
+              <Skeleton className="h-[400px]" />
+              <Skeleton className="h-[400px]" />
+              <Skeleton className="h-[400px]" />
+            </>
+          )}
         </div>
       </div>
 
       <div className="mb-8">
-        <PlanComparison />
+        <PlanComparison plans={plans} />
       </div>
 
       <Card>

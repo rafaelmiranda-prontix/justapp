@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { stripe, STRIPE_PRICE_IDS } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
-import { PLANS, type PlanType } from '@/lib/plans'
+import { getPlanConfig, type PlanType } from '@/lib/plans'
 import { z } from 'zod'
 
 const checkoutSchema = z.object({
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Advogado não encontrado' }, { status: 404 })
     }
 
-    const planConfig = PLANS[plan as PlanType]
+    const planConfig = await getPlanConfig(plan as PlanType)
     const priceId = STRIPE_PRICE_IDS[plan as 'BASIC' | 'PREMIUM']
 
     if (!priceId) {

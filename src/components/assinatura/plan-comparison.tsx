@@ -2,20 +2,36 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Check, X } from 'lucide-react'
-import { PLANS } from '@/lib/plans'
+import { PLANS_STATIC as PLANS, type PlanConfig } from '@/lib/plans'
 import { formatCurrency } from '@/lib/utils'
 
-export function PlanComparison() {
+interface PlanComparisonProps {
+  plans?: Record<string, PlanConfig>
+}
+
+export function PlanComparison({ plans }: PlanComparisonProps) {
   const planKeys = Object.keys(PLANS) as Array<keyof typeof PLANS>
+
+  // Gerar valores de leads dinamicamente dos planos
+  const leadsValues = plans
+    ? {
+        FREE: plans.FREE?.leadsPerMonth?.toString() || '0',
+        BASIC: plans.BASIC?.leadsPerMonth?.toString() || '10',
+        PREMIUM:
+          plans.PREMIUM?.leadsPerMonth === -1 || (plans.PREMIUM?.leadsPerMonth ?? 0) >= 999
+            ? 'Ilimitado'
+            : plans.PREMIUM?.leadsPerMonth?.toString() || '50',
+      }
+    : {
+        FREE: '3',
+        BASIC: '10',
+        PREMIUM: '50',
+      }
 
   const features = [
     {
       name: 'Leads por mês',
-      values: {
-        FREE: '0',
-        BASIC: '10',
-        PREMIUM: 'Ilimitado',
-      },
+      values: leadsValues,
     },
     {
       name: 'Perfil básico',

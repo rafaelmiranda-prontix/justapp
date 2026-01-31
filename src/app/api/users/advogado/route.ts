@@ -56,7 +56,7 @@ export async function POST(req: Request) {
 
     // Configurar plano inicial (FREE) e limites
     const planoInicial: 'FREE' = 'FREE'
-    const limits = getPlanLimits(planoInicial)
+    const limits = await getPlanLimits(planoInicial)
     const leadsLimiteMes = limits.isUnlimited ? -1 : limits.leadsPerMonth
 
     // Criar usuário + advogado com status PRE_ACTIVE

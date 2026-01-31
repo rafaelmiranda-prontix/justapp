@@ -1,47 +1,70 @@
+import { prisma } from './prisma'
+
 export type PlanType = 'FREE' | 'BASIC' | 'PREMIUM'
 
 export interface PlanConfig {
+  id: string
+  codigo: PlanType
   name: string
+  description?: string
   price: number // em centavos (R$)
   priceDisplay: number // para exibição
   leadsPerMonth: number // -1 = ilimitado
   features: string[]
-  stripePriceId?: string // ID do preço no Stripe
+  stripePriceId?: string
+  ativo: boolean
+  ordem: number
 }
 
-export const PLANS: Record<PlanType, PlanConfig> = {
+// Cache dos planos
+let plansCache: Record<PlanType, PlanConfig> | null = null
+let lastCacheUpdate: number = 0
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutos
+
+// Valores padrão caso falhe buscar do banco
+// Exportado como PLANS_STATIC para compatibilidade com client components
+export const PLANS_STATIC: Record<PlanType, Omit<PlanConfig, 'id'>> = {
   FREE: {
+    codigo: 'FREE',
     name: 'Gratuito',
+    description: 'Plano gratuito com recursos básicos',
     price: 0,
     priceDisplay: 0,
-    leadsPerMonth: 0,
+    leadsPerMonth: 3,
     features: [
       'Perfil básico na plataforma',
       'Visualização de casos compatíveis',
-      'Sem leads mensais',
+      'Leads mensais limitados',
     ],
+    ativo: true,
+    ordem: 1,
   },
   BASIC: {
+    codigo: 'BASIC',
     name: 'Básico',
-    price: 9900, // R$ 99,00 em centavos
+    description: 'Plano ideal para advogados iniciantes',
+    price: 9900,
     priceDisplay: 99,
     leadsPerMonth: 10,
     features: [
-      '10 leads qualificados por mês',
+      'Leads qualificados por mês',
       'Perfil completo destacado',
       'Suporte por email',
       'Dashboard de métricas',
       'Avaliações de clientes',
     ],
-    // stripePriceId será configurado nas variáveis de ambiente
+    ativo: true,
+    ordem: 2,
   },
   PREMIUM: {
+    codigo: 'PREMIUM',
     name: 'Premium',
-    price: 29900, // R$ 299,00 em centavos
+    description: 'Plano completo para profissionais estabelecidos',
+    price: 29900,
     priceDisplay: 299,
-    leadsPerMonth: -1, // Ilimitado
+    leadsPerMonth: 50,
     features: [
-      'Leads qualificados ilimitados',
+      'Máximo de leads qualificados',
       'Perfil destacado no topo',
       'Suporte prioritário',
       'Dashboard avançado',
@@ -49,35 +72,144 @@ export const PLANS: Record<PlanType, PlanConfig> = {
       'Relatórios detalhados',
       'Badge "Premium" no perfil',
     ],
-    // stripePriceId será configurado nas variáveis de ambiente
+    ativo: true,
+    ordem: 3,
   },
 }
 
-export function getPlanConfig(plan: PlanType): PlanConfig {
-  return PLANS[plan]
-}
+/**
+ * Busca planos do banco de dados
+ */
+async function fetchPlansFromDB(): Promise<Record<PlanType, PlanConfig>> {
+  try {
+    const planos = await prisma.planos.findMany({
+      where: { ativo: true },
+      orderBy: { ordem: 'asc' },
+    })
 
-export function getPlanLimits(plan: PlanType): {
-  leadsPerMonth: number
-  isUnlimited: boolean
-} {
-  const config = PLANS[plan]
-  return {
-    leadsPerMonth: config.leadsPerMonth,
-    isUnlimited: config.leadsPerMonth === -1,
+    const plansMap: Record<string, PlanConfig> = {}
+
+    for (const plano of planos) {
+      plansMap[plano.codigo] = {
+        id: plano.id,
+        codigo: plano.codigo as PlanType,
+        name: plano.nome,
+        description: plano.descricao || undefined,
+        price: plano.preco,
+        priceDisplay: plano.precoDisplay,
+        leadsPerMonth: plano.leadsPerMonth,
+        features: plano.features,
+        stripePriceId: plano.stripePriceId || undefined,
+        ativo: plano.ativo,
+        ordem: plano.ordem,
+      }
+    }
+
+    // Garantir que todos os planos existam
+    return {
+      FREE: plansMap.FREE || { ...PLANS_STATIC.FREE, id: 'default-free' },
+      BASIC: plansMap.BASIC || { ...PLANS_STATIC.BASIC, id: 'default-basic' },
+      PREMIUM: plansMap.PREMIUM || { ...PLANS_STATIC.PREMIUM, id: 'default-premium' },
+    }
+  } catch (error) {
+    console.error('[Plans] Error fetching plans from database:', error)
+    // Retornar defaults com IDs temporários
+    return {
+      FREE: { ...PLANS_STATIC.FREE, id: 'default-free' },
+      BASIC: { ...PLANS_STATIC.BASIC, id: 'default-basic' },
+      PREMIUM: { ...PLANS_STATIC.PREMIUM, id: 'default-premium' },
+    }
   }
 }
 
+/**
+ * Obtém planos com cache
+ */
+async function getPlansWithCache(): Promise<Record<PlanType, PlanConfig>> {
+  const now = Date.now()
+
+  // Verificar se cache é válido
+  if (plansCache && now - lastCacheUpdate < CACHE_TTL) {
+    return plansCache
+  }
+
+  // Buscar do banco
+  plansCache = await fetchPlansFromDB()
+  lastCacheUpdate = now
+
+  return plansCache
+}
+
+/**
+ * Obtém configuração completa do plano (async)
+ */
+export async function getPlanConfig(plan: PlanType): Promise<PlanConfig> {
+  const plans = await getPlansWithCache()
+  return plans[plan]
+}
+
+/**
+ * Obtém todos os planos ativos
+ */
+export async function getAllPlans(): Promise<Record<PlanType, PlanConfig>> {
+  return getPlansWithCache()
+}
+
+/**
+ * Obtém limites de leads do plano (async)
+ */
+export async function getPlanLimits(
+  plan: PlanType
+): Promise<{
+  leadsPerMonth: number
+  isUnlimited: boolean
+}> {
+  const planConfig = await getPlanConfig(plan)
+  const leadsPerMonth = planConfig.leadsPerMonth
+
+  return {
+    leadsPerMonth,
+    isUnlimited: leadsPerMonth === -1 || leadsPerMonth >= 999,
+  }
+}
+
+/**
+ * Versão síncrona com valores padrão (usar apenas quando async não é possível)
+ */
+export function getPlanLimitsSync(plan: PlanType): {
+  leadsPerMonth: number
+  isUnlimited: boolean
+} {
+  // Usa cache se disponível, senão usa defaults
+  const plans = plansCache || PLANS_STATIC
+  const leadsPerMonth = (plans[plan] as PlanConfig).leadsPerMonth
+
+  return {
+    leadsPerMonth,
+    isUnlimited: leadsPerMonth === -1 || leadsPerMonth >= 999,
+  }
+}
+
+/**
+ * Verifica se advogado pode receber mais leads
+ */
 export function canReceiveLead(
   plan: PlanType,
   leadsRecebidosMes: number,
   leadsLimiteMes: number
 ): boolean {
-  const limits = getPlanLimits(plan)
-
-  if (limits.isUnlimited) {
-    return true
+  // Usa leadsLimiteMes do banco (já armazenado no advogado)
+  if (leadsLimiteMes === -1 || leadsLimiteMes >= 999) {
+    return true // Ilimitado
   }
 
   return leadsRecebidosMes < leadsLimiteMes
+}
+
+/**
+ * Invalida o cache (útil após atualizar planos no banco)
+ */
+export function invalidatePlansCache(): void {
+  plansCache = null
+  lastCacheUpdate = 0
 }

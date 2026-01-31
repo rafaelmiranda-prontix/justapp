@@ -52,7 +52,7 @@ export function PlanCard({ plan, planId, currentPlan, onSelect, isLoading }: Pla
           )}
         </div>
         <CardDescription>
-          {plan.leadsPerMonth === -1
+          {plan.leadsPerMonth === -1 || plan.leadsPerMonth >= 999
             ? 'Leads ilimitados'
             : `${plan.leadsPerMonth} leads por mês`}
         </CardDescription>

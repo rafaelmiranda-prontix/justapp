@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useGeolocation } from '@/hooks/use-geolocation'
-import { getPlanConfig } from '@/lib/plans'
+import { PLANS_STATIC } from '@/lib/plans'
 
 interface Especialidade {
   id: string
@@ -536,7 +536,7 @@ export default function AdvogadoPerfilPage() {
             <Label>Plano Atual</Label>
             <div className="mt-2">
               <Badge variant="outline" className="text-lg px-3 py-1">
-                {getPlanConfig(perfil.plano as any)?.name || perfil.plano}
+                {PLANS_STATIC[perfil.plano as keyof typeof PLANS_STATIC]?.name || perfil.plano}
               </Badge>
             </div>
           </div>
