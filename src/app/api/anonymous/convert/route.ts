@@ -13,7 +13,7 @@ import { hash } from 'bcryptjs'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { sessionId, name, email, phone } = body
+    const { sessionId, name, email, phone, cidade, estado } = body
 
     // Validações
     if (!sessionId || !name || !email) {
@@ -95,13 +95,13 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Criar Cidadao
+      // Criar Cidadao (priorizar cidade/estado do formulário, depois da sessão)
       const cidadao = await tx.cidadaos.create({
         data: {
           id: nanoid(),
           userId: user.id,
-          cidade: session.cidade || null,
-          estado: session.estado || null,
+          cidade: cidade || session.cidade || null,
+          estado: estado || session.estado || null,
           updatedAt: now,
         },
       })

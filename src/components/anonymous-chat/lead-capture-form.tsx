@@ -1,13 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, Mail, User, Phone, CheckCircle2 } from 'lucide-react'
+import { Loader2, Mail, User, Phone, CheckCircle2, MapPin, Navigation } from 'lucide-react'
+import { GeolocationModal } from './geolocation-modal'
+import { useGeolocation } from '@/hooks/use-geolocation'
 
 interface LeadCaptureFormProps {
-  onSubmit: (data: { name: string; email: string; phone?: string }) => Promise<void>
+  onSubmit: (data: { name: string; email: string; phone?: string; cidade?: string; estado?: string }) => Promise<void>
   extractedData?: {
     especialidade?: string
     cidade?: string
@@ -20,8 +22,58 @@ export function LeadCaptureForm({ onSubmit, extractedData }: LeadCaptureFormProp
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [cidade, setCidade] = useState(extractedData?.cidade || '')
+  const [estado, setEstado] = useState(extractedData?.estado || '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showGeoModal, setShowGeoModal] = useState(false)
+  const [isGettingLocation, setIsGettingLocation] = useState(false)
+  
+  const { getCurrentPosition, error: geoError } = useGeolocation()
+
+  // Preencher cidade e estado se vierem do extractedData
+  useEffect(() => {
+    if (extractedData?.cidade && !cidade) {
+      setCidade(extractedData.cidade)
+    }
+    if (extractedData?.estado && !estado) {
+      setEstado(extractedData.estado)
+    }
+  }, [extractedData, cidade, estado])
+
+  const handleGetLocation = async () => {
+    setShowGeoModal(false)
+    setIsGettingLocation(true)
+    
+    try {
+      const position = await getCurrentPosition()
+      
+      // Fazer reverse geocoding
+      const res = await fetch(
+        `/api/geo/reverse-geocode?lat=${position.latitude}&lon=${position.longitude}`
+      )
+      const result = await res.json()
+
+      if (result.success) {
+        setCidade(result.data.cidade)
+        setEstado(result.data.estado)
+      }
+    } catch (error: any) {
+      console.error('Erro ao obter localização:', error)
+      // Não mostrar erro, apenas não preencher os campos
+    } finally {
+      setIsGettingLocation(false)
+    }
+  }
+
+  const handleRequestLocation = () => {
+    setShowGeoModal(true)
+  }
+
+  const handleDenyLocation = () => {
+    setShowGeoModal(false)
+    // Usuário pode preencher manualmente
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,6 +90,11 @@ export function LeadCaptureForm({ onSubmit, extractedData }: LeadCaptureFormProp
       return
     }
 
+    if (!cidade.trim() || !estado.trim()) {
+      setError('Por favor, informe sua cidade e estado')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -45,6 +102,8 @@ export function LeadCaptureForm({ onSubmit, extractedData }: LeadCaptureFormProp
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim() || undefined,
+        cidade: cidade.trim(),
+        estado: estado.trim().toUpperCase(),
       })
       // Se chegou aqui, foi sucesso - o formulário será escondido pelo componente pai
       // Não precisamos limpar os campos aqui, pois o formulário será desmontado
@@ -146,6 +205,54 @@ export function LeadCaptureForm({ onSubmit, extractedData }: LeadCaptureFormProp
           />
         </div>
 
+        {/* Localização */}
+        <div className="space-y-2">
+          <Label htmlFor="cidade" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            Localização *
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="cidade"
+              type="text"
+              placeholder="Cidade"
+              value={cidade}
+              onChange={(e) => setCidade(e.target.value)}
+              disabled={isSubmitting || isGettingLocation}
+              required
+              className="bg-white dark:bg-gray-900 flex-1"
+            />
+            <Input
+              id="estado"
+              type="text"
+              placeholder="Estado (ex: SP)"
+              value={estado}
+              onChange={(e) => setEstado(e.target.value.toUpperCase())}
+              disabled={isSubmitting || isGettingLocation}
+              required
+              maxLength={2}
+              className="bg-white dark:bg-gray-900 w-24"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={handleRequestLocation}
+              disabled={isSubmitting || isGettingLocation}
+              title="Usar minha localização"
+            >
+              {isGettingLocation ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Navigation className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Clique no ícone de navegação para usar sua localização automaticamente
+          </p>
+        </div>
+
         {/* Error */}
         {error && (
           <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
@@ -175,6 +282,14 @@ export function LeadCaptureForm({ onSubmit, extractedData }: LeadCaptureFormProp
           Ao enviar, você concorda com nossos termos de uso
         </p>
       </form>
+
+      {/* Modal de Geolocalização */}
+      <GeolocationModal
+        open={showGeoModal}
+        onClose={handleDenyLocation}
+        onAllow={handleGetLocation}
+        onDeny={handleDenyLocation}
+      />
 
       {/* Trust badges */}
       <div className="grid grid-cols-3 gap-2 pt-2 border-t text-xs text-center">

@@ -21,7 +21,7 @@ interface UseAnonymousChatReturn {
     estado?: string
     score?: number
   }
-  submitLeadData: (data: { name: string; email: string; phone?: string }) => Promise<void>
+  submitLeadData: (data: { name: string; email: string; phone?: string; cidade?: string; estado?: string }) => Promise<void>
   resetChat: () => Promise<void>
 }
 
@@ -261,7 +261,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
 
   // Submeter dados do lead
   const submitLeadData = useCallback(
-    async (data: { name: string; email: string; phone?: string }) => {
+    async (data: { name: string; email: string; phone?: string; cidade?: string; estado?: string }) => {
       if (!sessionId) {
         console.error('No session ID')
         throw new Error('Sessão não encontrada')
