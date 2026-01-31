@@ -34,10 +34,11 @@ export async function GET() {
     }
 
     // Verifica se o plano está ativo
+    // FREE sempre está ativo
+    // Planos pagos: ativo se não expirou
     const isActive =
-      advogadoAtualizado.plano !== 'FREE' &&
-      (!advogadoAtualizado.planoExpira ||
-        advogadoAtualizado.planoExpira > new Date())
+      advogadoAtualizado.plano === 'FREE' ||
+      (!advogadoAtualizado.planoExpira || advogadoAtualizado.planoExpira > new Date())
 
     return NextResponse.json({
       success: true,

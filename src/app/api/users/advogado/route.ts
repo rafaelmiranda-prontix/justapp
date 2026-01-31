@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { validateOAB } from '@/lib/utils'
 import { EmailService } from '@/lib/email.service'
 import { getPlanLimits } from '@/lib/plans'
+import { createSubscriptionHistory } from '@/lib/subscription-history.service'
 
 const signupSchema = z.object({
   name: z.string().min(2),
@@ -90,6 +91,26 @@ export async function POST(req: Request) {
         advogados: true,
       },
     })
+
+    // Criar histórico de assinatura inicial (plano FREE)
+    try {
+      const planoFree = await prisma.planos.findUnique({
+        where: { codigo: 'FREE' },
+      })
+
+      if (planoFree && user.advogados) {
+        await createSubscriptionHistory({
+          advogadoId: user.advogados.id,
+          planoId: planoFree.id,
+          precoPago: 0,
+          leadsLimite: leadsLimiteMes,
+        })
+        console.log(`[Signup] Subscription history created for: ${user.email}`)
+      }
+    } catch (historyError) {
+      console.error('[Signup] Failed to create subscription history:', historyError)
+      // Não falha a request - apenas log
+    }
 
     // Enviar email de ativação
     try {
