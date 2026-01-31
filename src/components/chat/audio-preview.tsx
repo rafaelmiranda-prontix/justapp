@@ -105,7 +105,13 @@ export function AudioPreview({
               {formatTime(currentTime)}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground">Áudio gravado</p>
+          {transcript ? (
+            <p className="text-xs text-green-700 dark:text-green-400 italic line-clamp-1">
+              "{transcript}"
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">Áudio gravado</p>
+          )}
         </div>
 
         {/* Botões de ação */}

@@ -17,6 +17,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const [error, setError] = useState<string | null>(null)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -29,6 +30,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 
       // Solicitar permissão de áudio
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      streamRef.current = stream
 
       // Criar MediaRecorder
       const mediaRecorder = new MediaRecorder(stream, {
@@ -90,6 +92,12 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       setAudioBlob(null)
       setRecordingTime(0)
       chunksRef.current = []
+
+      // Parar todas as tracks do stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop())
+        streamRef.current = null
+      }
 
       if (timerRef.current) {
         clearInterval(timerRef.current)
