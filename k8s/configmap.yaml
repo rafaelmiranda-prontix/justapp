@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: legalconnect-config
+  namespace: legalconnect
+data:
+  # Node Environment
+  NODE_ENV: "production"
+  NEXT_TELEMETRY_DISABLED: "1"
+  
+  # Database Connection (será sobrescrito por Secret)
+  DATABASE_URL: "postgresql://legalconnect:$(POSTGRES_PASSWORD)@postgres-service:5432/legalconnect?schema=public"
+  
+  # Redis Connection
+  REDIS_URL: "redis://redis-service:6379"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  
+  # NextAuth
+  NEXTAUTH_URL: "https://legalconnect.example.com"
+  
+  # Email
+  EMAIL_FROM: "LegalConnect <noreply@legalconnect.com>"
+  
+  # App Configuration
+  PORT: "3000"
+  HOSTNAME: "0.0.0.0"
+  
+  # PostgreSQL Service
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "legalconnect"
+  POSTGRES_USER: "legalconnect"

@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legalconnect-app
+  namespace: legalconnect
+  labels:
+    app: legalconnect-app
+spec:
+  replicas: 2  # Ajuste conforme necessário
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: legalconnect-app
+  template:
+    metadata:
+      labels:
+        app: legalconnect-app
+    spec:
+      initContainers:
+      # Aguardar PostgreSQL estar pronto
+      - name: wait-for-postgres
+        image: busybox:1.35
+        command: ['sh', '-c']
+        args:
+        - |
+          until nc -z postgres-service 5432; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+          echo "PostgreSQL is ready!"
+      # Aguardar Redis estar pronto
+      - name: wait-for-redis
+        image: busybox:1.35
+        command: ['sh', '-c']
+        args:
+        - |
+          until nc -z redis-service 6379; do
+            echo "Waiting for Redis..."
+            sleep 2
+          done
+          echo "Redis is ready!"
+      containers:
+      - name: app
+        image: legalconnect-app:latest  # Ajuste com sua imagem Docker
+        # image: your-registry/legalconnect-app:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          name: http
+        envFrom:
+        - configMapRef:
+            name: legalconnect-config
+        - secretRef:
+            name: legalconnect-secrets
+        env:
+        # Sobrescrever DATABASE_URL com senha do secret
+        - name: DATABASE_URL
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service:5432/$(POSTGRES_DB)?schema=public"
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: legalconnect-config
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: legalconnect-secrets
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: legalconnect-config
+              key: POSTGRES_DB
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/public/uploads
+      volumes:
+      - name: uploads
+        persistentVolumeClaim:
+          claimName: app-uploads-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: legalconnect-app-service
+  namespace: legalconnect
+  labels:
+    app: legalconnect-app
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    app: legalconnect-app
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-uploads-pvc
+  namespace: legalconnect
+spec:
+  accessModes:
+    - ReadWriteMany  # Para múltiplos pods
+  resources:
+    requests:
+      storage: 10Gi
+  # storageClassName: fast-ssd  # Ajuste conforme seu cluster

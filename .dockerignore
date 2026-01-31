@@ -1,14 +1,73 @@
-Dockerfile
-.dockerignore
+# Dependencies
 node_modules
 npm-debug.log
+yarn-error.log
+.pnp
+.pnp.js
+
+# Testing
+coverage
+.nyc_output
+
+# Next.js
 .next
-.git
-.gitignore
+out
+dist
+build
+
+# Production
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
 .env
-.env.local
-.env.production
-README.md
-docs
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE
 .vscode
 .idea
+*.swp
+*.swo
+*~
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Scripts (opcional - mantenha se precisar rodar no container)
+# scripts
+
+# Uploads (será criado no container)
+public/uploads

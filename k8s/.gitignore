@@ -1,0 +1,8 @@
+# Secrets - NUNCA commitar!
+secrets.yaml
+*.secrets.yaml
+.env.secrets
+secrets/
+
+# Kustomize builds
+kustomization-build.yaml
