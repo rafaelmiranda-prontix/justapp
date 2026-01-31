@@ -1,0 +1,206 @@
+# 🛠️ Scripts de Manutenção
+
+Este diretório contém scripts utilitários para gerenciar o banco de dados e testar funcionalidades.
+
+## 📦 Seed (Popular Banco de Dados)
+
+### Popular Tudo de Uma Vez
+```bash
+npm run seed
+# ou
+npx tsx scripts/seed-all.ts
+```
+
+Executa todos os seeds em ordem:
+1. ✅ Configurações padrão
+2. ✅ Advogados de teste
+
+### Seeds Individuais
+
+#### Configurações Padrão
+```bash
+npm run seed:configs
+```
+
+Cria 21 configurações do sistema:
+- **Matching**: max_matches_per_caso, min_match_score, match_expiration_hours
+- **Planos**: Limites de leads (FREE: 3, BASIC: 10, PREMIUM: 50)
+- **Notificações**: Configurações de emails e alertas
+- **Chat**: Regras de chat e anexos
+- **Avaliações**: Regras de reviews
+- **Sistema**: Modo beta, manutenção
+- **Chat Anônimo**: Configurações do fluxo anônimo
+- **Email**: Expiração de ativação
+
+#### Advogados de Teste
+```bash
+npm run seed:lawyers
+```
+
+Cria 4 advogados com diferentes planos:
+- Dr. João Silva (PREMIUM) - São Paulo, SP - Direito Civil e Imobiliário
+- Dra. Maria Santos (BASIC) - Rio de Janeiro, RJ - Direito Trabalhista e do Consumidor
+- Dr. Carlos Oliveira (BASIC) - Campinas, SP - Direito Penal
+- Dra. Ana Costa (FREE) - Belo Horizonte, MG - Direito Civil
+
+**Login**: `[email acima] / senha123`
+
+---
+
+## 🔍 Diagnóstico
+
+### Verificar Distribuição de Casos
+```bash
+npm run check:distribution
+# ou
+npx tsx scripts/check-distribution.ts
+```
+
+**Mostra**:
+- ✅ Advogados ativos e com capacidade
+- 📋 Casos abertos aguardando distribuição
+- 🤝 Matches criados
+- ⚠️ Problemas identificados
+
+**Exemplo de Saída**:
+```
+=== Diagnóstico de Distribuição de Casos ===
+
+📊 Advogados ATIVOS e COM ONBOARDING: 4
+✅ Advogados disponíveis:
+   - Dr. João Silva (PREMIUM, 1/50 leads)
+
+📋 Casos ABERTOS: 1
+🤝 Total de Matches: 1
+
+=== PROBLEMAS IDENTIFICADOS ===
+✓ Nenhum problema encontrado
+```
+
+---
+
+## 🚀 Manutenção
+
+### Distribuir Casos Manualmente
+```bash
+npx tsx scripts/distribute-open-cases.ts
+```
+
+Dispara distribuição para todos os casos com status ABERTO que ainda não têm matches.
+
+**Quando usar**:
+- Após criar novos advogados
+- Para reprocessar casos que não foram distribuídos
+- Em ambiente de desenvolvimento para testes
+
+---
+
+### Atualizar Localização de Casos
+```bash
+npx tsx scripts/update-case-location.ts
+```
+
+Atualiza casos sem cidade/estado para São Paulo, SP.
+
+**Quando usar**:
+- Casos criados sem localização
+- Para permitir matching com advogados de SP
+
+---
+
+## 📚 Estrutura dos Scripts
+
+```
+scripts/
+├── README.md                      # Este arquivo
+├── seed-all.ts                    # Executa todos os seeds
+├── seed-configs.ts                # Cria configurações padrão
+├── seed-lawyers.ts                # Cria advogados de teste
+├── check-distribution.ts          # Diagnóstico completo
+├── distribute-open-cases.ts       # Distribuição manual
+└── update-case-location.ts        # Atualizar localização
+```
+
+---
+
+## 🎯 Fluxo Recomendado
+
+### 1. Setup Inicial (Primeiro Deploy)
+```bash
+# 1. Gerar Prisma Client
+npm run db:generate
+
+# 2. Popular banco de dados
+npm run seed
+
+# 3. Verificar se tudo está ok
+npm run check:distribution
+```
+
+### 2. Desenvolvimento Local
+```bash
+# Resetar e recriar dados de teste
+npm run seed:lawyers
+
+# Verificar distribuição
+npm run check:distribution
+```
+
+### 3. Troubleshooting
+```bash
+# Diagnóstico completo
+npm run check:distribution
+
+# Distribuir casos manualmente
+npx tsx scripts/distribute-open-cases.ts
+
+# Popular configs se estiver faltando
+npm run seed:configs
+```
+
+---
+
+## ⚙️ Configurações Criadas
+
+| Chave | Valor Padrão | Descrição |
+|-------|--------------|-----------|
+| `max_matches_per_caso` | 5 | Matches criados por caso |
+| `min_match_score` | 60 | Score mínimo (0-100) |
+| `match_expiration_hours` | 48 | Horas até expirar |
+| `free_plan_monthly_leads` | 3 | Limite FREE |
+| `basic_plan_monthly_leads` | 10 | Limite BASIC |
+| `premium_plan_monthly_leads` | 50 | Limite PREMIUM |
+| `anonymous_chat_enabled` | true | Chat anônimo ativo |
+| `beta_mode` | true | Modo beta (requer convite) |
+
+Ver lista completa em: [seed-configs.ts](seed-configs.ts)
+
+---
+
+## 🔧 Comandos Úteis
+
+```bash
+# Abrir Prisma Studio (visualizar banco)
+npm run db:studio
+
+# Gerar Prisma Client após mudanças no schema
+npm run db:generate
+
+# Push schema para banco (dev)
+npm run db:push
+
+# Criar migration
+npm run db:migrate
+
+# Executar qualquer script
+npx tsx scripts/[nome-do-script].ts
+```
+
+---
+
+## 📝 Notas
+
+- **Todos os scripts são idempotentes**: Executar múltiplas vezes não cria duplicatas
+- **Seeds atualizam descrições**: Se config já existe, atualiza descrição mas mantém valor
+- **Advogados de teste**: Senhas são sempre `senha123`
+- **Logs detalhados**: Todos os scripts mostram progresso e erros
