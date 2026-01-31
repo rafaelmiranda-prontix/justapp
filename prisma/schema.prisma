@@ -198,6 +198,7 @@ model mensagens {
   lida        Boolean  @default(false)
   createdAt   DateTime @default(now())
   matches     matches  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  remetente   users    @relation("MensagensRemetente", fields: [remetenteId], references: [id], onDelete: Cascade)
 
   @@index([matchId])
   @@index([remetenteId])
@@ -272,23 +273,24 @@ model sessions {
 }
 
 model users {
-  id                String     @id
-  email             String     @unique
+  id                String       @id
+  email             String       @unique
   emailVerified     DateTime?
   name              String
   image             String?
   phone             String?
   password          String?
   role              UserRole
-  status            UserStatus @default(ACTIVE)
-  activationToken   String?    @unique
+  status            UserStatus   @default(ACTIVE)
+  activationToken   String?      @unique
   activationExpires DateTime?
-  createdAt         DateTime   @default(now())
+  createdAt         DateTime     @default(now())
   updatedAt         DateTime
   accounts          accounts[]
   advogados         advogados?
   cidadaos          cidadaos?
   sessions          sessions[]
+  mensagens         mensagens[]  @relation("MensagensRemetente")
 }
 
 model verification_tokens {

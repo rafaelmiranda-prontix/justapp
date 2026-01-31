@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { ChatWindow } from '@/components/chat/chat-window'
+import { ChatWrapper } from '@/components/chat/chat-wrapper'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
@@ -92,13 +92,13 @@ export default function AdvogadoChatPage({ params }: { params: Promise<{ matchId
         Voltar ao dashboard
       </Link>
 
-      <ChatWindow
+      <ChatWrapper
         matchId={matchId}
         currentUserId={session.user.id}
-        otherUser={{
-          name: otherUser.name,
-          image: otherUser.image,
-        }}
+        currentUserName={session.user.name || 'Advogado'}
+        currentUserImage={session.user.image || null}
+        otherUserName={otherUser.name}
+        otherUserImage={otherUser.image}
       />
     </div>
   )

@@ -5,6 +5,8 @@ import { ChatInterfaceOptimized } from './chat-interface-optimized'
 interface ChatAdaptiveProps {
   matchId: string
   currentUserId: string
+  currentUserName: string
+  currentUserImage: string | null
   otherUserName: string
   otherUserImage: string | null
 }
@@ -16,6 +18,8 @@ interface ChatAdaptiveProps {
 export async function ChatAdaptive({
   matchId,
   currentUserId,
+  currentUserName,
+  currentUserImage,
   otherUserName,
   otherUserImage,
 }: ChatAdaptiveProps) {
@@ -28,6 +32,8 @@ export async function ChatAdaptive({
     <ChatComponent
       matchId={matchId}
       currentUserId={currentUserId}
+      currentUserName={currentUserName}
+      currentUserImage={currentUserImage}
       otherUserName={otherUserName}
       otherUserImage={otherUserImage}
     />

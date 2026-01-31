@@ -4,10 +4,11 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { pusherServer } from '@/lib/pusher'
+import { randomUUID } from 'crypto'
 
 const createMessageSchema = z.object({
   conteudo: z.string().min(1).max(2000),
-  anexoUrl: z.string().url().optional(),
+  anexoUrl: z.string().url().optional().nullable(),
 })
 
 // GET - Lista mensagens de um match
@@ -64,11 +65,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ matchId:
       // Buscar mensagens criadas depois do ID fornecido
       const afterMessage = await prisma.mensagens.findUnique({
         where: { id: afterId },
-        select: { criadoEm: true },
+        select: { createdAt: true },
       })
 
       if (afterMessage) {
-        whereClause.criadoEm = { gt: afterMessage.criadoEm }
+        whereClause.createdAt = { gt: afterMessage.createdAt }
       }
     }
 
@@ -78,8 +79,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ matchId:
         id: true,
         conteudo: true,
         anexoUrl: true,
-        lido: true,
-        criadoEm: true,
+        lida: true,
+        createdAt: true,
         remetente: {
           select: {
             id: true,
@@ -88,7 +89,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ matchId:
           },
         },
       },
-      orderBy: { criadoEm: afterId ? 'asc' : 'desc' },
+      orderBy: { createdAt: afterId ? 'asc' : 'desc' },
       take: limit,
       skip: afterId ? 0 : offset,
     })
@@ -163,7 +164,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ matchId
       where: {
         matchId,
         remetenteId: session.user.id,
-        criadoEm: {
+        createdAt: {
           gte: new Date(Date.now() - 60000), // Últimos 60 segundos
         },
       },
@@ -179,6 +180,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ matchId
     // Cria a mensagem
     const mensagem = await prisma.mensagens.create({
       data: {
+        id: randomUUID(),
         matchId,
         remetenteId: session.user.id,
         conteudo,
@@ -213,7 +215,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ matchId
     console.error('Error creating message:', error)
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Dados inválidos', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Dados inválidas', details: error.errors }, { status: 400 })
     }
 
     return NextResponse.json({ error: 'Erro ao enviar mensagem' }, { status: 500 })

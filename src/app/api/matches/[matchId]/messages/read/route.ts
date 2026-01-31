@@ -53,7 +53,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ matchId
         matchId,
         remetenteId: { not: session.user.id },
       },
-      data: { lido: true },
+      data: { lida: true },
     })
 
     // Notificar via Pusher

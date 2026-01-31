@@ -19,8 +19,8 @@ interface Message {
   id: string
   conteudo: string
   anexoUrl: string | null
-  lido: boolean
-  criadoEm: string
+  lida: boolean
+  createdAt: string
   remetente: {
     id: string
     name: string
@@ -31,6 +31,8 @@ interface Message {
 interface ChatInterfaceProps {
   matchId: string
   currentUserId: string
+  currentUserName: string
+  currentUserImage: string | null
   otherUserName: string
   otherUserImage: string | null
 }
@@ -77,7 +79,7 @@ const ChatMessage = memo(
               isCurrentUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
             )}
           >
-            {formatDistanceToNow(new Date(message.criadoEm), {
+            {formatDistanceToNow(new Date(message.createdAt), {
               addSuffix: true,
               locale: ptBR,
             })}
@@ -99,6 +101,8 @@ ChatMessage.displayName = 'ChatMessage'
 export function ChatInterfaceOptimized({
   matchId,
   currentUserId,
+  currentUserName,
+  currentUserImage,
   otherUserName,
   otherUserImage,
 }: ChatInterfaceProps) {
@@ -121,7 +125,7 @@ export function ChatInterfaceOptimized({
     typingUsers,
     startTyping,
     stopTyping,
-  } = useRealtimeMessages(matchId, currentUserId)
+  } = useRealtimeMessages(matchId, currentUserId, currentUserName, currentUserImage)
 
   // Auto-scroll quando novas mensagens chegam
   useEffect(() => {

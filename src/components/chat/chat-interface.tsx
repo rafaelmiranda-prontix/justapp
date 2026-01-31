@@ -18,8 +18,8 @@ interface Message {
   id: string
   conteudo: string
   anexoUrl: string | null
-  lido: boolean
-  criadoEm: string
+  lida: boolean
+  createdAt: string
   remetente: {
     id: string
     name: string
@@ -217,7 +217,7 @@ export function ChatInterface({
                         isCurrentUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
                       )}
                     >
-                      {formatDistanceToNow(new Date(message.criadoEm), {
+                      {formatDistanceToNow(new Date(message.createdAt), {
                         addSuffix: true,
                         locale: ptBR,
                       })}

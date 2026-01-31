@@ -6,8 +6,8 @@ interface Message {
   id: string
   conteudo: string
   anexoUrl: string | null
-  lido: boolean
-  criadoEm: string
+  lida: boolean
+  createdAt: string
   remetente: {
     id: string
     name: string
@@ -31,7 +31,9 @@ interface UseRealtimeMessagesReturn {
 
 export function useRealtimeMessages(
   matchId: string,
-  currentUserId: string
+  currentUserId: string,
+  currentUserName: string = 'Você',
+  currentUserImage: string | null = null
 ): UseRealtimeMessagesReturn {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -110,7 +112,7 @@ export function useRealtimeMessages(
     channel.bind('messages-read', (data: { userId: string; messageIds: string[] }) => {
       setMessages((prev) =>
         prev.map((msg) =>
-          data.messageIds.includes(msg.id) ? { ...msg, lido: true } : msg
+          data.messageIds.includes(msg.id) ? { ...msg, lida: true } : msg
         )
       )
     })
@@ -151,12 +153,12 @@ export function useRealtimeMessages(
         id: tempId,
         conteudo: content,
         anexoUrl: attachmentUrl,
-        lido: false,
-        criadoEm: new Date().toISOString(),
+        lida: false,
+        createdAt: new Date().toISOString(),
         remetente: {
           id: currentUserId,
-          name: 'Você',
-          image: null,
+          name: currentUserName,
+          image: currentUserImage,
         },
       }
 
@@ -193,20 +195,20 @@ export function useRealtimeMessages(
         throw err
       }
     },
-    [matchId, currentUserId]
+    [matchId, currentUserId, currentUserName, currentUserImage]
   )
 
   // Marcar mensagens como lidas
   const markAsRead = useCallback(() => {
     const unreadIds = messages
-      .filter((m) => !m.lido && m.remetente.id !== currentUserId)
+      .filter((m) => !m.lida && m.remetente.id !== currentUserId)
       .map((m) => m.id)
 
     if (unreadIds.length === 0) return
 
     // Atualizar localmente imediatamente
     setMessages((prev) =>
-      prev.map((msg) => (unreadIds.includes(msg.id) ? { ...msg, lido: true } : msg))
+      prev.map((msg) => (unreadIds.includes(msg.id) ? { ...msg, lida: true } : msg))
     )
 
     // Notificar servidor (fire and forget)
