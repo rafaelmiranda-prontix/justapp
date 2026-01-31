@@ -52,6 +52,7 @@ export default withAuth(
           pathname.startsWith('/api/auth') ||
           pathname.startsWith('/api/users') ||
           pathname.startsWith('/api/anonymous') || // Rotas do chat anônimo
+          pathname.startsWith('/api/transcribe-audio') || // Transcrição de áudio (chat anônimo)
           pathname.startsWith('/api/health') || // Health check
           pathname.startsWith('/api/test-') || // Rotas de teste
           pathname.startsWith('/_next') ||
