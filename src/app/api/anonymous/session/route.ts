@@ -3,7 +3,7 @@ import { AnonymousSessionService } from '@/lib/anonymous-session.service'
 
 /**
  * GET /api/anonymous/session?sessionId=xxx
- * Busca sessão anônima existente
+ * Busca sessão anônima existente ou cria uma nova se não encontrada
  */
 export async function GET(request: NextRequest) {
   try {
@@ -17,13 +17,23 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const session = await AnonymousSessionService.findBySessionId(sessionId)
+    let session = await AnonymousSessionService.findBySessionId(sessionId)
 
+    // Se sessão não encontrada ou expirada, criar uma nova
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: 'Sessão não encontrada ou expirada' },
-        { status: 404 }
-      )
+      console.log('[API] Session not found, creating new session...')
+      
+      const userAgent = request.headers.get('user-agent') || undefined
+      const ipAddress = process.env.NODE_ENV === 'production'
+        ? request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined
+        : undefined
+
+      session = await AnonymousSessionService.create({
+        userAgent,
+        ipAddress,
+      })
+
+      console.log('[API] New session created:', session.sessionId)
     }
 
     // Verificar se deve mostrar formulário de captura
@@ -41,6 +51,8 @@ export async function GET(request: NextRequest) {
         preQualificationScore: session.preQualificationScore,
         status: session.status,
         expiresAt: session.expiresAt,
+        // Indicar se foi criada uma nova sessão
+        isNewSession: !sessionId || session.sessionId !== sessionId,
       },
     })
   } catch (error: any) {

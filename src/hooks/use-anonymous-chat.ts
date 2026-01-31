@@ -47,12 +47,20 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.data) {
+          // Se uma nova sessão foi criada (sessão antiga não encontrada)
+          if (data.data.isNewSession && data.data.sessionId !== sessionIdToLoad) {
+            console.log('[Hook] New session created, updating sessionId:', data.data.sessionId)
+            setSessionId(data.data.sessionId)
+            localStorage.setItem(SESSION_STORAGE_KEY, data.data.sessionId)
+          }
+
           console.log('[Hook] Session data loaded:', {
             mensagens: data.data.mensagens?.length || 0,
             shouldCaptureLeadData: data.data.shouldCaptureLeadData,
             especialidade: data.data.especialidadeDetectada,
             cidade: data.data.cidade,
             estado: data.data.estado,
+            isNewSession: data.data.isNewSession,
           })
           
           // Carregar mensagens
