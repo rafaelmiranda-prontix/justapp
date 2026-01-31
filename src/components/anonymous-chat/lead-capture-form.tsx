@@ -75,6 +75,29 @@ export function LeadCaptureForm({ onSubmit, extractedData }: LeadCaptureFormProp
     // Usuário pode preencher manualmente
   }
 
+  // Função para formatar telefone brasileiro: (XX) XXXXX-XXXX
+  const formatPhone = (value: string) => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '')
+    
+    // Aplica a máscara
+    if (numbers.length <= 2) {
+      return numbers.length > 0 ? `(${numbers}` : numbers
+    } else if (numbers.length <= 7) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
+    } else if (numbers.length <= 10) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`
+    } else {
+      // Limita a 11 dígitos (com DDD + 9 dígitos)
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`
+    }
+  }
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value)
+    setPhone(formatted)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -98,10 +121,13 @@ export function LeadCaptureForm({ onSubmit, extractedData }: LeadCaptureFormProp
     setIsSubmitting(true)
 
     try {
+      // Remover formatação do telefone antes de enviar (apenas números)
+      const phoneNumbers = phone.replace(/\D/g, '')
+      
       await onSubmit({
         name: name.trim(),
         email: email.trim().toLowerCase(),
-        phone: phone.trim() || undefined,
+        phone: phoneNumbers || undefined,
         cidade: cidade.trim(),
         estado: estado.trim().toUpperCase(),
       })
@@ -136,11 +162,6 @@ export function LeadCaptureForm({ onSubmit, extractedData }: LeadCaptureFormProp
             {extractedData.cidade && extractedData.estado && (
               <p className="text-muted-foreground">
                 📍 <strong>Localização:</strong> {extractedData.cidade}, {extractedData.estado}
-              </p>
-            )}
-            {extractedData.score && extractedData.score >= 70 && (
-              <p className="text-green-600 dark:text-green-400 font-medium">
-                ✅ Seu caso tem boa viabilidade ({extractedData.score} pontos)
               </p>
             )}
           </div>
@@ -199,8 +220,9 @@ export function LeadCaptureForm({ onSubmit, extractedData }: LeadCaptureFormProp
             type="tel"
             placeholder="(21) 99999-9999"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={handlePhoneChange}
             disabled={isSubmitting}
+            maxLength={15}
             className="bg-white dark:bg-gray-900"
           />
         </div>
@@ -298,12 +320,12 @@ export function LeadCaptureForm({ onSubmit, extractedData }: LeadCaptureFormProp
           <div className="text-muted-foreground">Para você</div>
         </div>
         <div>
-          <div className="font-semibold">Até 5 Advogados</div>
-          <div className="text-muted-foreground">Qualificados</div>
+          <div className="font-semibold">Melhor Advogado</div>
+          <div className="text-muted-foreground">Para seu caso</div>
         </div>
         <div>
-          <div className="font-semibold">Você Escolhe</div>
-          <div className="text-muted-foreground">Qual contratar</div>
+          <div className="font-semibold">Resposta Rápida</div>
+          <div className="text-muted-foreground">Dos advogados</div>
         </div>
       </div>
     </div>
