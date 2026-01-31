@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid'
 import { prisma } from '@/lib/prisma'
 import { validateOAB } from '@/lib/utils'
 import { EmailService } from '@/lib/email.service'
+import { getPlanLimits } from '@/lib/plans'
 
 const signupSchema = z.object({
   name: z.string().min(2),
@@ -53,6 +54,11 @@ export async function POST(req: Request) {
     const activationExpires = new Date()
     activationExpires.setHours(activationExpires.getHours() + 48) // 48h para ativar
 
+    // Configurar plano inicial (FREE) e limites
+    const planoInicial: 'FREE' = 'FREE'
+    const limits = getPlanLimits(planoInicial)
+    const leadsLimiteMes = limits.isUnlimited ? -1 : limits.leadsPerMonth
+
     // Criar usuário + advogado com status PRE_ACTIVE
     const user = await prisma.users.create({
       data: {
@@ -72,6 +78,10 @@ export async function POST(req: Request) {
             oab: oabNormalizado,
             cidade: data.cidade,
             estado: data.estado.toUpperCase(),
+            plano: planoInicial,
+            leadsLimiteMes,
+            leadsRecebidosMes: 0,
+            ultimoResetLeads: now,
             updatedAt: now,
           },
         },

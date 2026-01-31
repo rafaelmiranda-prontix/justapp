@@ -79,7 +79,7 @@ export function SignupAdvogadoForm() {
       toast({
         variant: 'success',
         title: 'Conta criada com sucesso!',
-        description: 'Faça login para continuar',
+        description: result.message || 'Enviamos um email de ativação. Verifique sua caixa de entrada para ativar sua conta.',
       })
 
       router.push('/auth/signin')

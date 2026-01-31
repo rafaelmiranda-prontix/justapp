@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useGeolocation } from '@/hooks/use-geolocation'
+import { getPlanConfig } from '@/lib/plans'
 
 interface Especialidade {
   id: string
@@ -535,20 +536,35 @@ export default function AdvogadoPerfilPage() {
             <Label>Plano Atual</Label>
             <div className="mt-2">
               <Badge variant="outline" className="text-lg px-3 py-1">
-                {perfil.plano}
+                {getPlanConfig(perfil.plano as any)?.name || perfil.plano}
               </Badge>
             </div>
           </div>
           <div>
             <Label>Leads Recebidos este Mês</Label>
             <div className="mt-2">
-              <p className="text-2xl font-bold">
-                {perfil.leadsRecebidosMes} / {perfil.leadsLimiteMes}
-              </p>
-              {perfil.leadsRecebidosMes >= perfil.leadsLimiteMes && (
-                <p className="text-sm text-yellow-600 mt-1">
-                  Limite atingido. Considere fazer upgrade do plano.
-                </p>
+              {perfil.leadsLimiteMes === 0 ? (
+                <div>
+                  <p className="text-2xl font-bold">0 / Sem leads</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    O plano gratuito não inclui leads. Faça upgrade para receber casos.
+                  </p>
+                </div>
+              ) : perfil.leadsLimiteMes === -1 ? (
+                <div>
+                  <p className="text-2xl font-bold">{perfil.leadsRecebidosMes} / Ilimitado</p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-2xl font-bold">
+                    {perfil.leadsRecebidosMes} / {perfil.leadsLimiteMes}
+                  </p>
+                  {perfil.leadsRecebidosMes >= perfil.leadsLimiteMes && (
+                    <p className="text-sm text-yellow-600 mt-1">
+                      Limite atingido. Considere fazer upgrade do plano.
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </div>
