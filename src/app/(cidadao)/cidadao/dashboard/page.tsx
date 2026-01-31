@@ -336,7 +336,7 @@ export default function CidadaoDashboardPage() {
                         </Button>
                       )}
                       <Button variant="outline" asChild className="flex-1">
-                        <Link href={`/casos/${caso.id}`}>Ver Detalhes</Link>
+                        <Link href={`/cidadao/casos/${caso.id}`}>Ver Detalhes</Link>
                       </Button>
                     </div>
                   </CardContent>

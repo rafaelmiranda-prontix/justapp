@@ -108,20 +108,21 @@ model avaliacoes {
 }
 
 model casos {
-  id              String          @id
-  cidadaoId       String
-  descricao       String
-  descricaoIA     String?
-  especialidadeId String?
-  urgencia        Urgencia        @default(NORMAL)
-  complexidade    Int             @default(1)
-  status          CasoStatus      @default(PENDENTE_ATIVACAO)
-  sessionId       String?         @unique
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime
-  cidadaos        cidadaos        @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)
-  especialidades  especialidades? @relation(fields: [especialidadeId], references: [id])
-  matches         matches[]
+  id                 String          @id
+  cidadaoId          String
+  descricao          String          // Resumo do problema (não concatenado)
+  descricaoIA        String?         // Análise da IA sobre o caso
+  conversaHistorico  Json?           // Histórico completo do chat anônimo
+  especialidadeId    String?
+  urgencia           Urgencia        @default(NORMAL)
+  complexidade       Int             @default(1)
+  status             CasoStatus      @default(PENDENTE_ATIVACAO)
+  sessionId          String?         @unique
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime
+  cidadaos           cidadaos        @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)
+  especialidades     especialidades? @relation(fields: [especialidadeId], references: [id])
+  matches            matches[]
 
   @@index([cidadaoId])
   @@index([especialidadeId])

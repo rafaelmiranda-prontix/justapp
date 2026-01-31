@@ -96,10 +96,9 @@ export default function AdvogadoDashboardPage() {
     }
   }
 
-  const handleViewDetails = (matchId: string) => {
-    // TODO: Implementar modal ou página de detalhes do caso
-    // Por enquanto, apenas log para evoluções futuras
-    console.log('Ver detalhes do match:', matchId)
+  const handleViewDetails = (match: Match) => {
+    // Redirecionar para página de detalhes do caso
+    window.location.href = `/advogado/casos/${match.casos.id}`
   }
 
   const handleRespond = async (matchId: string, accepted: boolean) => {
@@ -226,7 +225,7 @@ export default function AdvogadoDashboardPage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleViewDetails(match.id)}
+                onClick={() => handleViewDetails(match)}
                 className="flex-1"
               >
                 <Eye className="h-4 w-4 mr-2" />

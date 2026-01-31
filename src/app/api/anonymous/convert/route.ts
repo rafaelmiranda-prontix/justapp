@@ -106,15 +106,49 @@ export async function POST(request: NextRequest) {
         },
       })
 
+      // Preparar histórico da conversa e extrair descrição do problema
+      const mensagensUsuario = session.mensagens.filter((m) => m.role === 'user')
+
+      // Buscar a resposta do usuário após a pergunta sobre o problema
+      // A pergunta é: "Por favor, descreva brevemente seu problema em poucas palavras."
+      let descricaoProblema = 'Caso criado via chat anônimo'
+
+      for (let i = 0; i < session.mensagens.length; i++) {
+        const msg = session.mensagens[i]
+        // Encontrar a pergunta sobre descrição do problema
+        if (
+          msg.role === 'assistant' &&
+          msg.content.toLowerCase().includes('descreva brevemente seu problema')
+        ) {
+          // A próxima mensagem do usuário é a descrição do problema
+          const proximaUsuario = session.mensagens
+            .slice(i + 1)
+            .find((m) => m.role === 'user')
+          if (proximaUsuario) {
+            descricaoProblema = proximaUsuario.content
+            break
+          }
+        }
+      }
+
+      // Se não encontrou, usar a primeira mensagem não-trivial do usuário
+      if (descricaoProblema === 'Caso criado via chat anônimo') {
+        // Filtrar saudações comuns
+        const saudacoes = ['olá', 'ola', 'oi', 'bom dia', 'boa tarde', 'boa noite', 'sim', 'não']
+        const mensagemValida = mensagensUsuario.find(
+          (m) => !saudacoes.includes(m.content.toLowerCase().trim())
+        )
+        if (mensagemValida) {
+          descricaoProblema = mensagemValida.content
+        }
+      }
+
       // Criar Caso PENDENTE_ATIVACAO
       const caso = await tx.casos.create({
         data: {
           id: nanoid(),
-          descricao:
-            session.mensagens
-              .filter((m) => m.role === 'user')
-              .map((m) => m.content)
-              .join('\n\n') || 'Caso criado via chat anônimo',
+          descricao: descricaoProblema, // Descrição do problema (não saudação)
+          conversaHistorico: session.mensagens, // Histórico completo do chat
           urgencia:
             session.urgenciaDetectada === 'ALTA'
               ? 'ALTA'
