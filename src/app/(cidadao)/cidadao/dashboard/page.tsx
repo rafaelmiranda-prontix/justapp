@@ -291,9 +291,6 @@ export default function CidadaoDashboardPage() {
                                 </Avatar>
                                 <div>
                                   <p className="font-medium text-sm">{match.advogados.users.name}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {match.score}% compatibilidade
-                                  </p>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">

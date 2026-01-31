@@ -201,9 +201,6 @@ export default function AdvogadoDashboardPage() {
           {match.casos.especialidades && (
             <Badge variant="outline">{match.casos.especialidades.nome}</Badge>
           )}
-          <Badge variant="secondary" className="font-semibold">
-            {match.score}% compatibilidade
-          </Badge>
         </div>
 
         {/* Descrição do caso */}
