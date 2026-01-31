@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { requireAdmin } from '@/lib/middleware/admin'
+import { logger } from '@/lib/logger'
 
 const inviteSchema = z.object({
   email: z.string().email(),
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
     } else {
       // TODO: Enviar email com código de convite
       // Por enquanto, apenas retorna o código
-      console.log(`Beta invite code for ${data.email}: ${inviteCode}`)
+      logger.info(`Beta invite code for ${data.email}: [REDACTED]`)
     }
 
     return NextResponse.json({

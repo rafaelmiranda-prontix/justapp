@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NotificationService } from '@/lib/notification.service'
+import { logger } from '@/lib/logger'
 
 /**
  * POST /api/matches/[matchId]/accept

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { CaseDistributionService } from '@/lib/case-distribution.service'
+import { logger } from '@/lib/logger'
 
 /**
  * GET /api/cron/reset-lead-counters
@@ -21,11 +22,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('[Cron] Starting monthly lead counter reset...')
+    logger.info('[Cron] Starting monthly lead counter reset...')
 
     const resetCount = await CaseDistributionService.resetMonthlyLeadCounters()
 
-    console.log(`[Cron] Lead counter reset completed: ${resetCount} lawyers reset`)
+    logger.info(`[Cron] Lead counter reset completed: ${resetCount} lawyers reset`)
 
     return NextResponse.json({
       success: true,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 import OpenAI from 'openai'
 
 const openai = new OpenAI({
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
       text: transcription.text,
     })
   } catch (error: any) {
-    console.error('[Transcribe] Error:', error)
+      logger.error('[Transcribe] Error:', error)
     return NextResponse.json(
       {
         error: 'Erro ao transcrever áudio',

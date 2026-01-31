@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 
 const feedbackSchema = z.object({
   tipo: z.enum(['BUG', 'MELHORIA', 'SUGESTAO', 'OUTRO']),
@@ -22,9 +23,10 @@ export async function POST(req: Request) {
 
     // Cria feedback no banco (ou envia para serviço externo)
     // Por enquanto, apenas loga
-    console.log('Feedback recebido:', {
+    logger.info('Feedback recebido:', {
       userId: session?.user?.id,
-      ...data,
+      tipo: data.tipo,
+      categoria: data.categoria,
       timestamp: new Date().toISOString(),
     })
 

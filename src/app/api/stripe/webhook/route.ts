@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { updateAdvogadoPlan } from '@/lib/subscription-service'
 import type { PlanType } from '@/lib/plans'
 import Stripe from 'stripe'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: Request) {
   try {
@@ -133,13 +134,13 @@ export async function POST(req: Request) {
 
         if (subscriptionId) {
           // TODO: Enviar email ao advogado sobre falha no pagamento
-          console.log('Payment failed for subscription:', subscriptionId)
+          logger.warn('Payment failed for subscription:', subscriptionId)
         }
         break
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+        logger.debug(`Unhandled event type: ${event.type}`)
     }
 
     return NextResponse.json({ received: true })

@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
     if (user.cidadaos && user.cidadaos.casos.length > 0) {
       // Disparar distribuição para cada caso ativado
       for (const caso of user.cidadaos.casos) {
-        console.log(`[Activate] Triggering matching for case ${caso.id}`)
+        logger.debug(`[Activate] Triggering matching for case ${caso.id}`)
 
         CaseDistributionService.distributeCase(caso.id)
           .then(async (result) => {

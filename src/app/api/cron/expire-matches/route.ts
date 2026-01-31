@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { CaseDistributionService } from '@/lib/case-distribution.service'
+import { logger } from '@/lib/logger'
 
 /**
  * GET /api/cron/expire-matches
@@ -21,11 +22,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('[Cron] Starting match expiration job...')
+    logger.info('[Cron] Starting match expiration job...')
 
     const expiredCount = await CaseDistributionService.expireOldMatches()
 
-    console.log(`[Cron] Match expiration completed: ${expiredCount} matches expired`)
+    logger.info(`[Cron] Match expiration completed: ${expiredCount} matches expired`)
 
     return NextResponse.json({
       success: true,

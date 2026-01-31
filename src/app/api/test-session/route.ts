@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { nanoid } from 'nanoid'
+import { logger } from '@/lib/logger'
 
 export async function GET() {
   try {
@@ -8,8 +9,8 @@ export async function GET() {
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 7)
 
-    console.log('Testing session creation...')
-    console.log('SessionId:', sessionId)
+    logger.debug('Testing session creation...')
+    logger.debug('SessionId:', sessionId)
 
     // Test 1: Create without messages
     const now = new Date()
@@ -23,7 +24,7 @@ export async function GET() {
         updatedAt: now,
       },
     })
-    console.log('✓ Empty session created:', session1.id)
+    logger.debug('✓ Empty session created:', session1.id)
 
     // Test 2: Create with simple message
     const session2 = await prisma.anonymousSession.create({
@@ -42,7 +43,7 @@ export async function GET() {
         updatedAt: now,
       },
     })
-    console.log('✓ Session with message created:', session2.id)
+    logger.debug('✓ Session with message created:', session2.id)
 
     // Clean up
     await prisma.anonymousSession.deleteMany({

@@ -134,11 +134,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ matchId
     const { matchId } = await params
     const body = await req.json()
     
-    console.log('[API] Received message data:', { conteudo: body.conteudo, anexoUrl: body.anexoUrl })
+    logger.debug('[API] Received message data:', { conteudo: body.conteudo?.substring(0, 50), hasAnexo: !!body.anexoUrl })
     
     const { conteudo, anexoUrl } = createMessageSchema.parse(body)
     
-    console.log('[API] Parsed message data:', { conteudo, anexoUrl })
+    logger.debug('[API] Parsed message data:', { hasConteudo: !!conteudo, hasAnexo: !!anexoUrl })
 
     // Busca o match para verificar autorização
     const match = await prisma.matches.findUnique({
@@ -196,7 +196,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ matchId
     }
 
     // Cria a mensagem
-    console.log('[API] Creating message with data:', {
+    logger.debug('[API] Creating message with data:', {
       matchId,
       remetenteId: session.user.id,
       conteudo,
