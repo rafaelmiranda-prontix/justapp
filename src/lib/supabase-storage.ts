@@ -32,9 +32,10 @@ const supabase = supabaseUrl && supabaseServiceKey
     })
   : null
 
-// Nome do bucket - Supabase Storage é case-sensitive
+// Nome dos buckets - Supabase Storage é case-sensitive
 // IMPORTANTE: Use o nome exato do bucket criado no Supabase
 const AUDIO_BUCKET = 'audio-messages'
+const CHAT_ATTACHMENTS_BUCKET = 'chat-attachments' // Bucket privado para anexos de chat
 
 interface UploadAudioResult {
   success: boolean
@@ -211,6 +212,310 @@ export async function deleteAudioFromSupabase(path: string): Promise<boolean> {
 
   try {
     const { error } = await supabase.storage.from(AUDIO_BUCKET).remove([path])
+
+    if (error) {
+      console.error('[Supabase Storage] Delete error:', error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('[Supabase Storage] Error deleting:', error)
+    return false
+  }
+}
+
+/**
+ * Interface para resultado de upload de anexo de chat
+ */
+interface UploadChatAttachmentResult {
+  success: boolean
+  url?: string
+  path?: string
+  signedUrl?: string // URL assinada para acesso privado
+  error?: string
+}
+
+/**
+ * Faz upload de anexo de chat para bucket privado do Supabase
+ * Retorna uma signed URL que expira após 1 hora
+ */
+export async function uploadChatAttachmentToSupabase(
+  file: File,
+  matchId: string,
+  userId: string
+): Promise<UploadChatAttachmentResult> {
+  if (!supabase) {
+    return {
+      success: false,
+      error: 'Supabase não configurado. Configure NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY',
+    }
+  }
+
+  // Validar service role key
+  if (supabaseServiceKey && !supabaseServiceKey.startsWith('eyJ')) {
+    return {
+      success: false,
+      error: 'A service role key está incorreta. Ela deve ser um JWT token que começa com "eyJ".',
+    }
+  }
+
+  try {
+    // Gerar nome único para o arquivo
+    const timestamp = Date.now()
+    const randomId = Math.random().toString(36).substring(2, 15)
+    const fileExtension = file.name.split('.').pop() || 'bin'
+    const filename = `${matchId}/${userId}/${timestamp}-${randomId}.${fileExtension}`
+
+    // Converter File para ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer()
+    const fileBlob = new File([arrayBuffer], filename, { type: file.type })
+
+    console.log('[Supabase Storage] Uploading chat attachment:', {
+      bucket: CHAT_ATTACHMENTS_BUCKET,
+      filename,
+      size: file.size,
+      type: file.type,
+      matchId,
+      userId,
+    })
+
+    // Fazer upload para bucket privado
+    const { data, error } = await supabase.storage
+      .from(CHAT_ATTACHMENTS_BUCKET)
+      .upload(filename, fileBlob, {
+        contentType: file.type,
+        upsert: false,
+        cacheControl: '3600',
+      })
+
+    if (error) {
+      console.error('[Supabase Storage] Upload error:', {
+        message: error.message,
+        statusCode: error.statusCode,
+        name: error.name,
+      })
+
+      if (error.message?.includes('row-level security') || 
+          error.message?.includes('RLS') || 
+          error.message?.includes('policy') ||
+          error.statusCode === 403) {
+        return {
+          success: false,
+          error: `Erro de permissão (RLS). Verifique:
+1. O bucket "${CHAT_ATTACHMENTS_BUCKET}" existe
+2. As políticas RLS estão configuradas corretamente
+3. A service role key está sendo usada
+
+Erro detalhado: ${error.message}`,
+        }
+      }
+
+      if (error.message?.includes('Bucket not found') || error.statusCode === 404) {
+        return {
+          success: false,
+          error: `Bucket "${CHAT_ATTACHMENTS_BUCKET}" não encontrado. Verifique se o bucket foi criado no Supabase Dashboard.`,
+        }
+      }
+
+      return {
+        success: false,
+        error: `Erro ao fazer upload: ${error.message || 'Erro desconhecido'}`,
+      }
+    }
+
+    // Gerar signed URL que expira em 1 hora (3600 segundos)
+    // Esta URL permite acesso privado ao arquivo
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      .from(CHAT_ATTACHMENTS_BUCKET)
+      .createSignedUrl(data.path, 3600) // Expira em 1 hora
+
+    if (signedUrlError) {
+      console.error('[Supabase Storage] Error creating signed URL:', signedUrlError)
+      // Mesmo sem signed URL, retornar sucesso com o path
+      // A signed URL pode ser gerada depois quando necessário
+      return {
+        success: true,
+        path: data.path,
+        url: data.path, // Fallback: usar path como URL
+      }
+    }
+
+    return {
+      success: true,
+      path: data.path,
+      signedUrl: signedUrlData.signedUrl,
+      url: signedUrlData.signedUrl, // URL assinada para acesso privado
+    }
+  } catch (error: any) {
+    console.error('[Supabase Storage] Error:', error)
+    return {
+      success: false,
+      error: error.message || 'Erro ao fazer upload do anexo',
+    }
+  }
+}
+
+/**
+ * Gera uma signed URL para um anexo de chat existente
+ * Útil para regenerar URLs que expiraram
+ */
+export async function getChatAttachmentSignedUrl(
+  path: string,
+  expiresIn: number = 3600 // 1 hora por padrão
+): Promise<{ success: boolean; signedUrl?: string; error?: string }> {
+  if (!supabase) {
+    return {
+      success: false,
+      error: 'Supabase não configurado',
+    }
+  }
+
+  try {
+    const { data, error } = await supabase.storage
+      .from(CHAT_ATTACHMENTS_BUCKET)
+      .createSignedUrl(path, expiresIn)
+
+    if (error) {
+      console.error('[Supabase Storage] Error creating signed URL:', error)
+      return {
+        success: false,
+        error: error.message || 'Erro ao gerar URL assinada',
+      }
+    }
+
+    return {
+      success: true,
+      signedUrl: data.signedUrl,
+    }
+  } catch (error: any) {
+    console.error('[Supabase Storage] Error:', error)
+    return {
+      success: false,
+      error: error.message || 'Erro ao gerar URL assinada',
+    }
+  }
+}
+
+/**
+ * Interface para resultado de download de arquivo
+ */
+interface GetChatAttachmentFileResult {
+  success: boolean
+  data?: ArrayBuffer
+  contentType?: string
+  filename?: string
+  error?: string
+}
+
+/**
+ * Baixa um arquivo de anexo de chat do Supabase Storage
+ * Usado pelo BFF autenticado para servir arquivos
+ */
+export async function getChatAttachmentFile(
+  path: string
+): Promise<GetChatAttachmentFileResult> {
+  if (!supabase) {
+    return {
+      success: false,
+      error: 'Supabase não configurado',
+    }
+  }
+
+  try {
+    // Baixar o arquivo do bucket privado
+    const { data, error } = await supabase.storage
+      .from(CHAT_ATTACHMENTS_BUCKET)
+      .download(path)
+
+    if (error) {
+      console.error('[Supabase Storage] Download error:', {
+        message: error.message,
+        statusCode: error.statusCode,
+        name: error.name,
+      })
+
+      if (error.message?.includes('not found') || error.statusCode === 404) {
+        return {
+          success: false,
+          error: 'Arquivo não encontrado',
+        }
+      }
+
+      return {
+        success: false,
+        error: `Erro ao baixar arquivo: ${error.message || 'Erro desconhecido'}`,
+      }
+    }
+
+    if (!data) {
+      return {
+        success: false,
+        error: 'Arquivo vazio ou não encontrado',
+      }
+    }
+
+    // Converter Blob para ArrayBuffer
+    const arrayBuffer = await data.arrayBuffer()
+
+    // Extrair nome do arquivo do path
+    const pathParts = path.split('/')
+    const filename = pathParts[pathParts.length - 1] || 'anexo'
+
+    // Tentar detectar content type do arquivo
+    let contentType = 'application/octet-stream'
+    const extension = filename.split('.').pop()?.toLowerCase()
+    
+    const mimeTypes: Record<string, string> = {
+      // Imagens
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      gif: 'image/gif',
+      webp: 'image/webp',
+      // Documentos
+      pdf: 'application/pdf',
+      doc: 'application/msword',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      xls: 'application/vnd.ms-excel',
+      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      // Texto
+      txt: 'text/plain',
+      // Áudio
+      mp3: 'audio/mpeg',
+      wav: 'audio/wav',
+      webm: 'audio/webm',
+    }
+
+    if (extension && mimeTypes[extension]) {
+      contentType = mimeTypes[extension]
+    }
+
+    return {
+      success: true,
+      data: arrayBuffer,
+      contentType,
+      filename,
+    }
+  } catch (error: any) {
+    console.error('[Supabase Storage] Error downloading file:', error)
+    return {
+      success: false,
+      error: error.message || 'Erro ao baixar arquivo',
+    }
+  }
+}
+
+/**
+ * Deleta anexo de chat do Supabase Storage
+ */
+export async function deleteChatAttachmentFromSupabase(path: string): Promise<boolean> {
+  if (!supabase) {
+    return false
+  }
+
+  try {
+    const { error } = await supabase.storage.from(CHAT_ATTACHMENTS_BUCKET).remove([path])
 
     if (error) {
       console.error('[Supabase Storage] Delete error:', error)

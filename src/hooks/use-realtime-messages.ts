@@ -166,13 +166,17 @@ export function useRealtimeMessages(
       setMessages((prev) => [...prev, optimisticMessage])
 
       try {
+        const payload = {
+          conteudo: content,
+          anexoUrl: attachmentUrl || null, // Garantir que seja null se undefined
+        }
+        
+        console.log('[Hook] Sending message payload:', payload)
+        
         const res = await fetch(`/api/matches/${matchId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            conteudo: content,
-            anexoUrl: attachmentUrl,
-          }),
+          body: JSON.stringify(payload),
         })
 
         const result = await res.json()

@@ -102,6 +102,7 @@ export function ChatWindow({ matchId, currentUserId, otherUser, onClose }: ChatW
         setIsUploading(true)
         const formData = new FormData()
         formData.append('file', selectedFile)
+        formData.append('matchId', matchId) // Passar matchId para upload em bucket privado
 
         const uploadResponse = await fetch('/api/upload', {
           method: 'POST',

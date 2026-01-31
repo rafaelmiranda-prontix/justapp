@@ -259,6 +259,7 @@ export function ChatInterface({
           )}
 
           <FileUpload
+            matchId={matchId}
             onUploadComplete={(url) => setAttachmentUrl(url)}
             onUploadError={(error) => toast({ title: 'Erro', description: error, variant: 'destructive' })}
             disabled={isSending}

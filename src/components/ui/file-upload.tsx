@@ -1,31 +1,46 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Paperclip, X, Loader2, File, Image } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface FileUploadProps {
-  onUploadComplete?: (url: string) => void
+  onFileSelect?: (file: File) => void
   onUploadError?: (error: string) => void
   maxSize?: number
   accept?: string
   disabled?: boolean
   className?: string
+  matchId?: string // ID do match para upload em bucket privado
+  selectedFile?: File | null // Arquivo selecionado (controlado pelo pai)
+  onClear?: () => void // Callback para limpar arquivo
 }
 
 export function FileUpload({
-  onUploadComplete,
+  onFileSelect,
   onUploadError,
   maxSize = 20 * 1024 * 1024, // 20MB
   accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx',
   disabled = false,
   className,
+  matchId,
+  selectedFile: externalSelectedFile,
+  onClear,
 }: FileUploadProps) {
-  const [isUploading, setIsUploading] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [internalSelectedFile, setInternalSelectedFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Usar arquivo externo se fornecido, senão usar interno
+  const selectedFile = externalSelectedFile !== undefined ? externalSelectedFile : internalSelectedFile
+
+  // Limpar preview quando selectedFile mudar para null
+  useEffect(() => {
+    if (!selectedFile) {
+      setPreview(null)
+    }
+  }, [selectedFile])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -37,7 +52,14 @@ export function FileUpload({
       return
     }
 
-    setSelectedFile(file)
+    // Se não for controlado externamente, atualizar estado interno
+    if (externalSelectedFile === undefined) {
+      setInternalSelectedFile(file)
+    }
+
+    // Notificar componente pai
+    console.log('[FileUpload] Notifying parent of file selection:', file.name)
+    onFileSelect?.(file)
 
     // Gera preview para imagens
     if (file.type.startsWith('image/')) {
@@ -51,41 +73,15 @@ export function FileUpload({
     }
   }
 
-  const handleUpload = async () => {
-    if (!selectedFile) return
-
-    setIsUploading(true)
-
-    try {
-      const formData = new FormData()
-      formData.append('file', selectedFile)
-
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      const result = await res.json()
-
-      if (!res.ok) {
-        throw new Error(result.error || 'Erro ao fazer upload')
-      }
-
-      onUploadComplete?.(result.data.url)
-      handleClear()
-    } catch (error) {
-      onUploadError?.(error instanceof Error ? error.message : 'Erro ao fazer upload')
-    } finally {
-      setIsUploading(false)
-    }
-  }
-
   const handleClear = () => {
-    setSelectedFile(null)
+    if (externalSelectedFile === undefined) {
+      setInternalSelectedFile(null)
+    }
     setPreview(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
+    onClear?.()
   }
 
   const formatFileSize = (bytes: number) => {
@@ -101,7 +97,7 @@ export function FileUpload({
         type="file"
         onChange={handleFileSelect}
         accept={accept}
-        disabled={disabled || isUploading}
+        disabled={disabled}
         className="hidden"
       />
 
@@ -111,7 +107,7 @@ export function FileUpload({
           variant="outline"
           size="sm"
           onClick={() => fileInputRef.current?.click()}
-          disabled={disabled || isUploading}
+          disabled={disabled}
         >
           <Paperclip className="h-4 w-4 mr-2" />
           Anexar arquivo
@@ -146,29 +142,15 @@ export function FileUpload({
             )}
           </div>
 
-          <div className="flex gap-1">
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleUpload}
-              disabled={isUploading}
-            >
-              {isUploading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'Enviar'
-              )}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleClear}
-              disabled={isUploading}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleClear}
+            disabled={disabled}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
       )}
     </div>

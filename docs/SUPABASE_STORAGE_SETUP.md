@@ -114,9 +114,84 @@ audio-messages/
       └── 1704067200000-kj2h3k4j5h.webm
 ```
 
+## 5. Bucket Privado para Anexos de Chat
+
+Para armazenar anexos de conversas entre advogado e cidadão de forma privada:
+
+### Criar o Bucket Privado
+
+1. No Dashboard do Supabase, vá em **Storage**
+2. Clique em **New bucket**
+3. Configure:
+   - **Name**: `chat-attachments`
+   - **Public bucket**: ❌ **NÃO marque** (bucket privado)
+   - **File size limit**: 20 MB (ou o limite desejado)
+   - **Allowed MIME types**: Deixe vazio ou configure tipos específicos (imagens, PDFs, documentos)
+
+### Configurar Políticas RLS para Bucket Privado
+
+Como o bucket é privado, precisamos de políticas RLS específicas:
+
+#### Política de INSERT (Upload) - Service Role
+```sql
+CREATE POLICY "Allow service role to upload chat attachments"
+ON storage.objects
+FOR INSERT
+TO service_role
+WITH CHECK (bucket_id = 'chat-attachments');
+```
+
+#### Política de SELECT (Leitura) - Apenas participantes do match
+```sql
+-- Esta política permite que apenas participantes do match acessem os arquivos
+-- A verificação de permissão é feita na API antes de gerar a signed URL
+CREATE POLICY "Allow service role to read chat attachments"
+ON storage.objects
+FOR SELECT
+TO service_role
+USING (bucket_id = 'chat-attachments');
+```
+
+#### Política de DELETE (Opcional) - Service Role
+```sql
+CREATE POLICY "Allow service role to delete chat attachments"
+ON storage.objects
+FOR DELETE
+TO service_role
+USING (bucket_id = 'chat-attachments');
+```
+
+### Estrutura de Pastas do Bucket Privado
+
+Os arquivos serão organizados assim:
+```
+chat-attachments/
+  └── {matchId}/
+      └── {userId}/
+          └── {timestamp}-{randomId}.{ext}
+```
+
+Exemplo:
+```
+chat-attachments/
+  └── YiMTDU9-Z7_rIB-dtN3e4/
+      └── user123/
+          └── 1704067200000-kj2h3k4j5h.pdf
+```
+
+### Acesso aos Arquivos
+
+Os arquivos são acessados via **signed URLs** que expiram após 1 hora:
+
+1. **Upload**: O arquivo é enviado para o bucket privado e uma signed URL é retornada
+2. **Acesso**: Quando necessário, a API `/api/chat/attachments/[path]` gera uma nova signed URL
+3. **Validação**: A API verifica se o usuário é participante do match antes de gerar a URL
+
 ## Segurança
 
 ⚠️ **Importante**:
 - A `SUPABASE_SERVICE_ROLE_KEY` **NUNCA** deve ser exposta no frontend
 - Use apenas em API routes do Next.js (server-side)
-- O bucket pode ser público para leitura, mas o upload deve ser controlado pelo backend
+- O bucket `audio-messages` pode ser público para leitura
+- O bucket `chat-attachments` deve ser **privado** e acessado apenas via signed URLs
+- As signed URLs expiram após 1 hora por padrão

@@ -109,8 +109,23 @@ export function ChatInterfaceOptimized({
   const [newMessage, setNewMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
+
+  // Debug: Log quando selectedFile mudar
+  useEffect(() => {
+    const canSend = !isSending && !isUploading && (!!newMessage.trim() || !!selectedFile)
+    console.log('[Chat] State update:', {
+      selectedFile: selectedFile?.name || 'null',
+      newMessage: newMessage.trim() || 'empty',
+      isSending,
+      isUploading,
+      canSend,
+      buttonDisabled: !canSend,
+    })
+  }, [selectedFile, newMessage, isSending, isUploading])
 
   // Hook de mensagens em tempo real com WebSocket
   const {
@@ -154,7 +169,8 @@ export function ChatInterfaceOptimized({
     async (e: React.FormEvent) => {
       e.preventDefault()
 
-      if (!newMessage.trim() || isSending) return
+      // Permitir enviar se tiver mensagem OU arquivo
+      if ((!newMessage.trim() && !selectedFile) || isSending || isUploading) return
 
       // Validação de tamanho
       if (newMessage.length > 2000) {
@@ -170,9 +186,70 @@ export function ChatInterfaceOptimized({
       stopTyping()
 
       try {
-        await sendMessage(newMessage, attachmentUrl)
+        let finalAttachmentUrl: string | null = attachmentUrl
+
+        // Se houver arquivo selecionado, fazer upload primeiro
+        if (selectedFile) {
+          setIsUploading(true)
+          try {
+            const formData = new FormData()
+            formData.append('file', selectedFile)
+            formData.append('matchId', matchId)
+
+            const uploadRes = await fetch('/api/upload', {
+              method: 'POST',
+              body: formData,
+            })
+
+            const uploadResult = await uploadRes.json()
+
+            if (!uploadRes.ok) {
+              throw new Error(uploadResult.error || 'Erro ao fazer upload')
+            }
+
+            if (!uploadResult.data?.url) {
+              throw new Error('URL do anexo não foi retornada pelo servidor')
+            }
+
+            finalAttachmentUrl = uploadResult.data.url
+            console.log('[Chat] Upload successful, URL:', finalAttachmentUrl)
+            setAttachmentUrl(finalAttachmentUrl)
+          } catch (error) {
+            console.error('[Chat] Error uploading file:', error)
+            toast({
+              title: 'Erro ao fazer upload',
+              description: error instanceof Error ? error.message : 'Tente novamente',
+              variant: 'destructive',
+            })
+            setIsSending(false)
+            setIsUploading(false)
+            return
+          } finally {
+            setIsUploading(false)
+          }
+        }
+
+        // Enviar mensagem (com ou sem anexo)
+        const messageContent = newMessage.trim() || (finalAttachmentUrl ? '📎 Arquivo anexado' : '')
+        
+        console.log('[Chat] Sending message:', {
+          content: messageContent,
+          attachmentUrl: finalAttachmentUrl,
+          hasAttachment: !!finalAttachmentUrl,
+        })
+        
+        await sendMessage(messageContent, finalAttachmentUrl)
+        
+        // Limpar estados após envio bem-sucedido
         setNewMessage('')
         setAttachmentUrl(null)
+        setSelectedFile(null)
+        
+        // Limpar o input de arquivo também
+        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+        if (fileInput) {
+          fileInput.value = ''
+        }
       } catch (error) {
         console.error('Error sending message:', error)
         toast({
@@ -184,7 +261,7 @@ export function ChatInterfaceOptimized({
         setIsSending(false)
       }
     },
-    [newMessage, isSending, attachmentUrl, sendMessage, stopTyping, toast]
+    [newMessage, isSending, isUploading, selectedFile, attachmentUrl, matchId, sendMessage, stopTyping, toast]
   )
 
   // Handler de tecla pressionada
@@ -334,12 +411,30 @@ export function ChatInterfaceOptimized({
           )}
 
           <FileUpload
-            onUploadComplete={(url) => setAttachmentUrl(url)}
+            matchId={matchId}
+            selectedFile={selectedFile}
+            onFileSelect={(file) => {
+              console.log('[Chat] File selected:', file.name)
+              setSelectedFile(file)
+              setAttachmentUrl(null) // Limpar URL anterior quando novo arquivo é selecionado
+            }}
+            onClear={() => {
+              console.log('[Chat] File cleared')
+              setSelectedFile(null)
+              setAttachmentUrl(null)
+            }}
             onUploadError={(error) =>
               toast({ title: 'Erro', description: error, variant: 'destructive' })
             }
-            disabled={isSending}
+            disabled={isSending || isUploading}
           />
+          
+          {/* Debug: Mostrar estado do arquivo selecionado */}
+          {process.env.NODE_ENV === 'development' && selectedFile && (
+            <div className="text-xs text-muted-foreground">
+              Arquivo selecionado: {selectedFile.name} ({selectedFile.size} bytes)
+            </div>
+          )}
 
           <form onSubmit={handleSendMessage} className="flex gap-2 w-full">
             <Textarea
@@ -352,8 +447,36 @@ export function ChatInterfaceOptimized({
               disabled={isSending}
             />
             <div className="flex flex-col gap-2">
-              <Button type="submit" size="icon" disabled={isSending || !newMessage.trim()}>
-                {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              <Button 
+                type="submit" 
+                size="icon" 
+                disabled={(() => {
+                  const shouldDisable = isSending || isUploading || (!newMessage.trim() && !selectedFile)
+                  console.log('[Chat] Button disabled check:', {
+                    isSending,
+                    isUploading,
+                    hasMessage: !!newMessage.trim(),
+                    hasFile: !!selectedFile,
+                    shouldDisable,
+                  })
+                  return shouldDisable
+                })()}
+                title={
+                  isSending || isUploading 
+                    ? 'Enviando...' 
+                    : selectedFile 
+                    ? `Enviar mensagem com anexo: ${selectedFile.name}` 
+                    : newMessage.trim() 
+                    ? 'Enviar mensagem' 
+                    : 'Digite uma mensagem ou anexe um arquivo'
+                }
+                className={selectedFile && !newMessage.trim() ? 'bg-primary hover:bg-primary/90' : ''}
+              >
+                {(isSending || isUploading) ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </form>

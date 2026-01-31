@@ -8,7 +8,20 @@ import { randomUUID } from 'crypto'
 
 const createMessageSchema = z.object({
   conteudo: z.string().min(1).max(2000),
-  anexoUrl: z.string().url().optional().nullable(),
+  anexoUrl: z
+    .string()
+    .refine(
+      (val) => {
+        // Aceitar null, undefined ou string vazia
+        if (!val || val === '') return true
+        // Se for string, deve ser URL válida
+        return val.startsWith('/') || val.startsWith('http://') || val.startsWith('https://')
+      },
+      { message: 'anexoUrl deve ser uma URL válida (relativa ou absoluta)' }
+    )
+    .optional()
+    .nullable()
+    .transform((val) => (val === '' ? null : val)), // Transformar string vazia em null
 })
 
 // GET - Lista mensagens de um match
@@ -120,7 +133,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ matchId
 
     const { matchId } = await params
     const body = await req.json()
+    
+    console.log('[API] Received message data:', { conteudo: body.conteudo, anexoUrl: body.anexoUrl })
+    
     const { conteudo, anexoUrl } = createMessageSchema.parse(body)
+    
+    console.log('[API] Parsed message data:', { conteudo, anexoUrl })
 
     // Busca o match para verificar autorização
     const match = await prisma.matches.findUnique({
@@ -178,13 +196,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ matchId
     }
 
     // Cria a mensagem
+    console.log('[API] Creating message with data:', {
+      matchId,
+      remetenteId: session.user.id,
+      conteudo,
+      anexoUrl,
+      hasAnexo: !!anexoUrl,
+    })
+    
     const mensagem = await prisma.mensagens.create({
       data: {
         id: randomUUID(),
         matchId,
         remetenteId: session.user.id,
         conteudo,
-        anexoUrl,
+        anexoUrl: anexoUrl || null, // Garantir que seja null se vazio
       },
       include: {
         remetente: {
