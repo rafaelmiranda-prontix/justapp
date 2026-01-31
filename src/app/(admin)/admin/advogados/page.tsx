@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -44,11 +44,7 @@ export default function AdminAdvogadosPage() {
   const [statusFilter, setStatusFilter] = useState('pendentes')
   const { toast } = useToast()
 
-  useEffect(() => {
-    fetchAdvogados()
-  }, [statusFilter])
-
-  const fetchAdvogados = async () => {
+  const fetchAdvogados = useCallback(async () => {
     setIsLoading(true)
     try {
       const res = await fetch(`/api/admin/advogados?status=${statusFilter}`)
@@ -67,7 +63,11 @@ export default function AdminAdvogadosPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [statusFilter, toast])
+
+  useEffect(() => {
+    fetchAdvogados()
+  }, [fetchAdvogados])
 
   const handleApprove = async (advogadoId: string) => {
     try {

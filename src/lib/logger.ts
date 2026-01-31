@@ -79,6 +79,7 @@ export const logger = {
    */
   info: (...args: any[]) => {
     if (isDevelopment) {
+      // eslint-disable-next-line no-console
       console.log(...args)
     }
   },
@@ -90,9 +91,11 @@ export const logger = {
     if (isProduction) {
       // Em produção, sanitizar dados sensíveis
       const sanitized = args.map(sanitizeForLogging)
+      // eslint-disable-next-line no-console
       console.error(...sanitized)
     } else {
       // Em desenvolvimento, logar tudo
+      // eslint-disable-next-line no-console
       console.error(...args)
     }
   },
@@ -102,6 +105,7 @@ export const logger = {
    */
   warn: (...args: any[]) => {
     if (isDevelopment) {
+      // eslint-disable-next-line no-console
       console.warn(...args)
     }
   },
@@ -111,6 +115,7 @@ export const logger = {
    */
   debug: (...args: any[]) => {
     if (isDevelopment) {
+      // eslint-disable-next-line no-console
       console.log('[DEBUG]', ...args)
     }
   },
@@ -120,6 +125,7 @@ export const logger = {
    */
   success: (...args: any[]) => {
     if (isDevelopment) {
+      // eslint-disable-next-line no-console
       console.log('[SUCCESS]', ...args)
     }
   },
@@ -131,6 +137,7 @@ export const logger = {
  */
 export function devLog(...args: any[]) {
   if (isDevelopment) {
+    // eslint-disable-next-line no-console
     console.log(...args)
   }
 }
@@ -142,8 +149,10 @@ export function devLog(...args: any[]) {
 export function safeErrorLog(...args: any[]) {
   if (isProduction) {
     const sanitized = args.map(sanitizeForLogging)
+    // eslint-disable-next-line no-console
     console.error(...sanitized)
   } else {
+    // eslint-disable-next-line no-console
     console.error(...args)
   }
 }

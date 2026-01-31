@@ -1,18 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
+import { logger } from './logger'
 
 // Inicializar cliente Supabase com service role key (bypassa RLS)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn(
+  logger.warn(
     '[Supabase Storage] Variáveis de ambiente não configuradas. Upload de áudio não funcionará.'
   )
 }
 
 // Verificar se a service role key está correta
 if (supabaseServiceKey && !supabaseServiceKey.startsWith('eyJ')) {
-  console.error(
+  logger.error(
     '[Supabase Storage] ⚠️ ERRO: A service role key deve ser um JWT token que começa com "eyJ". ' +
     'Verifique se está usando a service_role key (não a anon key) em SUPABASE_SERVICE_ROLE_KEY. ' +
     'Encontre em: Settings → API → service_role'
@@ -56,7 +57,7 @@ async function ensureBucketExists(): Promise<{ exists: boolean; buckets?: string
     const { data, error } = await supabase.storage.listBuckets()
     
     if (error) {
-      console.error('[Supabase Storage] Error listing buckets:', error)
+      logger.error('[Supabase Storage] Error listing buckets:', error)
       // Se der erro ao listar, assumir que o bucket existe e tentar fazer upload
       // (pode ser problema de permissão na listagem, mas upload pode funcionar)
       return { exists: true }
@@ -66,14 +67,14 @@ async function ensureBucketExists(): Promise<{ exists: boolean; buckets?: string
     const bucketExists = bucketNames.includes(AUDIO_BUCKET)
     
     if (!bucketExists) {
-      console.warn(`[Supabase Storage] Bucket "${AUDIO_BUCKET}" não encontrado na lista.`)
-      console.log('[Supabase Storage] Buckets disponíveis:', bucketNames)
-      console.log('[Supabase Storage] Tentando fazer upload mesmo assim...')
+      logger.warn(`[Supabase Storage] Bucket "${AUDIO_BUCKET}" não encontrado na lista.`)
+      logger.debug('[Supabase Storage] Buckets disponíveis:', bucketNames)
+      logger.debug('[Supabase Storage] Tentando fazer upload mesmo assim...')
     }
 
     return { exists: bucketExists, buckets: bucketNames }
   } catch (error) {
-    console.error('[Supabase Storage] Error checking bucket:', error)
+    logger.error('[Supabase Storage] Error checking bucket:', error)
     // Em caso de erro, assumir que existe e tentar fazer upload
     return { exists: true }
   }
@@ -97,9 +98,9 @@ export async function uploadAudioToSupabase(
   const serviceKeyPrefix = supabaseServiceKey ? supabaseServiceKey.substring(0, 20) + '...' : 'Não configurado'
   const isServiceKeyValid = supabaseServiceKey?.startsWith('eyJ') || false
   
-  console.log('[Supabase Storage] Config:', {
+  logger.debug('[Supabase Storage] Config:', {
     url: supabaseUrl ? '✅ Configurado' : '❌ Não configurado',
-    serviceKey: supabaseServiceKey ? `✅ ${serviceKeyPrefix}` : '❌ Não configurado',
+    serviceKey: supabaseServiceKey ? '✅ Configurado' : '❌ Não configurado',
     serviceKeyValid: isServiceKeyValid ? '✅ JWT válido' : '❌ NÃO É JWT (deve começar com "eyJ")',
     bucket: AUDIO_BUCKET,
   })
@@ -114,7 +115,7 @@ export async function uploadAudioToSupabase(
   // Verificar se o bucket existe (mas não bloquear se a verificação falhar)
   const bucketCheck = await ensureBucketExists()
   if (!bucketCheck.exists && bucketCheck.buckets) {
-    console.warn(`[Supabase Storage] Bucket "${AUDIO_BUCKET}" não encontrado. Buckets disponíveis: ${bucketCheck.buckets.join(', ')}`)
+    logger.warn(`[Supabase Storage] Bucket "${AUDIO_BUCKET}" não encontrado. Buckets disponíveis: ${bucketCheck.buckets?.join(', ') || 'N/A'}`)
     // Não bloquear, apenas avisar - pode ser problema na listagem mas o upload pode funcionar
   }
 
@@ -129,7 +130,7 @@ export async function uploadAudioToSupabase(
     const file = new File([arrayBuffer], filename, { type: 'audio/webm;codecs=opus' })
 
     // Fazer upload
-    console.log('[Supabase Storage] Uploading audio:', {
+    logger.debug('[Supabase Storage] Uploading audio', {
       bucket: AUDIO_BUCKET,
       filename,
       size: file.size,
@@ -157,7 +158,7 @@ export async function uploadAudioToSupabase(
       if (error.message?.includes('row-level security') || 
           error.message?.includes('RLS') || 
           error.message?.includes('policy') ||
-          error.statusCode === 403) {
+          (typeof error.statusCode === 'number' && error.statusCode === 403)) {
         return {
           success: false,
           error: `Erro de permissão (RLS). Verifique:
@@ -170,7 +171,7 @@ Erro detalhado: ${error.message}`,
         }
       }
       
-      if (error.message?.includes('Bucket not found') || error.statusCode === 404) {
+      if (error.message?.includes('Bucket not found') || (typeof error.statusCode === 'number' && error.statusCode === 404)) {
         return {
           success: false,
           error: `Bucket "${AUDIO_BUCKET}" não encontrado. Verifique se o nome do bucket está correto no Supabase Dashboard.`,
@@ -214,13 +215,13 @@ export async function deleteAudioFromSupabase(path: string): Promise<boolean> {
     const { error } = await supabase.storage.from(AUDIO_BUCKET).remove([path])
 
     if (error) {
-      console.error('[Supabase Storage] Delete error:', error)
+      logger.error('[Supabase Storage] Delete error:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('[Supabase Storage] Error deleting:', error)
+    logger.error('[Supabase Storage] Error deleting:', error)
     return false
   }
 }
@@ -316,7 +317,7 @@ export async function uploadChatAttachmentToSupabase(
     const arrayBuffer = await file.arrayBuffer()
     const fileBlob = new File([arrayBuffer], filename, { type: file.type })
 
-    console.log('[Supabase Storage] Uploading chat attachment:', {
+    logger.debug('[Supabase Storage] Uploading chat attachment:', {
       bucket: CHAT_ATTACHMENTS_BUCKET,
       filename,
       size: file.size,
@@ -335,7 +336,7 @@ export async function uploadChatAttachmentToSupabase(
       })
 
     if (error) {
-      console.error('[Supabase Storage] Upload error:', {
+      logger.error('[Supabase Storage] Upload error:', {
         message: error.message,
         statusCode: error.statusCode,
         name: error.name,
@@ -344,7 +345,7 @@ export async function uploadChatAttachmentToSupabase(
       if (error.message?.includes('row-level security') || 
           error.message?.includes('RLS') || 
           error.message?.includes('policy') ||
-          error.statusCode === 403) {
+          (typeof error.statusCode === 'number' && error.statusCode === 403)) {
         return {
           success: false,
           error: `Erro de permissão (RLS). Verifique:
@@ -356,7 +357,7 @@ Erro detalhado: ${error.message}`,
         }
       }
 
-      if (error.message?.includes('Bucket not found') || error.statusCode === 404) {
+      if (error.message?.includes('Bucket not found') || (typeof error.statusCode === 'number' && error.statusCode === 404)) {
         return {
           success: false,
           error: `Bucket "${CHAT_ATTACHMENTS_BUCKET}" não encontrado. Verifique se o bucket foi criado no Supabase Dashboard.`,
@@ -376,7 +377,7 @@ Erro detalhado: ${error.message}`,
       .createSignedUrl(data.path, 3600) // Expira em 1 hora
 
     if (signedUrlError) {
-      console.error('[Supabase Storage] Error creating signed URL:', signedUrlError)
+      logger.error('[Supabase Storage] Error creating signed URL:', signedUrlError)
       // Mesmo sem signed URL, retornar sucesso com o path
       // A signed URL pode ser gerada depois quando necessário
       return {
@@ -474,13 +475,13 @@ export async function getChatAttachmentFile(
       .download(path)
 
     if (error) {
-      console.error('[Supabase Storage] Download error:', {
+      logger.error('[Supabase Storage] Download error:', {
         message: error.message,
         statusCode: error.statusCode,
         name: error.name,
       })
 
-      if (error.message?.includes('not found') || error.statusCode === 404) {
+      if (error.message?.includes('not found') || (typeof error.statusCode === 'number' && error.statusCode === 404)) {
         return {
           success: false,
           error: 'Arquivo não encontrado',
@@ -563,13 +564,13 @@ export async function deleteChatAttachmentFromSupabase(path: string): Promise<bo
     const { error } = await supabase.storage.from(CHAT_ATTACHMENTS_BUCKET).remove([path])
 
     if (error) {
-      console.error('[Supabase Storage] Delete error:', error)
+      logger.error('[Supabase Storage] Delete error:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('[Supabase Storage] Error deleting:', error)
+    logger.error('[Supabase Storage] Error deleting:', error)
     return false
   }
 }

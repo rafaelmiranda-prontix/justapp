@@ -52,7 +52,7 @@ export class AIChatService {
 
       // Log de uso para monitoramento
       if (response.usage) {
-        console.log(`[AI] Provider: ${provider.name}, Input: ${response.usage.inputTokens}, Output: ${response.usage.outputTokens}`)
+        logger.debug(`[AI] Provider: ${provider.name}, Input: ${response.usage.inputTokens}, Output: ${response.usage.outputTokens}`)
       }
 
       // Extrair dados estruturados da conversa

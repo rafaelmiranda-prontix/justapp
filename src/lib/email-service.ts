@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { logger } from './logger'
 
 // Inicializa Resend (se não houver API key, não envia email)
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -18,8 +19,8 @@ interface SendEmailParams {
 export async function sendEmail({ to, subject, html, text }: SendEmailParams) {
   // Se não tiver API key configurada, apenas loga
   if (!resend) {
-    console.log('[EMAIL] Resend não configurado. Email que seria enviado:')
-    console.log({ to, subject, preview: html.substring(0, 100) })
+    logger.warn('[EMAIL] Resend não configurado. Email que seria enviado')
+    logger.debug({ to: '[REDACTED]', subject, preview: html.substring(0, 100) })
     return { success: false, message: 'Resend não configurado' }
   }
 
@@ -33,14 +34,14 @@ export async function sendEmail({ to, subject, html, text }: SendEmailParams) {
     })
 
     if (error) {
-      console.error('[EMAIL] Erro ao enviar:', error)
+      logger.error('[EMAIL] Erro ao enviar:', error)
       return { success: false, error }
     }
 
-    console.log('[EMAIL] Email enviado com sucesso:', data?.id)
+    logger.info('[EMAIL] Email enviado com sucesso:', data?.id)
     return { success: true, data }
   } catch (error) {
-    console.error('[EMAIL] Erro ao enviar email:', error)
+    logger.error('[EMAIL] Erro ao enviar email:', error)
     return { success: false, error }
   }
 }

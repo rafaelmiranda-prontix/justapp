@@ -1,6 +1,7 @@
 import { prisma } from './prisma'
 import { nanoid } from 'nanoid'
 import { PreQualificationService } from './pre-qualification/pre-qualification.service'
+import { logger } from './logger'
 import { PreQualificationState } from './pre-qualification/types'
 
 export interface ChatMessage {
@@ -44,13 +45,13 @@ export class AnonymousSessionService {
     ipAddress?: string
   }): Promise<AnonymousSessionData> {
     try {
-      console.log('[Service] Generating sessionId...')
+      logger.debug('[Service] Generating sessionId...')
       const sessionId = this.generateSessionId()
-      console.log('[Service] SessionId generated:', sessionId)
+      logger.debug('[Service] SessionId generated')
 
       const expiresAt = new Date()
       expiresAt.setDate(expiresAt.getDate() + 7) // 7 dias
-      console.log('[Service] Expires at:', expiresAt)
+      logger.debug('[Service] Expires at:', expiresAt)
 
       // Inicializar pré-qualificação (SEM IA - economia de custos)
       const preQualState = PreQualificationService.initializeState()
@@ -61,9 +62,9 @@ export class AnonymousSessionService {
         content: welcomeText,
         timestamp: new Date(),
       }
-      console.log('[Service] Pre-qualification initialized')
+      logger.debug('[Service] Pre-qualification initialized')
 
-      console.log('[Service] Creating session in database...')
+      logger.debug('[Service] Creating session in database...')
       const now = new Date()
       const session = await prisma.anonymousSession.create({
         data: {
@@ -83,12 +84,11 @@ export class AnonymousSessionService {
           updatedAt: now,
         },
       })
-      console.log('[Service] Session created in database:', session.id)
+      logger.debug('[Service] Session created in database')
 
       return this.formatSession(session)
     } catch (error: any) {
-      console.error('[Service] Error creating session:', error)
-      console.error('[Service] Error details:', error.message, error.stack)
+      logger.error('[Service] Error creating session:', error)
       throw error
     }
   }

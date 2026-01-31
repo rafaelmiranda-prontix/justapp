@@ -136,7 +136,7 @@ export class ChatService {
       },
     })
 
-    console.log(
+    logger.debug(
       `[Chat] Message sent in match ${matchId} by ${isCidadao ? 'citizen' : 'lawyer'} ${remetenteId}`
     )
 

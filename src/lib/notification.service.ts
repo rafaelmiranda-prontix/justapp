@@ -50,9 +50,9 @@ export class NotificationService {
         html: this.getNewMatchEmailTemplate(match, advogado, caso),
       })
 
-      console.log(`[Notification] New match email sent to ${advogado.users.email}`)
+      logger.info(`[Notification] New match email sent`)
     } catch (error) {
-      console.error('[Notification] Failed to send new match email:', error)
+      logger.error('[Notification] Failed to send new match email:', error)
       // Não lança erro - notificação não deve impedir o fluxo
     }
   }
@@ -97,9 +97,9 @@ export class NotificationService {
         html: this.getMatchAcceptedEmailTemplate(match, cidadao, advogado),
       })
 
-      console.log(`[Notification] Match accepted email sent to ${cidadao.users.email}`)
+      logger.info(`[Notification] Match accepted email sent`)
     } catch (error) {
-      console.error('[Notification] Failed to send match accepted email:', error)
+      logger.error('[Notification] Failed to send match accepted email:', error)
     }
   }
 
@@ -139,9 +139,9 @@ export class NotificationService {
         html: this.getMatchExpiringEmailTemplate(match, hoursLeft),
       })
 
-      console.log(`[Notification] Match expiring email sent to ${match.advogados.user.email}`)
+      logger.info(`[Notification] Match expiring email sent`)
     } catch (error) {
-      console.error('[Notification] Failed to send match expiring email:', error)
+      logger.error('[Notification] Failed to send match expiring email:', error)
     }
   }
 

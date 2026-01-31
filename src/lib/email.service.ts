@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { logger } from './logger'
 
 // Inicializa Resend apenas se a API key estiver configurada
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -22,8 +23,8 @@ export class EmailService {
 
     // Verificar se Resend está configurado
     if (!resend) {
-      console.warn('[Email] Resend não configurado. Email de ativação não enviado.')
-      console.log(`[Email] Link de ativação que seria enviado: ${activationUrl}`)
+      logger.warn('[Email] Resend não configurado. Email de ativação não enviado.')
+      logger.debug(`[Email] Link de ativação que seria enviado: [REDACTED]`)
       // Não lançar erro - apenas logar, pois o usuário foi criado com sucesso
       return
     }
@@ -37,15 +38,15 @@ export class EmailService {
       })
 
       if (result.error) {
-        console.error('[Email] Resend error:', result.error)
+        logger.error('[Email] Resend error:', result.error)
         throw new Error(result.error.message || 'Erro ao enviar email de ativação')
       }
 
-      console.log(`[Email] Activation email sent to: ${email} (ID: ${result.data?.id})`)
+      logger.info(`[Email] Activation email sent (ID: ${result.data?.id})`)
     } catch (error: any) {
-      console.error('[Email] Failed to send activation email:', error)
+      logger.error('[Email] Failed to send activation email:', error)
       // Não lançar erro - apenas logar, pois o usuário foi criado com sucesso
-      console.log(`[Email] Link de ativação: ${activationUrl}`)
+      logger.debug(`[Email] Link de ativação: [REDACTED]`)
     }
   }
 
@@ -163,7 +164,7 @@ export class EmailService {
 
     // Verificar se Resend está configurado
     if (!resend) {
-      console.warn('[Email] Resend não configurado. Email de boas-vindas não enviado.')
+      logger.warn('[Email] Resend não configurado. Email de boas-vindas não enviado.')
       return
     }
 
@@ -221,13 +222,13 @@ export class EmailService {
       })
 
       if (result.error) {
-        console.error('[Email] Resend error:', result.error)
+        logger.error('[Email] Resend error:', result.error)
         return
       }
 
-      console.log(`[Email] Welcome email sent to: ${email} (ID: ${result.data?.id})`)
+      logger.info(`[Email] Welcome email sent (ID: ${result.data?.id})`)
     } catch (error: any) {
-      console.error('[Email] Failed to send welcome email:', error)
+      logger.error('[Email] Failed to send welcome email:', error)
       // Não lançar erro pois email de boas-vindas não é crítico
     }
   }

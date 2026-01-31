@@ -42,9 +42,9 @@ export class CaseDistributionService {
       throw new Error('Apenas casos com status ABERTO podem ser distribuídos')
     }
 
-    console.log(`[Distribution] Starting distribution for case ${casoId}`)
-    console.log(`[Distribution] Especialidade: ${caso.especialidades?.nome || 'Não definida'}`)
-    console.log(`[Distribution] Localização: ${caso.cidadaos.cidade}, ${caso.cidadaos.estado}`)
+    logger.debug(`[Distribution] Starting distribution for case ${casoId}`)
+    logger.debug(`[Distribution] Especialidade: ${caso.especialidades?.nome || 'Não definida'}`)
+    logger.debug(`[Distribution] Localização: ${caso.cidadaos.cidade}, ${caso.cidadaos.estado}`)
 
     // Buscar configurações
     const maxMatches = await ConfigService.get<number>('max_matches_per_caso', 5)
@@ -54,7 +54,7 @@ export class CaseDistributionService {
     // Buscar advogados compatíveis
     const advogadosCompativeis = await this.findCompatibleLawyers(caso, minScore)
 
-    console.log(`[Distribution] Found ${advogadosCompativeis.length} compatible lawyers`)
+    logger.debug(`[Distribution] Found ${advogadosCompativeis.length} compatible lawyers`)
 
     // Limitar ao máximo configurado
     const advogadosParaMatch = advogadosCompativeis.slice(0, maxMatches)
@@ -78,7 +78,7 @@ export class CaseDistributionService {
         })
 
         if (existingMatch) {
-          console.log(`[Distribution] Match already exists for lawyer ${advogado.id}`)
+          logger.debug(`[Distribution] Match already exists for lawyer ${advogado.id}`)
           continue
         }
 
@@ -107,16 +107,16 @@ export class CaseDistributionService {
         })
 
         matchesCreated.push(match.id)
-        console.log(
+        logger.debug(
           `[Distribution] Match created: ${match.id} | Lawyer: ${advogado.id} | Score: ${advogado.matchScore}`
         )
       } catch (error) {
-        console.error(`[Distribution] Error creating match for lawyer ${advogado.id}:`, error)
+        logger.error(`[Distribution] Error creating match for lawyer ${advogado.id}:`, error)
         // Continuar com próximo advogado
       }
     }
 
-    console.log(`[Distribution] Created ${matchesCreated.length} matches for case ${casoId}`)
+    logger.debug(`[Distribution] Created ${matchesCreated.length} matches for case ${casoId}`)
 
     return {
       matchesCreated: matchesCreated.length,
@@ -162,33 +162,33 @@ export class CaseDistributionService {
     })
 
     // TIER 1: Busca normal com todas as regras
-    console.log('[Distribution] Tier 1: Trying strict matching...')
+    logger.debug('[Distribution] Tier 1: Trying strict matching...')
     const advogadosCompativeis = this.strictMatching(advogados, caso, minScore)
 
     if (advogadosCompativeis.length > 0) {
-      console.log(`[Distribution] Tier 1: Found ${advogadosCompativeis.length} strict matches`)
+      logger.debug(`[Distribution] Tier 1: Found ${advogadosCompativeis.length} strict matches`)
       return advogadosCompativeis
     }
 
     // TIER 2: Fallback - Mesmo estado + ordenar por número de especialidades
-    console.log('[Distribution] Tier 2: Trying same state + most specialties...')
+    logger.debug('[Distribution] Tier 2: Trying same state + most specialties...')
     const fallback1 = this.fallbackBySpecialties(advogados, caso)
 
     if (fallback1.length > 0) {
-      console.log(`[Distribution] Tier 2: Found ${fallback1.length} matches by specialties`)
+      logger.debug(`[Distribution] Tier 2: Found ${fallback1.length} matches by specialties`)
       return fallback1
     }
 
     // TIER 3: Fallback - Mesmo estado + aleatório
-    console.log('[Distribution] Tier 3: Trying random from same state...')
+    logger.debug('[Distribution] Tier 3: Trying random from same state...')
     const fallback2 = this.fallbackRandomSameState(advogados, caso)
 
     if (fallback2.length > 0) {
-      console.log(`[Distribution] Tier 3: Found ${fallback2.length} random matches`)
+      logger.debug(`[Distribution] Tier 3: Found ${fallback2.length} random matches`)
       return fallback2
     }
 
-    console.log('[Distribution] No compatible lawyers found in any tier')
+    logger.debug('[Distribution] No compatible lawyers found in any tier')
     return []
   }
 
@@ -504,7 +504,7 @@ export class CaseDistributionService {
     casosDistribuidos: number
     matchesCriados: number
   }> {
-    console.log(`[Redistribution] Checking cases for lawyer ${advogadoId}`)
+    logger.debug(`[Redistribution] Checking cases for lawyer ${advogadoId}`)
 
     // 1. Verificar se advogado está elegível
     const advogado = await prisma.advogados.findUnique({
@@ -518,13 +518,13 @@ export class CaseDistributionService {
     })
 
     if (!advogado) {
-      console.log('[Redistribution] Lawyer not found')
+      logger.debug('[Redistribution] Lawyer not found')
       return { casosDistribuidos: 0, matchesCriados: 0 }
     }
 
     // Verificar se tem mais de 2 pendentes
     if (advogado.matches.length >= 2) {
-      console.log(
+      logger.debug(
         `[Redistribution] Lawyer has ${advogado.matches.length} pending matches (max 2)`
       )
       return { casosDistribuidos: 0, matchesCriados: 0 }
@@ -532,7 +532,7 @@ export class CaseDistributionService {
 
     // Verificar cota de leads
     if (advogado.leadsRecebidosMes >= advogado.leadsLimiteMes) {
-      console.log(
+      logger.debug(
         `[Redistribution] Lawyer reached monthly limit (${advogado.leadsRecebidosMes}/${advogado.leadsLimiteMes})`
       )
       return { casosDistribuidos: 0, matchesCriados: 0 }
@@ -558,7 +558,7 @@ export class CaseDistributionService {
       },
     })
 
-    console.log(
+    logger.debug(
       `[Redistribution] Found ${casosOrfaos.length} orphan cases in state ${advogado.estado}`
     )
 
@@ -572,21 +572,21 @@ export class CaseDistributionService {
 
     for (const caso of casosOrfaos) {
       try {
-        console.log(`[Redistribution] Attempting to distribute case ${caso.id}`)
+        logger.debug(`[Redistribution] Attempting to distribute case ${caso.id}`)
 
         const result = await this.distributeCase(caso.id)
 
         if (result.matchesCreated > 0) {
           casosDistribuidos++
           matchesCriados += result.matchesCreated
-          console.log(`[Redistribution] Case ${caso.id} distributed successfully`)
+          logger.debug(`[Redistribution] Case ${caso.id} distributed successfully`)
         }
       } catch (error) {
-        console.error(`[Redistribution] Failed to distribute case ${caso.id}:`, error)
+        logger.error(`[Redistribution] Failed to distribute case ${caso.id}:`, error)
       }
     }
 
-    console.log(
+    logger.debug(
       `[Redistribution] Completed for lawyer ${advogadoId}: ${casosDistribuidos} cases, ${matchesCriados} matches`
     )
 
@@ -619,7 +619,7 @@ export class CaseDistributionService {
     })
 
     if (result.count > 0) {
-      console.log(`[Distribution] Expired ${result.count} old matches`)
+      logger.debug(`[Distribution] Expired ${result.count} old matches`)
     }
 
     return result.count
@@ -658,7 +658,7 @@ export class CaseDistributionService {
       })
     }
 
-    console.log(`[Distribution] Reset lead counters for ${advogadosParaResetar.length} lawyers`)
+    logger.debug(`[Distribution] Reset lead counters for ${advogadosParaResetar.length} lawyers`)
 
     return advogadosParaResetar.length
   }

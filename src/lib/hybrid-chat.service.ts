@@ -58,7 +58,7 @@ export class HybridChatService {
     // Se não há estado de pré-qualificação, inicializar um novo
     // (pode acontecer se sessão foi criada antes da implementação ou se estado foi perdido)
     if (!session.preQualificationState) {
-      console.log('[Hybrid] Estado de pré-qualificação não encontrado, inicializando novo estado')
+      logger.debug('[Hybrid] Estado de pré-qualificação não encontrado, inicializando novo estado')
       const newState = PreQualificationService.initializeState()
       
       // Salvar estado inicializado
@@ -75,7 +75,7 @@ export class HybridChatService {
 
     // Se não há API key de IA, sempre usar pré-qualificação
     if (!hasAIAPIKey()) {
-      console.log('[Hybrid] Nenhuma API key de IA configurada, usando pré-qualificação')
+      logger.debug('[Hybrid] Nenhuma API key de IA configurada, usando pré-qualificação')
       if (!session.preQualificationState) {
         const newState = PreQualificationService.initializeState()
         await AnonymousSessionService.updateDetectedData(session.sessionId, {
@@ -94,7 +94,7 @@ export class HybridChatService {
     try {
       return await this.processWithAI(session, userMessage)
     } catch (error) {
-      console.error('[Hybrid] IA falhou, voltando para pré-qualificação:', error)
+      logger.error('[Hybrid] IA falhou, voltando para pré-qualificação:', error)
       // Inicializar pré-qualificação como fallback
       const newState = PreQualificationService.initializeState()
       await AnonymousSessionService.updateDetectedData(session.sessionId, {
@@ -169,7 +169,7 @@ export class HybridChatService {
     // Não devemos usar isso em loop - melhor voltar para pré-qualificação
     if (aiResponse.reply.includes('Entendi. Pode me dar mais detalhes sobre sua situação?') && 
         !session.useAI) {
-      console.warn('[Hybrid] IA retornou fallback genérico, mas sessão não está marcada como useAI. Inicializando pré-qualificação.')
+      logger.warn('[Hybrid] IA retornou fallback genérico, mas sessão não está marcada como useAI. Inicializando pré-qualificação.')
       throw new Error('IA fallback detected - switching to pre-qualification')
     }
 
@@ -317,6 +317,6 @@ Responda:
       useAI: true as any, // TypeScript hack - updateDetectedData precisa ser expandido
     })
 
-    console.log(`[Hybrid] IA ativada para sessão ${sessionId}`)
+    logger.debug(`[Hybrid] IA ativada para sessão ${sessionId}`)
   }
 }
