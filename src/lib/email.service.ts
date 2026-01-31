@@ -13,7 +13,12 @@ export class EmailService {
     activationToken: string
   ): Promise<void> {
     const activationUrl = `${process.env.NEXTAUTH_URL}/auth/activate?token=${activationToken}`
-    const firstName = name.split(' ')[0]
+    // Para advogados com prefixo (Dr./Dra.), pegar prefixo + primeiro nome
+    // Caso contrário, pegar apenas o primeiro nome
+    const nameParts = name.split(' ')
+    const firstName = nameParts[0] === 'Dr.' || nameParts[0] === 'Dra.'
+      ? `${nameParts[0]} ${nameParts[1] || ''}`.trim()
+      : nameParts[0]
 
     // Verificar se Resend está configurado
     if (!resend) {
@@ -148,7 +153,12 @@ export class EmailService {
    * Envia email de boas-vindas após ativação
    */
   static async sendWelcomeEmail(email: string, name: string): Promise<void> {
-    const firstName = name.split(' ')[0]
+    // Para advogados com prefixo (Dr./Dra.), pegar prefixo + primeiro nome
+    // Caso contrário, pegar apenas o primeiro nome
+    const nameParts = name.split(' ')
+    const firstName = nameParts[0] === 'Dr.' || nameParts[0] === 'Dra.'
+      ? `${nameParts[0]} ${nameParts[1] || ''}`.trim()
+      : nameParts[0]
     const dashboardUrl = `${process.env.NEXTAUTH_URL}/cidadao/dashboard`
 
     // Verificar se Resend está configurado

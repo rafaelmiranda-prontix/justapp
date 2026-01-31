@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -8,11 +8,21 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { validateOAB } from '@/lib/utils'
+import { validateOAB, formatPhone, unformatPhone } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 
 const signupAdvogadoSchema = z.object({
+  prefixo: z.enum(['Dr.', 'Dra.'], {
+    required_error: 'Selecione o prefixo',
+  }),
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   email: z.string().email('Email inválido'),
   phone: z.string().min(10, 'Telefone inválido'),
@@ -46,23 +56,37 @@ export function SignupAdvogadoForm() {
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
   } = useForm<SignupAdvogadoFormData>({
     resolver: zodResolver(signupAdvogadoSchema),
+    defaultValues: {
+      prefixo: 'Dr.',
+    },
   })
 
   const oabValue = watch('oab')
+  const prefixoValue = watch('prefixo')
+  const phoneValue = watch('phone')
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value)
+    setValue('phone', formatted)
+  }
 
   const onSubmit = async (data: SignupAdvogadoFormData) => {
     setIsLoading(true)
 
     try {
+      // Combinar prefixo com nome
+      const fullName = `${data.prefixo} ${data.name.trim()}`
+
       const res = await fetch('/api/users/advogado', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: data.name,
+          name: fullName,
           email: data.email,
-          phone: data.phone,
+          phone: data.phone ? unformatPhone(data.phone) : '',
           oab: data.oab,
           cidade: data.cidade,
           estado: data.estado.toUpperCase(),
@@ -100,12 +124,31 @@ export function SignupAdvogadoForm() {
         <Label htmlFor="name">
           Nome completo <span className="text-red-500">*</span>
         </Label>
-        <Input
-          id="name"
-          placeholder="Dr. João da Silva"
-          {...register('name')}
-          disabled={isLoading}
-        />
+        <div className="flex gap-2">
+          <Select
+            value={prefixoValue}
+            onValueChange={(value) => setValue('prefixo', value as 'Dr.' | 'Dra.')}
+            disabled={isLoading}
+          >
+            <SelectTrigger className="w-20">
+              <SelectValue placeholder="Dr." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Dr.">Dr.</SelectItem>
+              <SelectItem value="Dra.">Dra.</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+            id="name"
+            placeholder="João da Silva"
+            {...register('name')}
+            disabled={isLoading}
+            className="flex-1"
+          />
+        </div>
+        {errors.prefixo && (
+          <p className="text-sm text-destructive">{errors.prefixo.message}</p>
+        )}
         {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
       </div>
 
@@ -131,7 +174,8 @@ export function SignupAdvogadoForm() {
           id="phone"
           type="tel"
           placeholder="(21) 99999-9999"
-          {...register('phone')}
+          value={phoneValue || ''}
+          onChange={handlePhoneChange}
           disabled={isLoading}
         />
         {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}

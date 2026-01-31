@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Loader2, Mail, User, Phone, CheckCircle2, MapPin, Navigation } from 'lucide-react'
 import { GeolocationModal } from './geolocation-modal'
 import { useGeolocation } from '@/hooks/use-geolocation'
+import { formatPhone, unformatPhone } from '@/lib/utils'
 
 interface LeadCaptureFormProps {
   onSubmit: (data: { name: string; email: string; phone?: string; cidade?: string; estado?: string }) => Promise<void>
@@ -75,24 +76,6 @@ export function LeadCaptureForm({ onSubmit, extractedData }: LeadCaptureFormProp
     // Usuário pode preencher manualmente
   }
 
-  // Função para formatar telefone brasileiro: (XX) XXXXX-XXXX
-  const formatPhone = (value: string) => {
-    // Remove tudo que não é número
-    const numbers = value.replace(/\D/g, '')
-    
-    // Aplica a máscara
-    if (numbers.length <= 2) {
-      return numbers.length > 0 ? `(${numbers}` : numbers
-    } else if (numbers.length <= 7) {
-      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
-    } else if (numbers.length <= 10) {
-      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`
-    } else {
-      // Limita a 11 dígitos (com DDD + 9 dígitos)
-      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`
-    }
-  }
-
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhone(e.target.value)
     setPhone(formatted)
@@ -122,7 +105,7 @@ export function LeadCaptureForm({ onSubmit, extractedData }: LeadCaptureFormProp
 
     try {
       // Remover formatação do telefone antes de enviar (apenas números)
-      const phoneNumbers = phone.replace(/\D/g, '')
+      const phoneNumbers = phone ? unformatPhone(phone) : undefined
       
       await onSubmit({
         name: name.trim(),

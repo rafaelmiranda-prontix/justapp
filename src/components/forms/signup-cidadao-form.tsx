@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
+import { formatPhone, unformatPhone } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 
 const signupCidadaoSchema = z.object({
@@ -33,9 +34,18 @@ export function SignupCidadaoForm() {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
+    setValue,
   } = useForm<SignupCidadaoFormData>({
     resolver: zodResolver(signupCidadaoSchema),
   })
+
+  const phoneValue = watch('phone')
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value)
+    setValue('phone', formatted)
+  }
 
   const onSubmit = async (data: SignupCidadaoFormData) => {
     setIsLoading(true)
@@ -47,7 +57,7 @@ export function SignupCidadaoForm() {
         body: JSON.stringify({
           name: data.name,
           email: data.email,
-          phone: data.phone,
+          phone: data.phone ? unformatPhone(data.phone) : undefined,
           password: data.password,
         }),
       })
@@ -111,7 +121,8 @@ export function SignupCidadaoForm() {
           id="phone"
           type="tel"
           placeholder="(21) 99999-9999"
-          {...register('phone')}
+          value={phoneValue || ''}
+          onChange={handlePhoneChange}
           disabled={isLoading}
         />
         {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
