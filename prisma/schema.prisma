@@ -307,6 +307,11 @@ enum CasoStatus {
   CANCELADO
 }
 
+enum ChatMode {
+  MVP       // Polling otimizado (sem dependências externas)
+  PUSHER    // WebSocket em tempo real via Pusher
+}
+
 enum ConfiguracaoTipo {
   STRING
   NUMBER

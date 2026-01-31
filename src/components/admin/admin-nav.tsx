@@ -9,6 +9,7 @@ import {
   MessageSquare,
   Scale,
   Shield,
+  Settings,
 } from 'lucide-react'
 
 const navItems = [
@@ -31,6 +32,11 @@ const navItems = [
     title: 'Usuários',
     href: '/admin/usuarios',
     icon: Users,
+  },
+  {
+    title: 'Config. Chat',
+    href: '/admin/chat-config',
+    icon: Settings,
   },
 ]
 

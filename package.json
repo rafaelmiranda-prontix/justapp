@@ -23,6 +23,9 @@
     "migrate:history": "tsx scripts/migrate-subscription-history.ts",
     "test:redistribution": "tsx scripts/test-redistribution.ts",
     "clean": "tsx scripts/clean-database.ts",
+    "admin:create": "tsx scripts/create-admin.ts",
+    "admin:password": "tsx scripts/set-admin-password.ts",
+    "admin:seed": "tsx prisma/seed-admin.ts",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },
@@ -56,6 +59,8 @@
     "next": "^15.1.6",
     "next-auth": "^4.24.5",
     "openai": "^6.17.0",
+    "pusher": "^5.3.2",
+    "pusher-js": "^8.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.50.1",

@@ -12,6 +12,7 @@ import {
   MessageSquare,
   AlertCircle,
   TrendingUp,
+  Settings,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -84,6 +85,29 @@ export default function AdminDashboardPage() {
             </Button>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Configurações do Sistema */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold mb-4">Configurações do Sistema</h2>
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="border-primary/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Configuração do Chat
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Alternar entre modo MVP (polling) e Pusher (WebSocket em tempo real)
+              </p>
+              <Button asChild variant="default" className="w-full">
+                <Link href="/admin/chat-config">Configurar Chat</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

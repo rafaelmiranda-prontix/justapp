@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { pusherServer } from '@/lib/pusher'
 
 const createMessageSchema = z.object({
   conteudo: z.string().min(1).max(2000),
@@ -20,17 +21,19 @@ export async function GET(req: Request, { params }: { params: Promise<{ matchId:
 
     const { matchId } = await params
 
-    // Busca o match para verificar autorização
+    // OTIMIZAÇÃO: Verificar autorização apenas com select necessário
     const match = await prisma.matches.findUnique({
       where: { id: matchId },
-      include: {
+      select: {
+        id: true,
+        status: true,
         advogados: {
-          include: { users: true },
+          select: { userId: true },
         },
         casos: {
-          include: {
+          select: {
             cidadaos: {
-              include: { users: true },
+              select: { userId: true },
             },
           },
         },
@@ -49,10 +52,34 @@ export async function GET(req: Request, { params }: { params: Promise<{ matchId:
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
     }
 
-    // Busca as mensagens
+    // OTIMIZAÇÃO: Busca mensagens com paginação (últimas 50 mensagens)
+    const url = new URL(req.url)
+    const limit = parseInt(url.searchParams.get('limit') || '50')
+    const offset = parseInt(url.searchParams.get('offset') || '0')
+    const afterId = url.searchParams.get('after') // Para buscar apenas novas mensagens (MVP polling)
+
+    // Se `after` é fornecido, buscar apenas mensagens mais recentes que este ID
+    const whereClause: any = { matchId }
+    if (afterId) {
+      // Buscar mensagens criadas depois do ID fornecido
+      const afterMessage = await prisma.mensagens.findUnique({
+        where: { id: afterId },
+        select: { criadoEm: true },
+      })
+
+      if (afterMessage) {
+        whereClause.criadoEm = { gt: afterMessage.criadoEm }
+      }
+    }
+
     const mensagens = await prisma.mensagens.findMany({
-      where: { matchId },
-      include: {
+      where: whereClause,
+      select: {
+        id: true,
+        conteudo: true,
+        anexoUrl: true,
+        lido: true,
+        criadoEm: true,
         remetente: {
           select: {
             id: true,
@@ -61,19 +88,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ matchId:
           },
         },
       },
-      orderBy: { criadoEm: 'asc' },
+      orderBy: { criadoEm: afterId ? 'asc' : 'desc' },
+      take: limit,
+      skip: afterId ? 0 : offset,
     })
 
-    // Marca mensagens como lidas
-    const messageIdsToMarkAsRead = mensagens
-      .filter((m) => !m.lido && m.remetenteId !== session.user.id)
-      .map((m) => m.id)
-
-    if (messageIdsToMarkAsRead.length > 0) {
-      await prisma.mensagens.updateMany({
-        where: { id: { in: messageIdsToMarkAsRead } },
-        data: { lido: true },
-      })
+    // Reverter ordem para mostrar mais antigas primeiro (exceto quando busca novas)
+    if (!afterId) {
+      mensagens.reverse()
     }
 
     return NextResponse.json({
@@ -172,6 +194,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ matchId
         },
       },
     })
+
+    // Enviar evento em tempo real via Pusher
+    try {
+      await pusherServer.trigger(`match-${matchId}`, 'new-message', mensagem)
+    } catch (error) {
+      console.error('Error triggering Pusher event:', error)
+      // Não falhar a requisição se Pusher falhar
+    }
 
     // TODO: Enviar notificação push/email para o destinatário
 
