@@ -127,6 +127,11 @@ export class CaseDistributionService {
   /**
    * Encontra advogados compatíveis com o caso
    * Retorna lista ordenada por score (maior primeiro)
+   *
+   * Estratégia em camadas:
+   * 1. Busca normal: especialidade + localização + score >= minScore
+   * 2. Fallback 1: Mesmo estado + maior número de especialidades
+   * 3. Fallback 2: Mesmo estado + aleatório
    */
   private static async findCompatibleLawyers(
     caso: any,
@@ -156,6 +161,49 @@ export class CaseDistributionService {
       },
     })
 
+    // TIER 1: Busca normal com todas as regras
+    console.log('[Distribution] Tier 1: Trying strict matching...')
+    const advogadosCompativeis = this.strictMatching(advogados, caso, minScore)
+
+    if (advogadosCompativeis.length > 0) {
+      console.log(`[Distribution] Tier 1: Found ${advogadosCompativeis.length} strict matches`)
+      return advogadosCompativeis
+    }
+
+    // TIER 2: Fallback - Mesmo estado + ordenar por número de especialidades
+    console.log('[Distribution] Tier 2: Trying same state + most specialties...')
+    const fallback1 = this.fallbackBySpecialties(advogados, caso)
+
+    if (fallback1.length > 0) {
+      console.log(`[Distribution] Tier 2: Found ${fallback1.length} matches by specialties`)
+      return fallback1
+    }
+
+    // TIER 3: Fallback - Mesmo estado + aleatório
+    console.log('[Distribution] Tier 3: Trying random from same state...')
+    const fallback2 = this.fallbackRandomSameState(advogados, caso)
+
+    if (fallback2.length > 0) {
+      console.log(`[Distribution] Tier 3: Found ${fallback2.length} random matches`)
+      return fallback2
+    }
+
+    console.log('[Distribution] No compatible lawyers found in any tier')
+    return []
+  }
+
+  /**
+   * Tier 1: Matching estrito com todas as regras
+   */
+  private static strictMatching(
+    advogados: any[],
+    caso: any,
+    minScore: number
+  ): Array<{
+    id: string
+    matchScore: number
+    distanciaKm: number | null
+  }> {
     const advogadosCompativeis: Array<{
       id: string
       matchScore: number
@@ -165,7 +213,6 @@ export class CaseDistributionService {
     for (const advogado of advogados) {
       // 1. Verificar limite de leads
       if (advogado.leadsRecebidosMes >= advogado.leadsLimiteMes) {
-        console.log(`[Distribution] Lawyer ${advogado.id} reached monthly limit`)
         continue
       }
 
@@ -213,6 +260,145 @@ export class CaseDistributionService {
     advogadosCompativeis.sort((a, b) => b.matchScore - a.matchScore)
 
     return advogadosCompativeis
+  }
+
+  /**
+   * Tier 2: Mesmo estado + ordenar por número de especialidades
+   * Ignora minScore e raioAtuacao, mas respeita limite de leads
+   */
+  private static fallbackBySpecialties(
+    advogados: any[],
+    caso: any
+  ): Array<{
+    id: string
+    matchScore: number
+    distanciaKm: number | null
+  }> {
+    const advogadosMesmoEstado: Array<{
+      id: string
+      matchScore: number
+      distanciaKm: number | null
+      numEspecialidades: number
+    }> = []
+
+    for (const advogado of advogados) {
+      // Verificar limite de leads
+      if (advogado.leadsRecebidosMes >= advogado.leadsLimiteMes) {
+        continue
+      }
+
+      // Verificar se está no mesmo estado
+      if (caso.cidadaos.estado !== advogado.estado) {
+        continue
+      }
+
+      // Calcular score (mesmo que não atinja minScore)
+      const score = this.calculateMatchScore(caso, advogado)
+
+      // Calcular distância se possível
+      let distanciaKm: number | null = null
+      if (
+        caso.cidadaos.latitude &&
+        caso.cidadaos.longitude &&
+        advogado.latitude &&
+        advogado.longitude
+      ) {
+        distanciaKm = this.calculateDistance(
+          caso.cidadaos.latitude,
+          caso.cidadaos.longitude,
+          advogado.latitude,
+          advogado.longitude
+        )
+      }
+
+      advogadosMesmoEstado.push({
+        id: advogado.id,
+        matchScore: score,
+        distanciaKm,
+        numEspecialidades: advogado.advogado_especialidades.length,
+      })
+    }
+
+    // Ordenar por: 1) número de especialidades (desc), 2) score (desc)
+    advogadosMesmoEstado.sort((a, b) => {
+      if (b.numEspecialidades !== a.numEspecialidades) {
+        return b.numEspecialidades - a.numEspecialidades
+      }
+      return b.matchScore - a.matchScore
+    })
+
+    // Remover campo auxiliar antes de retornar
+    return advogadosMesmoEstado.map(({ id, matchScore, distanciaKm }) => ({
+      id,
+      matchScore,
+      distanciaKm,
+    }))
+  }
+
+  /**
+   * Tier 3: Mesmo estado + aleatório
+   * Última tentativa - ignora score, raio, especialidades
+   */
+  private static fallbackRandomSameState(
+    advogados: any[],
+    caso: any
+  ): Array<{
+    id: string
+    matchScore: number
+    distanciaKm: number | null
+  }> {
+    const advogadosMesmoEstado: Array<{
+      id: string
+      matchScore: number
+      distanciaKm: number | null
+    }> = []
+
+    for (const advogado of advogados) {
+      // Verificar limite de leads
+      if (advogado.leadsRecebidosMes >= advogado.leadsLimiteMes) {
+        continue
+      }
+
+      // Verificar se está no mesmo estado
+      if (caso.cidadaos.estado !== advogado.estado) {
+        continue
+      }
+
+      // Calcular score e distância
+      const score = this.calculateMatchScore(caso, advogado)
+
+      let distanciaKm: number | null = null
+      if (
+        caso.cidadaos.latitude &&
+        caso.cidadaos.longitude &&
+        advogado.latitude &&
+        advogado.longitude
+      ) {
+        distanciaKm = this.calculateDistance(
+          caso.cidadaos.latitude,
+          caso.cidadaos.longitude,
+          advogado.latitude,
+          advogado.longitude
+        )
+      }
+
+      advogadosMesmoEstado.push({
+        id: advogado.id,
+        matchScore: score,
+        distanciaKm,
+      })
+    }
+
+    // Embaralhar aleatoriamente
+    for (let i = advogadosMesmoEstado.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[advogadosMesmoEstado[i], advogadosMesmoEstado[j]] = [
+        advogadosMesmoEstado[j],
+        advogadosMesmoEstado[i],
+      ]
+    }
+
+    return advogadosMesmoEstado
   }
 
   /**
@@ -303,6 +489,108 @@ export class CaseDistributionService {
 
   private static deg2rad(deg: number): number {
     return deg * (Math.PI / 180)
+  }
+
+  /**
+   * Redistribui casos ABERTOS sem matches quando advogado está disponível
+   * Chamado no login do advogado
+   *
+   * Regras:
+   * - Advogado não pode ter mais de 2 matches PENDENTES
+   * - Advogado deve ter cota de leads disponível
+   * - Apenas casos ABERTOS sem nenhum match
+   */
+  static async redistributeCasesForLawyer(advogadoId: string): Promise<{
+    casosDistribuidos: number
+    matchesCriados: number
+  }> {
+    console.log(`[Redistribution] Checking cases for lawyer ${advogadoId}`)
+
+    // 1. Verificar se advogado está elegível
+    const advogado = await prisma.advogados.findUnique({
+      where: { id: advogadoId },
+      include: {
+        users: true,
+        matches: {
+          where: { status: 'PENDENTE' },
+        },
+      },
+    })
+
+    if (!advogado) {
+      console.log('[Redistribution] Lawyer not found')
+      return { casosDistribuidos: 0, matchesCriados: 0 }
+    }
+
+    // Verificar se tem mais de 2 pendentes
+    if (advogado.matches.length >= 2) {
+      console.log(
+        `[Redistribution] Lawyer has ${advogado.matches.length} pending matches (max 2)`
+      )
+      return { casosDistribuidos: 0, matchesCriados: 0 }
+    }
+
+    // Verificar cota de leads
+    if (advogado.leadsRecebidosMes >= advogado.leadsLimiteMes) {
+      console.log(
+        `[Redistribution] Lawyer reached monthly limit (${advogado.leadsRecebidosMes}/${advogado.leadsLimiteMes})`
+      )
+      return { casosDistribuidos: 0, matchesCriados: 0 }
+    }
+
+    // 2. Buscar casos ABERTOS sem matches no mesmo estado
+    const casosOrfaos = await prisma.casos.findMany({
+      where: {
+        status: 'ABERTO',
+        matches: {
+          none: {}, // Casos sem nenhum match
+        },
+        cidadaos: {
+          estado: advogado.estado, // Mesmo estado do advogado
+        },
+      },
+      include: {
+        cidadaos: true,
+        especialidades: true,
+      },
+      orderBy: {
+        createdAt: 'asc', // Casos mais antigos primeiro
+      },
+    })
+
+    console.log(
+      `[Redistribution] Found ${casosOrfaos.length} orphan cases in state ${advogado.estado}`
+    )
+
+    if (casosOrfaos.length === 0) {
+      return { casosDistribuidos: 0, matchesCriados: 0 }
+    }
+
+    // 3. Tentar distribuir cada caso
+    let casosDistribuidos = 0
+    let matchesCriados = 0
+
+    for (const caso of casosOrfaos) {
+      try {
+        console.log(`[Redistribution] Attempting to distribute case ${caso.id}`)
+
+        const result = await this.distributeCase(caso.id)
+
+        if (result.matchesCreated > 0) {
+          casosDistribuidos++
+          matchesCriados += result.matchesCreated
+          console.log(`[Redistribution] Case ${caso.id} distributed successfully`)
+        }
+      } catch (error) {
+        console.error(`[Redistribution] Failed to distribute case ${caso.id}:`, error)
+      }
+    }
+
+    console.log(
+      `[Redistribution] Completed for lawyer ${advogadoId}: ${casosDistribuidos} cases, ${matchesCriados} matches`
+    )
+
+    return { casosDistribuidos, matchesCriados }
   }
 
   /**

@@ -21,6 +21,7 @@
     "check:distribution": "tsx scripts/check-distribution.ts",
     "fix:leads": "tsx scripts/fix-leads-limits.ts",
     "migrate:history": "tsx scripts/migrate-subscription-history.ts",
+    "test:redistribution": "tsx scripts/test-redistribution.ts",
     "clean": "tsx scripts/clean-database.ts",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""

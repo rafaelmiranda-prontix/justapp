@@ -65,7 +65,20 @@ export default function AdvogadoDashboardPage() {
 
   useEffect(() => {
     fetchMatches()
+    redistributeCases()
   }, [])
+
+  const redistributeCases = async () => {
+    try {
+      // Tentar redistribuir casos órfãos em background
+      await fetch('/api/advogado/redistribute-cases', {
+        method: 'POST',
+      })
+    } catch (error) {
+      // Erro silencioso - não afetar a experiência do usuário
+      console.log('Background redistribution failed:', error)
+    }
+  }
 
   const fetchMatches = async () => {
     setIsLoading(true)
