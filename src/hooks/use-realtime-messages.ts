@@ -142,9 +142,27 @@ export function useRealtimeMessages(
     }
   }, [matchId, currentUserId, fetchInitialMessages])
 
-  // Enviar mensagem
+  // Enviar mensagem com Optimistic Update
   const sendMessage = useCallback(
     async (content: string, attachmentUrl: string | null = null) => {
+      // OPTIMISTIC UPDATE: Criar mensagem temporária
+      const tempId = `temp-${Date.now()}`
+      const optimisticMessage: Message = {
+        id: tempId,
+        conteudo: content,
+        anexoUrl: attachmentUrl,
+        lido: false,
+        criadoEm: new Date().toISOString(),
+        remetente: {
+          id: currentUserId,
+          name: 'Você',
+          image: null,
+        },
+      }
+
+      // Adicionar mensagem temporária IMEDIATAMENTE
+      setMessages((prev) => [...prev, optimisticMessage])
+
       try {
         const res = await fetch(`/api/matches/${matchId}/messages`, {
           method: 'POST',
@@ -158,16 +176,24 @@ export function useRealtimeMessages(
         const result = await res.json()
 
         if (!result.success) {
+          // Remover mensagem temporária em caso de erro
+          setMessages((prev) => prev.filter((msg) => msg.id !== tempId))
           throw new Error(result.error || 'Erro ao enviar mensagem')
         }
 
-        // A mensagem será adicionada via Pusher event
+        // Substituir mensagem temporária pela real quando chegar via Pusher
+        // (o evento 'new-message' já faz isso automaticamente, mas garantimos aqui)
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === tempId ? result.data : msg))
+        )
       } catch (err) {
         console.error('Error sending message:', err)
+        // Remover mensagem temporária em caso de erro
+        setMessages((prev) => prev.filter((msg) => msg.id !== tempId))
         throw err
       }
     },
-    [matchId]
+    [matchId, currentUserId]
   )
 
   // Marcar mensagens como lidas

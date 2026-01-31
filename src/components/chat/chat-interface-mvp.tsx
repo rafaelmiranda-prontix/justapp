@@ -217,7 +217,7 @@ export function ChatInterfaceMVP({
       .toUpperCase()
   }, [])
 
-  // Handler de envio otimizado
+  // Handler de envio otimizado com Optimistic Update
   const handleSendMessage = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault()
@@ -233,6 +233,28 @@ export function ChatInterfaceMVP({
         return
       }
 
+      const messageContent = newMessage
+      const messageAttachment = attachmentUrl
+
+      // OPTIMISTIC UPDATE: Criar mensagem temporária
+      const tempId = `temp-${Date.now()}`
+      const optimisticMessage: Message = {
+        id: tempId,
+        conteudo: messageContent,
+        anexoUrl: messageAttachment,
+        lido: false,
+        criadoEm: new Date().toISOString(),
+        remetente: {
+          id: currentUserId,
+          name: 'Você',
+          image: null,
+        },
+      }
+
+      // Limpar input e adicionar mensagem temporária IMEDIATAMENTE
+      setNewMessage('')
+      setAttachmentUrl(null)
+      setMessages((prev) => [...prev, optimisticMessage])
       setIsSending(true)
 
       try {
@@ -240,21 +262,27 @@ export function ChatInterfaceMVP({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            conteudo: newMessage,
-            anexoUrl: attachmentUrl,
+            conteudo: messageContent,
+            anexoUrl: messageAttachment,
           }),
         })
 
         const result = await res.json()
 
         if (result.success) {
-          setNewMessage('')
-          setAttachmentUrl(null)
-
-          // OTIMIZAÇÃO: Adicionar mensagem localmente imediatamente
-          setMessages((prev) => [...prev, result.data])
+          // Substituir mensagem temporária pela mensagem real do servidor
+          setMessages((prev) =>
+            prev.map((msg) => (msg.id === tempId ? result.data : msg))
+          )
           lastMessageIdRef.current = result.data.id
         } else {
+          // Remover mensagem temporária em caso de erro
+          setMessages((prev) => prev.filter((msg) => msg.id !== tempId))
+
+          // Restaurar conteúdo no input
+          setNewMessage(messageContent)
+          setAttachmentUrl(messageAttachment)
+
           toast({
             title: 'Erro ao enviar',
             description: result.error || 'Tente novamente',
@@ -263,6 +291,14 @@ export function ChatInterfaceMVP({
         }
       } catch (error) {
         console.error('Error sending message:', error)
+
+        // Remover mensagem temporária em caso de erro
+        setMessages((prev) => prev.filter((msg) => msg.id !== tempId))
+
+        // Restaurar conteúdo no input
+        setNewMessage(messageContent)
+        setAttachmentUrl(messageAttachment)
+
         toast({
           title: 'Erro ao enviar',
           description: 'Verifique sua conexão',
@@ -272,7 +308,7 @@ export function ChatInterfaceMVP({
         setIsSending(false)
       }
     },
-    [newMessage, isSending, attachmentUrl, matchId, toast]
+    [newMessage, isSending, attachmentUrl, matchId, currentUserId, toast]
   )
 
   // Handler de tecla otimizado
