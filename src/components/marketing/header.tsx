@@ -5,6 +5,27 @@ import { Button } from '@/components/ui/button'
 import { Scale } from 'lucide-react'
 
 export function MarketingHeader() {
+  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    // Se for um link de âncora (começa com #)
+    if (href.startsWith('#')) {
+      e.preventDefault()
+      const elementId = href.substring(1)
+      const element = document.getElementById(elementId)
+      
+      if (element) {
+        // Calcula a posição considerando o header sticky (64px de altura)
+        const headerOffset = 80
+        const elementPosition = element.getBoundingClientRect().top
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth',
+        })
+      }
+    }
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
@@ -17,12 +38,14 @@ export function MarketingHeader() {
             <nav className="hidden md:flex items-center gap-6">
               <Link
                 href="#solucao"
+                onClick={(e) => handleSmoothScroll(e, '#solucao')}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Funcionalidades
               </Link>
               <Link
                 href="#como-funciona"
+                onClick={(e) => handleSmoothScroll(e, '#como-funciona')}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Como Funciona
