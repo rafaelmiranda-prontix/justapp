@@ -1,19 +1,86 @@
 'use client'
 
 // Analytics service - suporta PostHog e outros
-// Por enquanto, implementação básica que pode ser expandida
+import posthog from 'posthog-js'
 
 declare global {
   interface Window {
-    posthog?: any
+    posthog?: typeof posthog
+    dataLayer?: any[]
+    gtag?: (...args: any[]) => void
   }
 }
 
+let posthogInitialized = false
+let googleAnalyticsInitialized = false
+
 export function initAnalytics() {
+  if (typeof window === 'undefined') return
+
   // Inicializa PostHog se disponível
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-    // PostHog será carregado via script tag ou npm package
-    // Por enquanto, apenas estrutura básica
+  if (process.env.NEXT_PUBLIC_POSTHOG_KEY && !posthogInitialized) {
+    const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY
+    const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com'
+
+    try {
+      posthog.init(posthogKey, {
+        api_host: posthogHost,
+        loaded: (posthog) => {
+          if (process.env.NODE_ENV === 'development') {
+            // eslint-disable-next-line no-console
+            console.log('✅ PostHog initialized')
+          }
+        },
+        // Desabilitar autocapture em desenvolvimento para reduzir ruído
+        autocapture: process.env.NODE_ENV === 'production',
+        // Capturar pageviews automaticamente
+        capture_pageview: true,
+        // Capturar pageleaves automaticamente
+        capture_pageleave: true,
+      })
+
+      // Expor no window para compatibilidade
+      window.posthog = posthog
+      posthogInitialized = true
+    } catch (error) {
+      console.error('Error initializing PostHog:', error)
+    }
+  }
+
+  // Inicializa Google Analytics se disponível
+  if (process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && !googleAnalyticsInitialized) {
+    const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+
+    try {
+      // Carregar script do Google Analytics
+      const script1 = document.createElement('script')
+      script1.async = true
+      script1.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`
+      document.head.appendChild(script1)
+
+      // Inicializar gtag
+      window.dataLayer = window.dataLayer || []
+      function gtag(...args: any[]) {
+        if (window.dataLayer) {
+          window.dataLayer.push(args)
+        }
+      }
+      window.gtag = gtag
+
+      gtag('js', new Date())
+      gtag('config', gaId, {
+        page_path: window.location.pathname,
+      })
+
+      googleAnalyticsInitialized = true
+
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('✅ Google Analytics initialized')
+      }
+    } catch (error) {
+      console.error('Error initializing Google Analytics:', error)
+    }
   }
 }
 
@@ -26,14 +93,23 @@ export function trackEvent(eventName: string, properties?: Record<string, any>) 
   }
 
   // Google Analytics (se configurado)
-  if (typeof (window as any).gtag !== 'undefined') {
-    (window as any).gtag('event', eventName, properties)
+  if (window.gtag) {
+    // Converter propriedades para formato do GA4
+    const gaProperties: Record<string, any> = {
+      event_category: properties?.category || 'general',
+      ...properties,
+    }
+    window.gtag('event', eventName, gaProperties)
   }
 
   // Log para desenvolvimento
   if (process.env.NODE_ENV === 'development') {
     // eslint-disable-next-line no-console
-    console.log('Analytics Event:', eventName, properties)
+    console.log('📊 Analytics Event:', eventName, {
+      posthog: !!window.posthog,
+      ga: !!window.gtag,
+      properties,
+    })
   }
 }
 
@@ -45,10 +121,22 @@ export function identifyUser(userId: string, traits?: Record<string, any>) {
     window.posthog.identify(userId, traits)
   }
 
+  // Google Analytics - User ID
+  if (window.gtag && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID) {
+    window.gtag('config', process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID, {
+      user_id: userId,
+      ...traits,
+    })
+  }
+
   // Log para desenvolvimento
   if (process.env.NODE_ENV === 'development') {
     // eslint-disable-next-line no-console
-    console.log('Analytics Identify:', userId, traits)
+    console.log('👤 Analytics Identify:', userId, {
+      posthog: !!window.posthog,
+      ga: !!window.gtag,
+      traits,
+    })
   }
 }
 
