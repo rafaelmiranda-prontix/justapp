@@ -252,9 +252,20 @@ export default function AdvogadoDashboardPage() {
             </>
           )}
           {match.status === 'ACEITO' && (
-            <Button size="sm" asChild className="w-full">
-              <Link href={`/advogado/chat/${match.id}`}>Abrir Chat</Link>
-            </Button>
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleViewDetails(match)}
+                className="flex-1"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Ver Detalhes
+              </Button>
+              <Button size="sm" asChild className="flex-1">
+                <Link href={`/advogado/chat/${match.id}`}>Abrir Chat</Link>
+              </Button>
+            </>
           )}
         </div>
       </CardContent>
