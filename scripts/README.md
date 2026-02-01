@@ -253,6 +253,51 @@ Ver lista completa em: [seed-configs.ts](seed-configs.ts)
 
 ---
 
+## 👥 Gerenciamento de Planos de Usuários
+
+### Listar Advogados e Seus Planos
+```bash
+# Listar todos os advogados
+npx tsx scripts/list-users-plans.ts
+
+# Filtrar por plano específico
+npx tsx scripts/list-users-plans.ts FREE
+npx tsx scripts/list-users-plans.ts PREMIUM
+npx tsx scripts/list-users-plans.ts UNLIMITED
+```
+
+**O que mostra:**
+- Nome, email, OAB
+- Plano atual e limites de leads
+- Uso atual (leads recebidos/limite)
+- Data de expiração (se aplicável)
+- Status do onboarding
+- Stripe Customer ID (se houver)
+- Estatísticas por plano
+
+### Alterar Plano de um Advogado
+```bash
+# Sintaxe
+npx tsx scripts/change-user-plan.ts <email-do-advogado> <novo-plano>
+
+# Exemplos
+npx tsx scripts/change-user-plan.ts advogado@example.com PREMIUM
+npx tsx scripts/change-user-plan.ts advogado@example.com UNLIMITED
+npx tsx scripts/change-user-plan.ts advogado@example.com FREE
+```
+
+**Planos válidos:** FREE, BASIC, PREMIUM, UNLIMITED
+
+**O que faz:**
+- ✅ Valida se o usuário é advogado
+- ✅ Mostra informações atuais do advogado
+- ✅ Atualiza o plano usando `updateAdvogadoPlan()`
+- ✅ Atualiza limite de leads automaticamente
+- ✅ Registra no histórico de assinaturas
+- ✅ Mostra situação atualizada
+
+---
+
 ## 🔧 Comandos Úteis
 
 ```bash

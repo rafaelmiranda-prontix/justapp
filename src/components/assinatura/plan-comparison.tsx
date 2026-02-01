@@ -10,7 +10,14 @@ interface PlanComparisonProps {
 }
 
 export function PlanComparison({ plans }: PlanComparisonProps) {
-  const planKeys = Object.keys(PLANS) as Array<keyof typeof PLANS>
+  // Filtrar apenas planos visíveis (não HIDDEN)
+  const visiblePlans = plans
+    ? Object.fromEntries(
+        Object.entries(plans).filter(([_, plan]) => plan.status !== 'HIDDEN')
+      )
+    : PLANS
+
+  const planKeys = Object.keys(visiblePlans) as Array<keyof typeof PLANS>
 
   // Gerar valores de leads dinamicamente dos planos
   const leadsValues = plans
@@ -84,7 +91,7 @@ export function PlanComparison({ plans }: PlanComparisonProps) {
                 <th className="text-left p-2 font-semibold">Recurso</th>
                 {planKeys.map((planKey) => (
                   <th key={planKey} className="text-center p-2 font-semibold">
-                    {PLANS[planKey].name}
+                    {visiblePlans[planKey]?.name || PLANS[planKey].name}
                   </th>
                 ))}
               </tr>
@@ -92,13 +99,21 @@ export function PlanComparison({ plans }: PlanComparisonProps) {
             <tbody>
               <tr className="border-b">
                 <td className="p-2 font-medium">Preço</td>
-                {planKeys.map((planKey) => (
-                  <td key={planKey} className="text-center p-2">
-                    {PLANS[planKey].priceDisplay === 0
-                      ? 'Grátis'
-                      : formatCurrency(PLANS[planKey].priceDisplay) + '/mês'}
-                  </td>
-                ))}
+                {planKeys.map((planKey) => {
+                  const plan = visiblePlans[planKey] || PLANS[planKey]
+                  const isComingSoon = plan.status === 'COMING_SOON'
+                  return (
+                    <td key={planKey} className="text-center p-2">
+                      {isComingSoon ? (
+                        <span className="text-sm text-muted-foreground">Em Breve</span>
+                      ) : plan.priceDisplay === 0 ? (
+                        'Grátis'
+                      ) : (
+                        formatCurrency(plan.priceDisplay) + '/mês'
+                      )}
+                    </td>
+                  )
+                })}
               </tr>
               {features.map((feature, idx) => (
                 <tr key={idx} className="border-b">
