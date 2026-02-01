@@ -20,9 +20,7 @@ export default function SignupPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm group-hover:bg-white/20 transition-colors">
-              <Scale className="h-6 w-6" />
-            </div>
+            <img src="/logo-icon.svg" alt="JustApp" className="h-8 w-8" />
             <span className="text-2xl font-bold">JustApp</span>
           </Link>
 
@@ -61,8 +59,8 @@ export default function SignupPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden mb-8 text-center">
             <Link href="/" className="inline-flex items-center gap-2 mb-2">
-              <Scale className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold">JustApp</span>
+              <img src="/logo-icon.svg" alt="JustApp" className="h-8 w-8" />
+              <span className="text-2xl font-bold bg-gradient-to-r from-[#001F5C] via-[#0066CC] to-[#00BFBF] bg-clip-text text-transparent">JustApp</span>
             </Link>
             <p className="text-muted-foreground">Conecte-se ao advogado ideal</p>
           </div>

@@ -12,7 +12,7 @@ export function MarketingHeader() {
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2">
               <img src="/logo-icon.svg" alt="JustApp" className="h-6 w-6" />
-              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">JustApp</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-[#001F5C] via-[#0066CC] to-[#00BFBF] bg-clip-text text-transparent">JustApp</span>
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               <Link

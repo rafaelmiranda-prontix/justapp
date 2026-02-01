@@ -1,17 +1,94 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Modern "J" Icon -->
-  <path d="M 32 12 L 32 44 L 24 44 L 24 52 L 44 52 L 44 44 L 36 44 L 36 20 C 36 16, 32 16, 32 16 C 28 16, 24 16, 24 20 L 32 20 Z" 
-        fill="url(#gradient)"/>
-  
-  <!-- Accent Dot -->
-  <circle cx="32" cy="56" r="3" fill="url(#gradient)"/>
-  
-  <!-- Gradient Definition -->
+  <!-- Circular ring segments -->
+  <g transform="translate(32, 32)">
+    <!-- Top-right arc (cyan to green) -->
+    <path d="M 14.4 -14.4 A 20.36 20.36 0 0 1 20.36 14.4"
+          stroke="url(#icon-gradient-cyan-green)"
+          stroke-width="4.5"
+          stroke-linecap="round"
+          fill="none"/>
+
+    <!-- Bottom-right arc (green accent) -->
+    <path d="M 20.36 14.4 A 20.36 20.36 0 0 1 14.4 20.36"
+          stroke="url(#icon-gradient-green-lime)"
+          stroke-width="4.5"
+          stroke-linecap="round"
+          fill="none"/>
+
+    <!-- Bottom-left arc (blue to cyan) -->
+    <path d="M -14.4 14.4 A 20.36 20.36 0 0 1 -20.36 -14.4"
+          stroke="url(#icon-gradient-blue-cyan)"
+          stroke-width="4.5"
+          stroke-linecap="round"
+          fill="none"/>
+
+    <!-- Top-left arc (dark blue) -->
+    <path d="M -20.36 -14.4 A 20.36 20.36 0 0 1 -14.4 -20.36"
+          stroke="url(#icon-gradient-navy-blue)"
+          stroke-width="4.5"
+          stroke-linecap="round"
+          fill="none"/>
+  </g>
+
+  <!-- Letters J and A -->
+  <!-- Letter J -->
+  <g transform="translate(21, 24)">
+    <path d="M 4 2 L 4 13 Q 4 16, 6.5 16 L 8 16"
+          stroke="url(#icon-gradient-j)"
+          stroke-width="4.5"
+          stroke-linecap="round"
+          fill="none"/>
+  </g>
+
+  <!-- Letter A -->
+  <g transform="translate(30, 24)">
+    <path d="M 1.5 16 L 6.5 2"
+          stroke="url(#icon-gradient-a)"
+          stroke-width="4.5"
+          stroke-linecap="round"
+          fill="none"/>
+    <path d="M 6.5 2 L 11.5 16"
+          stroke="url(#icon-gradient-a)"
+          stroke-width="4.5"
+          stroke-linecap="round"
+          fill="none"/>
+    <path d="M 4 10 L 9 10"
+          stroke="url(#icon-gradient-a)"
+          stroke-width="4.5"
+          stroke-linecap="round"
+          fill="none"/>
+  </g>
+
   <defs>
-    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    <!-- Ring gradients -->
+    <linearGradient id="icon-gradient-cyan-green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D4D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7EE8A9;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="icon-gradient-green-lime" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7EE8A9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#B4F34D;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="icon-gradient-blue-cyan" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0066CC;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00BFFF;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="icon-gradient-navy-blue" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#001F5C;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0066CC;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="icon-gradient-j" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0052A3;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0099FF;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="icon-gradient-a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00BFBF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#66E8B3;stop-opacity:1" />
     </linearGradient>
   </defs>
 </svg>

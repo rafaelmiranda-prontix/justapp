@@ -9,8 +9,8 @@ export function MarketingFooter() {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Scale className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold">JustApp</span>
+                <img src="/logo-icon.svg" alt="JustApp" className="h-6 w-6" />
+                <span className="text-xl font-bold bg-gradient-to-r from-[#001F5C] via-[#0066CC] to-[#00BFBF] bg-clip-text text-transparent">JustApp</span>
               </div>
               <p className="text-sm text-muted-foreground mb-2 font-semibold">
                 Plataforma Jurídica Inteligente

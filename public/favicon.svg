@@ -1,13 +1,89 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" rx="6" fill="url(#gradient)"/>
-  <path d="M 16 6 L 16 22 L 12 22 L 12 26 L 22 26 L 22 22 L 18 22 L 18 10 C 18 8, 16 8, 16 8 C 14 8, 12 8, 12 10 L 16 10 Z" 
-        fill="white"/>
-  <circle cx="16" cy="28" r="2" fill="white"/>
+  <!-- Simplified ring for favicon -->
+  <g transform="translate(16, 16)">
+    <!-- Top-right arc -->
+    <path d="M 7.2 -7.2 A 10.18 10.18 0 0 1 10.18 7.2"
+          stroke="url(#fav-gradient-cyan-green)"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          fill="none"/>
+    <!-- Bottom-right arc -->
+    <path d="M 10.18 7.2 A 10.18 10.18 0 0 1 7.2 10.18"
+          stroke="url(#fav-gradient-green)"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          fill="none"/>
+    <!-- Bottom-left arc -->
+    <path d="M -7.2 7.2 A 10.18 10.18 0 0 1 -10.18 -7.2"
+          stroke="url(#fav-gradient-blue-cyan)"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          fill="none"/>
+    <!-- Top-left arc -->
+    <path d="M -10.18 -7.2 A 10.18 10.18 0 0 1 -7.2 -10.18"
+          stroke="url(#fav-gradient-navy)"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          fill="none"/>
+  </g>
+
+  <!-- J and A -->
+  <g transform="translate(10.5, 12)">
+    <!-- J -->
+    <path d="M 2 1 L 2 6.5 Q 2 8, 3.2 8 L 4 8"
+          stroke="url(#fav-gradient-j)"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          fill="none"/>
+    <!-- A -->
+    <g transform="translate(3.5, 0)">
+      <path d="M 0.8 8 L 3.2 1"
+            stroke="url(#fav-gradient-a)"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            fill="none"/>
+      <path d="M 3.2 1 L 5.6 8"
+            stroke="url(#fav-gradient-a)"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            fill="none"/>
+      <path d="M 2 5 L 4.4 5"
+            stroke="url(#fav-gradient-a)"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            fill="none"/>
+    </g>
+  </g>
+
   <defs>
-    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    <linearGradient id="fav-gradient-cyan-green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D4D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7EE8A9;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="fav-gradient-green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7EE8A9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#B4F34D;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="fav-gradient-blue-cyan" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0066CC;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00BFFF;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="fav-gradient-navy" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#001F5C;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0066CC;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="fav-gradient-j" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0052A3;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0099FF;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="fav-gradient-a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00BFBF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#66E8B3;stop-opacity:1" />
     </linearGradient>
   </defs>
 </svg>

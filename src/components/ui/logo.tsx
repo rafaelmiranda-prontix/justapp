@@ -48,7 +48,7 @@ export function Logo({
       {showText && (
         <span
           className={cn(
-            'font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent',
+            'font-bold tracking-tight bg-gradient-to-r from-[#001F5C] via-[#0066CC] to-[#00BFBF] bg-clip-text text-transparent',
             sizeConfig.text
           )}
         >

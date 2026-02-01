@@ -1,22 +1,132 @@
 <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background Circle -->
-  <circle cx="100" cy="100" r="90" fill="url(#gradient)" opacity="0.1"/>
-  
-  <!-- Main "J" Letter -->
-  <path d="M 100 40 L 100 140 L 80 140 L 80 160 L 140 160 L 140 140 L 120 140 L 120 60 C 120 50, 110 50, 100 50 C 90 50, 80 50, 80 60 L 100 60 Z" 
-        fill="url(#gradient)" 
-        stroke="url(#gradient)" 
-        stroke-width="2"/>
-  
-  <!-- Modern Accent Dot -->
-  <circle cx="100" cy="170" r="8" fill="url(#gradient)"/>
-  
-  <!-- Gradient Definition -->
+  <!-- Circular ring segments (dynamic circle like the reference) -->
+  <g transform="translate(100, 100)">
+    <!-- Top-right arc (cyan to green) -->
+    <path d="M 45 -45 A 63.64 63.64 0 0 1 63.64 45"
+          stroke="url(#gradient-cyan-green)"
+          stroke-width="14"
+          stroke-linecap="round"
+          fill="none"/>
+
+    <!-- Bottom-right arc (green accent) -->
+    <path d="M 63.64 45 A 63.64 63.64 0 0 1 45 63.64"
+          stroke="url(#gradient-green-lime)"
+          stroke-width="14"
+          stroke-linecap="round"
+          fill="none"/>
+
+    <!-- Bottom-left arc (blue to cyan) -->
+    <path d="M -45 45 A 63.64 63.64 0 0 1 -63.64 -45"
+          stroke="url(#gradient-blue-cyan)"
+          stroke-width="14"
+          stroke-linecap="round"
+          fill="none"/>
+
+    <!-- Top-left arc (dark blue) -->
+    <path d="M -63.64 -45 A 63.64 63.64 0 0 1 -45 -63.64"
+          stroke="url(#gradient-navy-blue)"
+          stroke-width="14"
+          stroke-linecap="round"
+          fill="none"/>
+  </g>
+
+  <!-- Letters J and A (modern 3D style) -->
+  <!-- Letter J (blue gradient) -->
+  <g transform="translate(65, 75)">
+    <!-- J shape -->
+    <path d="M 12 5 L 12 40 Q 12 50, 20 50 L 25 50"
+          stroke="url(#gradient-j)"
+          stroke-width="14"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+    <!-- 3D effect highlight -->
+    <path d="M 10 5 L 10 40 Q 10 48, 18 48 L 23 48"
+          stroke="url(#gradient-j-light)"
+          stroke-width="3"
+          stroke-linecap="round"
+          opacity="0.5"
+          fill="none"/>
+  </g>
+
+  <!-- Letter A (cyan/green gradient) -->
+  <g transform="translate(95, 75)">
+    <!-- Left stroke of A -->
+    <path d="M 5 50 L 20 5"
+          stroke="url(#gradient-a)"
+          stroke-width="14"
+          stroke-linecap="round"
+          fill="none"/>
+    <!-- Right stroke of A -->
+    <path d="M 20 5 L 35 50"
+          stroke="url(#gradient-a)"
+          stroke-width="14"
+          stroke-linecap="round"
+          fill="none"/>
+    <!-- Crossbar of A -->
+    <path d="M 13 30 L 27 30"
+          stroke="url(#gradient-a)"
+          stroke-width="14"
+          stroke-linecap="round"
+          fill="none"/>
+    <!-- 3D effect highlights -->
+    <path d="M 7 50 L 22 5"
+          stroke="url(#gradient-a-light)"
+          stroke-width="3"
+          stroke-linecap="round"
+          opacity="0.5"
+          fill="none"/>
+    <path d="M 22 5 L 37 50"
+          stroke="url(#gradient-a-light)"
+          stroke-width="3"
+          stroke-linecap="round"
+          opacity="0.5"
+          fill="none"/>
+  </g>
+
+  <!-- Gradient Definitions -->
   <defs>
-    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    <!-- Ring gradients (matching reference image) -->
+    <linearGradient id="gradient-cyan-green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D4D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7EE8A9;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="gradient-green-lime" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7EE8A9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#B4F34D;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="gradient-blue-cyan" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0066CC;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00BFFF;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="gradient-navy-blue" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#001F5C;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0066CC;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Letter J gradients (blue tones like reference) -->
+    <linearGradient id="gradient-j" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0052A3;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0099FF;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="gradient-j-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#66CCFF;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Letter A gradients (cyan/green tones like reference) -->
+    <linearGradient id="gradient-a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00BFBF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#66E8B3;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="gradient-a-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A0FFD9;stop-opacity:1" />
     </linearGradient>
   </defs>
 </svg>

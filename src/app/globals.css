@@ -3,58 +3,168 @@
 @tailwind utilities;
 
 @layer utilities {
+  /* Grid Pattern */
   .bg-grid-pattern {
-    background-image: 
+    background-image:
       linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
     background-size: 20px 20px;
+  }
+
+  /* JustApp gradients (baseados no logo) */
+  .gradient-primary {
+    background: linear-gradient(135deg, #001F5C 0%, #0066CC 50%, #00BFBF 100%);
+  }
+
+  .gradient-accent {
+    background: linear-gradient(135deg, #00D4D4 0%, #7EE8A9 100%);
+  }
+
+  .gradient-success {
+    background: linear-gradient(135deg, #7EE8A9 0%, #B4F34D 100%);
+  }
+
+  .gradient-text-primary {
+    background: linear-gradient(135deg, #001F5C 0%, #0066CC 50%, #00BFBF 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Glassmorphism effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Smooth shadows (JustApp style) */
+  .shadow-soft {
+    box-shadow: 0 4px 16px rgba(0, 102, 204, 0.12);
+  }
+
+  .shadow-soft-lg {
+    box-shadow: 0 8px 32px rgba(0, 102, 204, 0.16);
+  }
+
+  /* Animated gradient background */
+  .bg-gradient-animated {
+    background: linear-gradient(135deg, #001F5C 0%, #0066CC 25%, #00BFBF 50%, #7EE8A9 75%, #001F5C 100%);
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
+  }
+
+  @keyframes gradient-shift {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
   }
 }
 
 @layer base {
   :root {
+    /* JustApp Design System - Inspirado no Monday.com */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 240 10% 3.9%;
+
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 240 10% 3.9%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 142.1 76.2% 36.3%;
-    --accent-foreground: 210 40% 98%;
+    --popover-foreground: 240 10% 3.9%;
+
+    /* Primary - Vibrant Purple/Blue (Monday.com style) */
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Soft Gray */
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    /* Muted - Light background */
+    --muted: 240 4.8% 97%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    /* Accent - Energetic Pink/Orange */
+    --accent: 346 77% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Success - Fresh Green */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning - Bright Yellow */
+    --warning: 38 92% 50%;
+    --warning-foreground: 240 10% 3.9%;
+
+    /* Destructive - Vibrant Red */
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Info - Cool Blue */
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+
+    /* Borders & Inputs */
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 262 83% 58%;
+
+    /* Border radius - mais arredondado (Monday.com style) */
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 142.1 70.6% 45.3%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 5%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 5%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 263 70% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 12%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 346 75% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 142 70% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 88% 55%;
+    --warning-foreground: 240 10% 3.9%;
+
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --info: 199 85% 50%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 263 70% 60%;
   }
 }
 
