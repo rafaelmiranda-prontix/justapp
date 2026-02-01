@@ -58,7 +58,8 @@ export default withAuth(
           pathname.startsWith('/_next') ||
           pathname.startsWith('/advogado/') || // Perfil público de advogado
           pathname === '/termos' || // Termos de Uso
-          pathname === '/privacidade' // Política de Privacidade
+          pathname === '/privacidade' || // Política de Privacidade
+          pathname.startsWith('/campanha') // Landing page de campanha
         ) {
           return true
         }
