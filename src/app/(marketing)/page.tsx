@@ -95,7 +95,7 @@ const benefitsAdvogado = [
   'Conexão inteligente reduz perda de tempo',
   'Dashboard com métricas de performance',
   'Plano flexível: gratuito ou premium',
-  'Foco em Direito do Consumidor (RJ)',
+  'Atendimento em todo o Brasil',
   'Aumente sua base de clientes',
 ]
 
@@ -109,7 +109,7 @@ const stats = [
 const testimonials = [
   {
     name: 'Maria Silva',
-    role: 'Cidadã - Rio de Janeiro',
+    role: 'Cidadã',
     text: 'Encontrei o advogado perfeito em minutos! O chat foi super fácil e o advogado resolveu meu caso de consumo rapidamente.',
     rating: 5,
     avatar: 'MS',
@@ -123,7 +123,7 @@ const testimonials = [
   },
   {
     name: 'Ana Costa',
-    role: 'Cidadã - Rio de Janeiro',
+    role: 'Cidadã',
     text: 'Processo super simples e rápido. Consegui resolver minha questão com uma loja online em poucos dias!',
     rating: 5,
     avatar: 'AC',
@@ -192,7 +192,7 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-primary" />
-                <span>Foco em Rio de Janeiro</span>
+                <span>Atendimento em todo o Brasil</span>
               </div>
               <div className="flex items-center gap-2">
                 <Scale className="h-4 w-4 text-primary" />
@@ -256,7 +256,7 @@ export default function LandingPage() {
       </section>
 
       {/* Solution Section */}
-      <section className="bg-gradient-to-br from-primary/5 via-background to-purple-500/5 py-20 md:py-28">
+      <section id="solucao" className="bg-gradient-to-br from-primary/5 via-background to-purple-500/5 py-20 md:py-28">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
@@ -293,7 +293,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works */}
-      <section className="container mx-auto px-4 py-20 md:py-28">
+      <section id="como-funciona" className="container mx-auto px-4 py-20 md:py-28">
         <div className="max-w-3xl mx-auto text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">Como Funciona</h2>
           <p className="text-xl text-muted-foreground">
@@ -310,7 +310,7 @@ export default function LandingPage() {
             },
             {
               step: '2',
-              title: 'Receba matches',
+              title: 'Receba propostas',
               description:
                 'Veja uma lista de advogados especializados, próximos de você e com as melhores avaliações.',
             },

@@ -267,7 +267,7 @@ export default function CidadaoDashboardPage() {
                       </p>
                     </div>
 
-                    {/* Matches */}
+                    {/* Conexões com Advogados */}
                     {caso.matches.length > 0 && (
                       <div>
                         <p className="text-sm font-medium mb-2">

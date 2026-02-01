@@ -16,7 +16,7 @@ export function MarketingHeader() {
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               <Link
-                href="#funcionalidades"
+                href="#solucao"
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Funcionalidades
@@ -26,12 +26,6 @@ export function MarketingHeader() {
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Como Funciona
-              </Link>
-              <Link
-                href="#precos"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Preços
               </Link>
             </nav>
           </div>

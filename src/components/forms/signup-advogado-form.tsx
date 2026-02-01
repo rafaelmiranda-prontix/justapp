@@ -203,7 +203,7 @@ export function SignupAdvogadoForm() {
           </Label>
           <Input
             id="cidade"
-            placeholder="Rio de Janeiro"
+            placeholder="São Paulo"
             {...register('cidade')}
             disabled={isLoading}
           />
@@ -216,7 +216,7 @@ export function SignupAdvogadoForm() {
           </Label>
           <Input
             id="estado"
-            placeholder="RJ"
+            placeholder="SP"
             maxLength={2}
             {...register('estado')}
             disabled={isLoading}

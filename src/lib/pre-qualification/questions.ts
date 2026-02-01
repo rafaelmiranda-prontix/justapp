@@ -207,7 +207,7 @@ export const PRE_QUALIFICATION_FLOW: QuestionFlow = {
 
   location: {
     id: 'location',
-    text: 'Em qual cidade e estado você está? (Ex: Rio de Janeiro, RJ)',
+    text: 'Em qual cidade e estado você está? (Ex: São Paulo, SP ou Belo Horizonte, MG)',
     type: 'location',
     nextQuestion: undefined, // Fim do fluxo
   },

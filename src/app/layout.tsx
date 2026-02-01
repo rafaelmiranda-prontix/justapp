@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     'direito',
     'consulta jurídica',
     'advogado online',
-    'Rio de Janeiro',
+    'advogado Brasil',
   ],
   authors: [{ name: 'JustApp' }],
   creator: 'JustApp',
@@ -51,6 +51,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/logo-icon.svg" />
+      </head>
       <body className={inter.className}>
         <ErrorBoundary>
           <Providers>{children}</Providers>

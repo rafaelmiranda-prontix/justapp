@@ -31,7 +31,7 @@ function toRad(degrees: number): number {
 }
 
 /**
- * Coordenadas aproximadas de cidades brasileiras (Rio de Janeiro como padrão)
+ * Coordenadas aproximadas de cidades brasileiras
  */
 export const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
   'Rio de Janeiro': { lat: -22.9068, lng: -43.1729 },
@@ -68,6 +68,6 @@ export function getCityCoordinates(city: string): { lat: number; lng: number } |
     return CITY_COORDINATES[cityKey]
   }
 
-  // Retorna Rio de Janeiro como fallback (conforme PRD - foco inicial)
-  return CITY_COORDINATES['Rio de Janeiro']
+  // Retorna Brasília como fallback (centro geográfico do Brasil)
+  return CITY_COORDINATES['Brasília']
 }
