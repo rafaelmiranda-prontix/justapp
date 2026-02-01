@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 import { prisma } from '@/lib/prisma'
 import { ConfigService } from '@/lib/config-service'
+import { logger } from '@/lib/logger'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -110,14 +111,14 @@ export class NotificationService {
     const match = await prisma.matches.findUnique({
       where: { id: matchId },
       include: {
-        advogado: {
+        advogados: {
           include: {
-            user: true,
+            users: true,
           },
         },
-        caso: {
+        casos: {
           include: {
-            especialidade: true,
+            especialidades: true,
           },
         },
       },
@@ -134,7 +135,7 @@ export class NotificationService {
     try {
       await resend.emails.send({
         from: process.env.EMAIL_FROM || 'JustApp <noreply@justapp.com.br>',
-        to: match.advogados.user.email,
+        to: match.advogados.users.email,
         subject: `⏰ Caso expira em ${hoursLeft}h`,
         html: this.getMatchExpiringEmailTemplate(match, hoursLeft),
       })

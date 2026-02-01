@@ -1,28 +1,28 @@
 import type { Prisma } from '@prisma/client'
 
 // User types with relations
-export type UserWithCidadao = Prisma.UserGetPayload<{
-  include: { cidadao: true }
+export type UserWithCidadao = Prisma.usersGetPayload<{
+  include: { cidadaos: true }
 }>
 
-export type UserWithAdvogado = Prisma.UserGetPayload<{
-  include: { advogado: true }
+export type UserWithAdvogado = Prisma.usersGetPayload<{
+  include: { advogados: true }
 }>
 
-export type UserWithRole = Prisma.UserGetPayload<{
+export type UserWithRole = Prisma.usersGetPayload<{
   include: {
-    cidadao: true
-    advogado: true
+    cidadaos: true
+    advogados: true
   }
 }>
 
 // Advogado types
-export type AdvogadoWithEspecialidades = Prisma.AdvogadoGetPayload<{
+export type AdvogadoWithEspecialidades = Prisma.advogadosGetPayload<{
   include: {
-    user: true
-    especialidades: {
+    users: true
+    advogado_especialidades: {
       include: {
-        especialidade: true
+        especialidades: true
       }
     }
     avaliacoes: true
@@ -44,19 +44,19 @@ export type AdvogadoPublic = {
 }
 
 // Caso types
-export type CasoWithDetails = Prisma.CasoGetPayload<{
+export type CasoWithDetails = Prisma.casosGetPayload<{
   include: {
-    cidadao: {
+    cidadaos: {
       include: {
-        user: true
+        users: true
       }
     }
-    especialidade: true
+    especialidades: true
     matches: {
       include: {
-        advogado: {
+        advogados: {
           include: {
-            user: true
+            users: true
           }
         }
       }
@@ -65,24 +65,24 @@ export type CasoWithDetails = Prisma.CasoGetPayload<{
 }>
 
 // Match types
-export type MatchWithDetails = Prisma.MatchGetPayload<{
+export type MatchWithDetails = Prisma.matchesGetPayload<{
   include: {
-    caso: {
+    casos: {
       include: {
-        cidadao: {
+        cidadaos: {
           include: {
-            user: true
+            users: true
           }
         }
-        especialidade: true
+        especialidades: true
       }
     }
-    advogado: {
+    advogados: {
       include: {
-        user: true
-        especialidades: {
+        users: true
+        advogado_especialidades: {
           include: {
-            especialidade: true
+            especialidades: true
           }
         }
       }
@@ -92,9 +92,9 @@ export type MatchWithDetails = Prisma.MatchGetPayload<{
 }>
 
 // Mensagem types
-export type MensagemWithRemetente = Prisma.MensagemGetPayload<{
+export type MensagemWithRemetente = Prisma.mensagensGetPayload<{
   include: {
-    match: true
+    matches: true
   }
 }>
 
@@ -161,20 +161,20 @@ export type DashboardCidadao = {
 }
 
 // Avaliação types
-export type AvaliacaoWithDetails = Prisma.AvaliacaoGetPayload<{
+export type AvaliacaoWithDetails = Prisma.avaliacoesGetPayload<{
   include: {
-    cidadao: {
+    cidadaos: {
       include: {
-        user: {
+        users: {
           select: {
             name: true
           }
         }
       }
     }
-    advogado: {
+    advogados: {
       include: {
-        user: {
+        users: {
           select: {
             name: true
           }

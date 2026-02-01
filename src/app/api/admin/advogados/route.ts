@@ -27,7 +27,7 @@ export async function GET(req: Request) {
       prisma.advogados.findMany({
         where,
         include: {
-          user: {
+          users: {
             select: {
               id: true,
               name: true,
@@ -35,9 +35,9 @@ export async function GET(req: Request) {
               createdAt: true,
             },
           },
-          especialidades: {
+          advogado_especialidades: {
             include: {
-              especialidade: {
+              especialidades: {
                 select: {
                   nome: true,
                 },

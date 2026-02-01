@@ -3,6 +3,7 @@ import { PreQualificationService } from './pre-qualification/pre-qualification.s
 import { AIChatService } from './ai-chat.service'
 import { PreQualificationState } from './pre-qualification/types'
 import { PRE_QUALIFICATION_FLOW } from './pre-qualification/questions'
+import { logger } from './logger'
 
 /**
  * Verifica se há API key de IA configurada

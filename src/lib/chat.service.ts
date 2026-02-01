@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { ConfigService } from '@/lib/config-service'
 import { nanoid } from 'nanoid'
+import { logger } from '@/lib/logger'
 
 /**
  * Serviço de Chat

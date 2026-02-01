@@ -49,8 +49,11 @@ export class PreQualificationService {
         if (rule.condition(answer)) {
           if (rule.field === 'viabilidade') {
             updatedExtractedData.viabilidade = parseInt(rule.value)
-          } else {
-            updatedExtractedData[rule.field] = rule.value as any
+          } else if (rule.field === 'localizacao') {
+            // localizacao é tratada separadamente no processamento de localização
+            // Não precisa ser armazenada em extractedData
+          } else if (rule.field === 'especialidade' || rule.field === 'urgencia') {
+            (updatedExtractedData as any)[rule.field] = rule.value
           }
         }
       }

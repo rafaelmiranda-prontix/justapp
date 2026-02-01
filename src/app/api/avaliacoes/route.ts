@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { nanoid } from 'nanoid'
 
 const createAvaliacaoSchema = z.object({
   advogadoId: z.string(),
@@ -62,7 +63,7 @@ export async function POST(req: Request) {
       const match = await prisma.matches.findFirst({
         where: {
           id: data.matchId,
-          caso: {
+          casos: {
             cidadaoId: cidadao.id,
           },
           advogadoId: data.advogadoId,
@@ -81,15 +82,16 @@ export async function POST(req: Request) {
     // Cria a avaliação
     const avaliacao = await prisma.avaliacoes.create({
       data: {
+        id: nanoid(),
         cidadaoId: cidadao.id,
         advogadoId: data.advogadoId,
         nota: data.nota,
         comentario: data.comentario || null,
       },
       include: {
-        cidadao: {
+        cidadaos: {
           include: {
-            user: {
+            users: {
               select: {
                 name: true,
               },
@@ -139,9 +141,9 @@ export async function GET(req: Request) {
       prisma.avaliacoes.findMany({
         where,
         include: {
-          cidadao: {
+          cidadaos: {
             include: {
-              user: {
+              users: {
                 select: {
                   name: true,
                 },

@@ -15,7 +15,7 @@ interface AdvogadoModerationCardProps {
     cidade: string
     estado: string
     createdAt: string
-    user: {
+    users: {
       id: string
       name: string
       email: string
@@ -51,11 +51,11 @@ export function AdvogadoModerationCard({
       <CardHeader>
         <div className="flex items-start gap-4">
           <Avatar>
-            <AvatarFallback>{getInitials(advogado.user.name)}</AvatarFallback>
+            <AvatarFallback>{getInitials(advogado.users.name)}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <CardTitle className="text-lg">{advogado.user.name}</CardTitle>
+              <CardTitle className="text-lg">{advogado.users.name}</CardTitle>
               {advogado.oabVerificado ? (
                 <Badge variant="default" className="bg-green-500">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -83,7 +83,7 @@ export function AdvogadoModerationCard({
       <CardContent className="space-y-4">
         <div>
           <p className="text-sm font-medium mb-1">Email:</p>
-          <p className="text-sm text-muted-foreground">{advogado.user.email}</p>
+          <p className="text-sm text-muted-foreground">{advogado.users.email}</p>
         </div>
 
         {advogado.especialidades.length > 0 && (

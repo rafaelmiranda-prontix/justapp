@@ -4,7 +4,7 @@ import { requireAdmin } from '@/lib/middleware/admin'
 
 export async function POST(
   req: Request,
-  { params }: { params: { advogadoId: string } }
+  { params }: { params: Promise<{ advogadoId: string }> }
 ) {
   try {
     const { error } = await requireAdmin()
@@ -13,8 +13,10 @@ export async function POST(
       return error
     }
 
+    const { advogadoId } = await params
+
     const advogado = await prisma.advogados.findUnique({
-      where: { id: params.advogadoId },
+      where: { id: advogadoId },
     })
 
     if (!advogado) {
@@ -25,7 +27,7 @@ export async function POST(
     }
 
     await prisma.advogados.update({
-      where: { id: params.advogadoId },
+      where: { id: advogadoId },
       data: {
         oabVerificado: true,
       },

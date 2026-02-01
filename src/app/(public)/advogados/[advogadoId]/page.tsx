@@ -4,7 +4,7 @@ import { AdvogadoProfile } from '@/components/advogado/advogado-profile'
 import { prisma } from '@/lib/prisma'
 
 interface PageProps {
-  params: { advogadoId: string }
+  params: Promise<{ advogadoId: string }>
 }
 
 async function getAdvogadoPublic(advogadoId: string) {
@@ -12,14 +12,14 @@ async function getAdvogadoPublic(advogadoId: string) {
     const advogado = await prisma.advogados.findUnique({
       where: { id: advogadoId },
       include: {
-        user: {
+        users: {
           select: {
             name: true,
           },
         },
-        especialidades: {
+        advogado_especialidades: {
           include: {
-            especialidade: {
+            especialidades: {
               select: {
                 id: true,
                 nome: true,
@@ -50,23 +50,23 @@ async function getAdvogadoPublic(advogadoId: string) {
     // Formata dados públicos
     return {
       id: advogado.id,
-      nome: advogado.user.name,
+      nome: advogado.users.name,
       foto: advogado.fotoUrl,
       bio: advogado.bio,
       oab: advogado.oab,
       oabVerificado: advogado.oabVerificado,
       cidade: advogado.cidade,
       estado: advogado.estado,
-      especialidades: advogado.especialidades.map((e) => ({
-        id: e.especialidade.id,
-        nome: e.especialidade.nome,
-        slug: e.especialidade.slug,
+      especialidades: advogado.advogado_especialidades.map((e) => ({
+        id: e.especialidades.id,
+        nome: e.especialidades.nome,
+        slug: e.especialidades.slug,
       })),
       precoConsulta: advogado.precoConsulta,
       aceitaOnline: advogado.aceitaOnline,
       avaliacaoMedia: Math.round(avaliacaoMedia * 10) / 10,
       totalAvaliacoes,
-      createdAt: advogado.createdAt,
+      createdAt: advogado.createdAt.toISOString(),
     }
   } catch (error) {
     console.error('Erro ao buscar advogado:', error)
@@ -75,7 +75,8 @@ async function getAdvogadoPublic(advogadoId: string) {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const advogado = await getAdvogadoPublic(params.advogadoId)
+  const { advogadoId } = await params
+  const advogado = await getAdvogadoPublic(advogadoId)
 
   if (!advogado) {
     return {
@@ -97,7 +98,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function AdvogadoPublicPage({ params }: PageProps) {
-  const advogado = await getAdvogadoPublic(params.advogadoId)
+  const { advogadoId } = await params
+  const advogado = await getAdvogadoPublic(advogadoId)
 
   if (!advogado) {
     notFound()

@@ -98,6 +98,7 @@ export async function POST(req: Request) {
     // Cria o match com score simulado (depois calcular real)
     const match = await prisma.matches.create({
       data: {
+        id: nanoid(),
         casoId: caso.id,
         advogadoId: data.advogadoId,
         score: 85, // Score simulado

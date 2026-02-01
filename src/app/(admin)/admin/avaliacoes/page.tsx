@@ -17,13 +17,13 @@ interface Avaliacao {
   comentario: string | null
   createdAt: string
   cidadao: {
-    user: {
+    users: {
       name: string
       email: string
     }
   }
   advogado: {
-    user: {
+    users: {
       name: string
     }
   }
@@ -125,13 +125,13 @@ export default function AdminAvaliacoesPage() {
                         <div>
                           <p className="font-medium">Cliente:</p>
                           <p className="text-sm text-muted-foreground">
-                            {avaliacao.cidadao.user.name} ({avaliacao.cidadao.user.email})
+                            {avaliacao.cidadao.users.name} ({avaliacao.cidadao.users.email})
                           </p>
                         </div>
                         <div>
                           <p className="font-medium">Advogado:</p>
                           <p className="text-sm text-muted-foreground">
-                            {avaliacao.advogado.user.name}
+                            {avaliacao.advogado.users.name}
                           </p>
                         </div>
                         <div>

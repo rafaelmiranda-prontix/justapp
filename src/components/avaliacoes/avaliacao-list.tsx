@@ -12,7 +12,7 @@ interface Avaliacao {
   comentario: string | null
   createdAt: string | Date
   cidadao: {
-    user: {
+    users: {
       name: string
     }
   }

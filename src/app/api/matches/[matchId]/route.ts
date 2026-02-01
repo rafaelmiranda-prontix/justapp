@@ -29,6 +29,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ matchI
             users: true,
           },
         },
+        casos: {
+          select: {
+            id: true,
+          },
+        },
       },
     })
 

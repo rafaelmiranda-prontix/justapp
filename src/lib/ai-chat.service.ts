@@ -1,5 +1,6 @@
 import { ChatMessage } from './anonymous-session.service'
 import { AIProviderFactory } from './ai/provider-factory'
+import { logger } from './logger'
 import { AIMessage, AICompletionRequest } from './ai/types'
 
 /**

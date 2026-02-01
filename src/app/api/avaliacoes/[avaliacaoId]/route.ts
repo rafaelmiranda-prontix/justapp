@@ -5,24 +5,26 @@ import { authOptions } from '@/lib/auth'
 
 export async function GET(
   req: Request,
-  { params }: { params: { avaliacaoId: string } }
+  { params }: { params: Promise<{ avaliacaoId: string }> }
 ) {
   try {
+    const { avaliacaoId } = await params
+
     const avaliacao = await prisma.avaliacoes.findUnique({
-      where: { id: params.avaliacaoId },
+      where: { id: avaliacaoId },
       include: {
-        cidadao: {
+        cidadaos: {
           include: {
-            user: {
+            users: {
               select: {
                 name: true,
               },
             },
           },
         },
-        advogado: {
+        advogados: {
           include: {
-            user: {
+            users: {
               select: {
                 name: true,
               },
@@ -48,9 +50,10 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  { params }: { params: { avaliacaoId: string } }
+  { params }: { params: Promise<{ avaliacaoId: string }> }
 ) {
   try {
+    const { avaliacaoId } = await params
     const session = await getServerSession(authOptions)
 
     if (!session?.user) {
@@ -62,9 +65,9 @@ export async function PUT(
 
     // Busca a avaliação
     const avaliacao = await prisma.avaliacoes.findUnique({
-      where: { id: params.avaliacaoId },
+      where: { id: avaliacaoId },
       include: {
-        cidadao: {
+        cidadaos: {
           select: {
             userId: true,
           },
@@ -78,7 +81,7 @@ export async function PUT(
 
     // Verifica se o usuário é o autor da avaliação ou admin
     if (
-      avaliacao.cidadao.userId !== session.user.id &&
+      avaliacao.cidadaos.userId !== session.user.id &&
       session.user.role !== 'ADMIN'
     ) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
@@ -86,7 +89,7 @@ export async function PUT(
 
     // Atualiza a avaliação
     const updated = await prisma.avaliacoes.update({
-      where: { id: params.avaliacaoId },
+      where: { id: avaliacaoId },
       data: {
         nota: nota ?? avaliacao.nota,
         comentario: comentario !== undefined ? comentario : avaliacao.comentario,
@@ -105,9 +108,10 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { avaliacaoId: string } }
+  { params }: { params: Promise<{ avaliacaoId: string }> }
 ) {
   try {
+    const { avaliacaoId } = await params
     const session = await getServerSession(authOptions)
 
     if (!session?.user) {
@@ -116,9 +120,9 @@ export async function DELETE(
 
     // Busca a avaliação
     const avaliacao = await prisma.avaliacoes.findUnique({
-      where: { id: params.avaliacaoId },
+      where: { id: avaliacaoId },
       include: {
-        cidadao: {
+        cidadaos: {
           select: {
             userId: true,
           },
@@ -132,7 +136,7 @@ export async function DELETE(
 
     // Verifica se o usuário é o autor da avaliação ou admin
     if (
-      avaliacao.cidadao.userId !== session.user.id &&
+      avaliacao.cidadaos.userId !== session.user.id &&
       session.user.role !== 'ADMIN'
     ) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
@@ -140,7 +144,7 @@ export async function DELETE(
 
     // Deleta a avaliação
     await prisma.avaliacoes.delete({
-      where: { id: params.avaliacaoId },
+      where: { id: avaliacaoId },
     })
 
     return NextResponse.json({

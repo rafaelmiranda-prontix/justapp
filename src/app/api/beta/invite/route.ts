@@ -90,7 +90,7 @@ export async function GET() {
     const betaAdvogados = await prisma.advogados.findMany({
       where: { isBeta: true },
       include: {
-        user: {
+        users: {
           select: {
             name: true,
             email: true,

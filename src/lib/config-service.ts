@@ -24,7 +24,7 @@ export class ConfigService {
     }
 
     try {
-      const config = await prisma.configuracao.findUnique({
+      const config = await prisma.configuracoes.findUnique({
         where: { chave },
       })
 
@@ -55,7 +55,7 @@ export class ConfigService {
    * Busca múltiplas configurações de uma categoria
    */
   static async getByCategory(categoria: string): Promise<Record<string, any>> {
-    const configs = await prisma.configuracao.findMany({
+      const configs = await prisma.configuracoes.findMany({
       where: { categoria },
     })
 
@@ -71,7 +71,7 @@ export class ConfigService {
    * Atualiza uma configuração
    */
   static async set(chave: string, valor: string): Promise<void> {
-    await prisma.configuracao.update({
+    await prisma.configuracoes.update({
       where: { chave },
       data: { valor },
     })

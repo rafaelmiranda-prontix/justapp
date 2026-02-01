@@ -3,21 +3,23 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   req: Request,
-  { params }: { params: { advogadoId: string } }
+  { params }: { params: Promise<{ advogadoId: string }> }
 ) {
   try {
+    const { advogadoId } = await params
+
     const advogado = await prisma.advogados.findUnique({
-      where: { id: params.advogadoId },
+      where: { id: advogadoId },
       include: {
-        user: {
+        users: {
           select: {
             name: true,
             email: true, // Pode remover se não quiser expor
           },
         },
-        especialidades: {
+        advogado_especialidades: {
           include: {
-            especialidade: {
+            especialidades: {
               select: {
                 id: true,
                 nome: true,
@@ -48,17 +50,17 @@ export async function GET(
     // Formata dados públicos
     const advogadoPublic = {
       id: advogado.id,
-      nome: advogado.user.name,
+      nome: advogado.users.name,
       foto: advogado.fotoUrl,
       bio: advogado.bio,
       oab: advogado.oab,
       oabVerificado: advogado.oabVerificado,
       cidade: advogado.cidade,
       estado: advogado.estado,
-      especialidades: advogado.especialidades.map((e) => ({
-        id: e.especialidade.id,
-        nome: e.especialidade.nome,
-        slug: e.especialidade.slug,
+      especialidades: advogado.advogado_especialidades.map((e) => ({
+        id: e.especialidades.id,
+        nome: e.especialidades.nome,
+        slug: e.especialidades.slug,
       })),
       precoConsulta: advogado.precoConsulta,
       aceitaOnline: advogado.aceitaOnline,

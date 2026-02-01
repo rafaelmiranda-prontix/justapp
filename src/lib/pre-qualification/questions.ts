@@ -209,7 +209,7 @@ export const PRE_QUALIFICATION_FLOW: QuestionFlow = {
     id: 'location',
     text: 'Em qual cidade e estado você está? (Ex: Rio de Janeiro, RJ)',
     type: 'location',
-    nextQuestion: null, // Fim do fluxo
+    nextQuestion: undefined, // Fim do fluxo
   },
 }
 

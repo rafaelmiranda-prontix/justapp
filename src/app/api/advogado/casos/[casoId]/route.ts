@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { casoId: string } }
+  { params }: { params: Promise<{ casoId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,7 +18,7 @@ export async function GET(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const { casoId } = params
+    const { casoId } = await params
 
     // Buscar advogado
     const advogado = await prisma.advogados.findUnique({

@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { pusherServer } from '@/lib/pusher'
 import { randomUUID } from 'crypto'
+import { logger } from '@/lib/logger'
 
 const createMessageSchema = z.object({
   conteudo: z.string().min(1).max(2000),

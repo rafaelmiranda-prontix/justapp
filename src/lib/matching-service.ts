@@ -56,7 +56,7 @@ export async function findMatchingAdvogados(
   // Busca advogados com a especialidade
   const advogados = await prisma.advogados.findMany({
     where: {
-      especialidades: {
+      advogado_especialidades: {
         some: {
           especialidadeId: especialidade.id,
         },
@@ -64,10 +64,10 @@ export async function findMatchingAdvogados(
       // Apenas advogados com plano ativo (depois implementar lógica de plano)
     },
     include: {
-      user: true,
-      especialidades: {
+      users: true,
+      advogado_especialidades: {
         include: {
-          especialidade: true,
+          especialidades: true,
         },
       },
       avaliacoes: {
@@ -159,12 +159,12 @@ export async function findMatchingAdvogados(
 
     return {
       id: advogado.id,
-      nome: advogado.user.name,
+      nome: advogado.users.name,
       foto: advogado.fotoUrl,
       bio: advogado.bio,
       cidade: advogado.cidade,
       estado: advogado.estado,
-      especialidades: advogado.especialidades.map((e) => e.especialidade.nome),
+      especialidades: advogado.advogado_especialidades.map((e) => e.especialidades.nome),
       precoConsulta: advogado.precoConsulta,
       aceitaOnline: advogado.aceitaOnline,
       avaliacaoMedia: Math.round(avaliacaoMedia * 10) / 10,

@@ -26,8 +26,8 @@ export function trackEvent(eventName: string, properties?: Record<string, any>) 
   }
 
   // Google Analytics (se configurado)
-  if (typeof window.gtag !== 'undefined') {
-    window.gtag('event', eventName, properties)
+  if (typeof (window as any).gtag !== 'undefined') {
+    (window as any).gtag('event', eventName, properties)
   }
 
   // Log para desenvolvimento

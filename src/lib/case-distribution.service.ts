@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid'
 import { prisma } from '@/lib/prisma'
 import { ConfigService } from '@/lib/config-service'
+import { logger } from '@/lib/logger'
 
 /**
  * Serviço de Distribuição Automática de Casos

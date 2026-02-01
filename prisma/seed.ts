@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, ConfiguracaoTipo } from '@prisma/client'
+import { nanoid } from 'nanoid'
 
 const prisma = new PrismaClient()
 
@@ -88,10 +89,18 @@ async function main() {
   ]
 
   for (const esp of especialidades) {
-    await prisma.especialidade.upsert({
+    await prisma.especialidades.upsert({
       where: { slug: esp.slug },
-      update: esp,
-      create: esp,
+      update: {
+        ...esp,
+        updatedAt: new Date(),
+      },
+      create: {
+        id: nanoid(),
+        ...esp,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     })
     console.log(`✅ Especialidade criada: ${esp.nome}`)
   }
@@ -226,10 +235,25 @@ async function main() {
   ]
 
   for (const config of configuracoesPadrao) {
-    await prisma.configuracao.upsert({
+    await prisma.configuracoes.upsert({
       where: { chave: config.chave },
-      update: {},
-      create: config,
+      update: {
+        valor: config.valor,
+        tipo: config.tipo as ConfiguracaoTipo,
+        descricao: config.descricao,
+        categoria: config.categoria,
+        updatedAt: new Date(),
+      },
+      create: {
+        id: nanoid(),
+        chave: config.chave,
+        valor: config.valor,
+        tipo: config.tipo as ConfiguracaoTipo,
+        descricao: config.descricao,
+        categoria: config.categoria,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     })
     console.log(`✅ Configuração criada: ${config.chave} = ${config.valor}`)
   }

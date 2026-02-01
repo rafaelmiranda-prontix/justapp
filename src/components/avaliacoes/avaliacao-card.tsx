@@ -12,7 +12,7 @@ interface AvaliacaoCardProps {
     comentario: string | null
     createdAt: string | Date
     cidadao: {
-      user: {
+      users: {
         name: string
       }
     }
@@ -34,12 +34,12 @@ export function AvaliacaoCard({ avaliacao }: AvaliacaoCardProps) {
       <CardContent className="pt-6">
         <div className="flex items-start gap-4">
           <Avatar>
-            <AvatarFallback>{getInitials(avaliacao.cidadao.user.name)}</AvatarFallback>
+            <AvatarFallback>{getInitials(avaliacao.cidadao.users.name)}</AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-2">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">{avaliacao.cidadao.user.name}</p>
+                <p className="font-medium">{avaliacao.cidadao.users.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {formatDate(avaliacao.createdAt)}
                 </p>

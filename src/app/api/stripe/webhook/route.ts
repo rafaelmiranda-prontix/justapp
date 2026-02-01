@@ -48,7 +48,7 @@ export async function POST(req: Request) {
           if (advogadoId && plan) {
             // Busca a subscription para pegar a data de expiração
             const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-            const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
+            const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000)
 
             // Atualiza o advogado
             await prisma.advogados.update({
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
         const plan = subscription.metadata?.plan as PlanType
 
         if (advogadoId && plan) {
-          const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
+          const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000)
 
           await prisma.advogados.update({
             where: { id: advogadoId },
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice
-        const subscriptionId = invoice.subscription as string
+        const subscriptionId = typeof (invoice as any).subscription === 'string' ? (invoice as any).subscription : (invoice as any).subscription?.id || null
 
         if (subscriptionId) {
           const subscription = await stripe.subscriptions.retrieve(subscriptionId)
@@ -114,7 +114,7 @@ export async function POST(req: Request) {
           const plan = subscription.metadata?.plan as PlanType
 
           if (advogadoId && plan) {
-            const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
+            const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000)
 
             await prisma.advogados.update({
               where: { id: advogadoId },
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice
-        const subscriptionId = invoice.subscription as string
+        const subscriptionId = typeof (invoice as any).subscription === 'string' ? (invoice as any).subscription : (invoice as any).subscription?.id || null
 
         if (subscriptionId) {
           // TODO: Enviar email ao advogado sobre falha no pagamento

@@ -24,7 +24,7 @@ interface Advogado {
   cidade: string
   estado: string
   createdAt: string
-  user: {
+  users: {
     id: string
     name: string
     email: string

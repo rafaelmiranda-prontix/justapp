@@ -4,7 +4,7 @@ import { requireAdmin } from '@/lib/middleware/admin'
 
 export async function POST(
   req: Request,
-  { params }: { params: { advogadoId: string } }
+  { params }: { params: Promise<{ advogadoId: string }> }
 ) {
   try {
     const { error } = await requireAdmin()
@@ -13,13 +13,14 @@ export async function POST(
       return error
     }
 
+    const { advogadoId } = await params
     const body = await req.json()
     const { motivo } = body
 
     const advogado = await prisma.advogados.findUnique({
-      where: { id: params.advogadoId },
+      where: { id: advogadoId },
       include: {
-        user: true,
+        users: true,
       },
     })
 
@@ -33,7 +34,7 @@ export async function POST(
     // Por enquanto apenas marca como não verificado
     // Futuramente pode adicionar campo de motivo de rejeição
     await prisma.advogados.update({
-      where: { id: params.advogadoId },
+      where: { id: advogadoId },
       data: {
         oabVerificado: false,
       },

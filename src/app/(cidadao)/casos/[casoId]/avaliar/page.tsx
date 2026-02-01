@@ -13,7 +13,7 @@ interface Match {
   id: string
   advogado: {
     id: string
-    user: {
+    users: {
       name: string
     }
   }
@@ -110,7 +110,7 @@ export default function AvaliarAdvogadoPage() {
         <CardHeader>
           <CardTitle>Avaliar Advogado</CardTitle>
           <CardDescription>
-            Avalie sua experiência com {match.advogado.user.name}
+            Avalie sua experiência com {match.advogado.users.name}
           </CardDescription>
         </CardHeader>
         <CardContent>

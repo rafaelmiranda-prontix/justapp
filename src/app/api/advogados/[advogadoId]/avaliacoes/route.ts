@@ -3,16 +3,17 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   req: Request,
-  { params }: { params: { advogadoId: string } }
+  { params }: { params: Promise<{ advogadoId: string }> }
 ) {
   try {
+    const { advogadoId } = await params
     const { searchParams } = new URL(req.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
 
     // Verifica se o advogado existe
     const advogado = await prisma.advogados.findUnique({
-      where: { id: params.advogadoId },
+      where: { id: advogadoId },
     })
 
     if (!advogado) {
@@ -23,12 +24,12 @@ export async function GET(
     const [avaliacoes, total] = await Promise.all([
       prisma.avaliacoes.findMany({
         where: {
-          advogadoId: params.advogadoId,
+          advogadoId: advogadoId,
         },
         include: {
-          cidadao: {
+          cidadaos: {
             include: {
-              user: {
+              users: {
                 select: {
                   name: true,
                 },
@@ -44,7 +45,7 @@ export async function GET(
       }),
       prisma.avaliacoes.count({
         where: {
-          advogadoId: params.advogadoId,
+          advogadoId: advogadoId,
         },
       }),
     ])
@@ -52,7 +53,7 @@ export async function GET(
     // Calcula estatísticas
     const todasAvaliacoes = await prisma.avaliacoes.findMany({
       where: {
-        advogadoId: params.advogadoId,
+        advogadoId: advogadoId,
       },
       select: {
         nota: true,

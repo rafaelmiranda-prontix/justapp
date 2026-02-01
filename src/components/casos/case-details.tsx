@@ -299,8 +299,8 @@ export function CaseDetails({ caso, showCidadaoInfo = false }: CaseDetailsProps)
                             try {
                               const date = typeof msg.timestamp === 'string' 
                                 ? new Date(msg.timestamp) 
-                                : msg.timestamp instanceof Date 
-                                  ? msg.timestamp 
+                                : msg.timestamp && typeof msg.timestamp === 'object' && 'getTime' in msg.timestamp
+                                  ? new Date(msg.timestamp as any)
                                   : new Date()
                               return date.toLocaleTimeString('pt-BR', {
                                 hour: '2-digit',

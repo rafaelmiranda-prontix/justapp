@@ -17,9 +17,9 @@ export async function GET(req: Request) {
     const [avaliacoes, total] = await Promise.all([
       prisma.avaliacoes.findMany({
         include: {
-          cidadao: {
+          cidadaos: {
             include: {
-              user: {
+              users: {
                 select: {
                   name: true,
                   email: true,
@@ -27,9 +27,9 @@ export async function GET(req: Request) {
               },
             },
           },
-          advogado: {
+          advogados: {
             include: {
-              user: {
+              users: {
                 select: {
                   name: true,
                 },
