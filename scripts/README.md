@@ -238,11 +238,16 @@ npm run seed:configs
 | `max_matches_per_caso` | 5 | Matches criados por caso |
 | `min_match_score` | 60 | Score mínimo (0-100) |
 | `match_expiration_hours` | 48 | Horas até expirar |
-| `free_plan_monthly_leads` | 3 | Limite FREE |
-| `basic_plan_monthly_leads` | 10 | Limite BASIC |
-| `premium_plan_monthly_leads` | 50 | Limite PREMIUM |
+| ~~`free_plan_monthly_leads`~~ | ~~3~~ | ⚠️ **REMOVIDO** - Use tabela `planos` |
+| ~~`basic_plan_monthly_leads`~~ | ~~10~~ | ⚠️ **REMOVIDO** - Use tabela `planos` |
+| ~~`premium_plan_monthly_leads`~~ | ~~50~~ | ⚠️ **REMOVIDO** - Use tabela `planos` |
 | `anonymous_chat_enabled` | true | Chat anônimo ativo |
 | `beta_mode` | true | Modo beta (requer convite) |
+
+**Planos agora são gerenciados via:**
+- Tabela `planos` no banco de dados
+- Script: `npx tsx scripts/seed-all-plans.ts`
+- 4 planos: FREE, BASIC, PREMIUM, UNLIMITED
 
 Ver lista completa em: [seed-configs.ts](seed-configs.ts)
 

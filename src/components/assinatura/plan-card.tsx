@@ -25,6 +25,8 @@ export function PlanCard({ plan, planId, currentPlan, onSelect, isLoading }: Pla
   const Icon = planIcons[planId as keyof typeof planIcons] || Zap
   const isCurrentPlan = currentPlan === planId
   const isFree = planId === 'FREE'
+  const isComingSoon = plan.status === 'COMING_SOON'
+  const isDisabled = isCurrentPlan || isLoading || isFree || isComingSoon
 
   return (
     <Card
@@ -32,9 +34,15 @@ export function PlanCard({ plan, planId, currentPlan, onSelect, isLoading }: Pla
         planId === 'PREMIUM' ? 'border-primary border-2' : ''
       } ${isCurrentPlan ? 'bg-muted' : ''}`}
     >
-      {planId === 'PREMIUM' && (
+      {planId === 'PREMIUM' && !isComingSoon && (
         <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
           Mais Popular
+        </Badge>
+      )}
+
+      {isComingSoon && (
+        <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-warning">
+          Em Breve
         </Badge>
       )}
 
@@ -45,9 +53,13 @@ export function PlanCard({ plan, planId, currentPlan, onSelect, isLoading }: Pla
         </div>
         <div className="flex items-baseline gap-2">
           <span className="text-4xl font-bold">
-            {plan.priceDisplay === 0 ? 'Grátis' : formatCurrency(plan.priceDisplay)}
+            {isComingSoon
+              ? 'Em Breve'
+              : plan.priceDisplay === 0
+                ? 'Grátis'
+                : formatCurrency(plan.priceDisplay)}
           </span>
-          {plan.priceDisplay > 0 && (
+          {plan.priceDisplay > 0 && !isComingSoon && (
             <span className="text-muted-foreground">/mês</span>
           )}
         </div>
@@ -71,13 +83,15 @@ export function PlanCard({ plan, planId, currentPlan, onSelect, isLoading }: Pla
           className="w-full"
           variant={planId === 'PREMIUM' ? 'default' : 'outline'}
           onClick={() => onSelect(planId)}
-          disabled={isCurrentPlan || isLoading || isFree}
+          disabled={isDisabled}
         >
           {isCurrentPlan
             ? 'Plano Atual'
             : isFree
               ? 'Plano Gratuito'
-              : 'Assinar Agora'}
+              : isComingSoon
+                ? 'Em Breve'
+                : 'Assinar Agora'}
         </Button>
       </CardContent>
     </Card>

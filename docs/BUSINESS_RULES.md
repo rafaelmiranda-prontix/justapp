@@ -436,9 +436,13 @@ PENDENTE → VISUALIZADO → ACEITO → CONTRATADO
 | **PREMIUM** | 50 | R$ 297 | + Prioridade + Estatísticas |
 
 ### Configurações de Limites
-- `free_plan_monthly_leads`: 3
-- `basic_plan_monthly_leads`: 10
-- `premium_plan_monthly_leads`: 50
+⚠️ **ATUALIZAÇÃO**: Limites agora são gerenciados pela tabela `planos` no banco de dados.
+- FREE: 3 leads/mês (ACTIVE)
+- BASIC: 10 leads/mês (COMING_SOON)
+- PREMIUM: 50 leads/mês (COMING_SOON)
+- UNLIMITED: ilimitado (HIDDEN)
+
+Para atualizar: `npx tsx scripts/seed-all-plans.ts`
 
 ### Controle de Leads
 

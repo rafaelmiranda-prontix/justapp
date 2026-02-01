@@ -36,27 +36,8 @@ async function seedConfigs() {
     },
 
     // === PLANOS / LEADS ===
-    {
-      chave: 'free_plan_monthly_leads',
-      valor: '3',
-      tipo: 'NUMBER' as const,
-      descricao: 'Limite mensal de leads para plano FREE',
-      categoria: 'planos',
-    },
-    {
-      chave: 'basic_plan_monthly_leads',
-      valor: '10',
-      tipo: 'NUMBER' as const,
-      descricao: 'Limite mensal de leads para plano BASIC',
-      categoria: 'planos',
-    },
-    {
-      chave: 'premium_plan_monthly_leads',
-      valor: '50',
-      tipo: 'NUMBER' as const,
-      descricao: 'Limite mensal de leads para plano PREMIUM',
-      categoria: 'planos',
-    },
+    // REMOVIDO: Limites agora são gerenciados pela tabela 'planos'
+    // Use: npx tsx scripts/seed-all-plans.ts
 
     // === NOTIFICAÇÕES ===
     {

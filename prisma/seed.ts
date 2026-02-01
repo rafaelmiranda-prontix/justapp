@@ -140,27 +140,8 @@ async function main() {
     },
 
     // LIMITES DE PLANOS
-    {
-      chave: 'free_plan_monthly_leads',
-      valor: '3',
-      tipo: 'NUMBER',
-      descricao: 'Número de leads mensais para plano FREE',
-      categoria: 'planos',
-    },
-    {
-      chave: 'basic_plan_monthly_leads',
-      valor: '10',
-      tipo: 'NUMBER',
-      descricao: 'Número de leads mensais para plano BASIC',
-      categoria: 'planos',
-    },
-    {
-      chave: 'premium_plan_monthly_leads',
-      valor: '50',
-      tipo: 'NUMBER',
-      descricao: 'Número de leads mensais para plano PREMIUM (ou ilimitado se -1)',
-      categoria: 'planos',
-    },
+    // REMOVIDO: Agora os limites são gerenciados pela tabela 'planos'
+    // Os planos (FREE, BASIC, PREMIUM, UNLIMITED) são configurados via scripts/seed-all-plans.ts
 
     // NOTIFICAÇÕES
     {

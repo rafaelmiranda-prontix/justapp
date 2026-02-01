@@ -3,11 +3,16 @@ import { getAllPlans } from '@/lib/plans'
 
 export async function GET() {
   try {
-    const plans = await getAllPlans()
+    const allPlans = await getAllPlans()
+
+    // Filtrar planos ocultos
+    const visiblePlans = Object.fromEntries(
+      Object.entries(allPlans).filter(([_, plan]) => plan.status !== 'HIDDEN')
+    )
 
     return NextResponse.json({
       success: true,
-      data: plans,
+      data: visiblePlans,
     })
   } catch (error) {
     console.error('Error fetching plans:', error)

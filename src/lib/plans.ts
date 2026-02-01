@@ -1,6 +1,8 @@
 import { prisma } from './prisma'
 
-export type PlanType = 'FREE' | 'BASIC' | 'PREMIUM'
+export type PlanType = 'FREE' | 'BASIC' | 'PREMIUM' | 'UNLIMITED'
+
+export type PlanStatus = 'ACTIVE' | 'COMING_SOON' | 'HIDDEN'
 
 export interface PlanConfig {
   id: string
@@ -13,6 +15,7 @@ export interface PlanConfig {
   features: string[]
   stripePriceId?: string
   ativo: boolean
+  status: PlanStatus
   ordem: number
 }
 
@@ -37,6 +40,7 @@ export const PLANS_STATIC: Record<PlanType, Omit<PlanConfig, 'id'>> = {
       'Leads mensais limitados',
     ],
     ativo: true,
+    status: 'ACTIVE',
     ordem: 1,
   },
   BASIC: {
@@ -54,6 +58,7 @@ export const PLANS_STATIC: Record<PlanType, Omit<PlanConfig, 'id'>> = {
       'Avaliações de clientes',
     ],
     ativo: true,
+    status: 'COMING_SOON',
     ordem: 2,
   },
   PREMIUM: {
@@ -73,7 +78,28 @@ export const PLANS_STATIC: Record<PlanType, Omit<PlanConfig, 'id'>> = {
       'Badge "Premium" no perfil',
     ],
     ativo: true,
+    status: 'COMING_SOON',
     ordem: 3,
+  },
+  UNLIMITED: {
+    codigo: 'UNLIMITED',
+    name: 'Ilimitado',
+    description: 'Plano personalizado para grandes volumes',
+    price: 0,
+    priceDisplay: 0,
+    leadsPerMonth: -1,
+    features: [
+      'Leads ilimitados',
+      'Perfil destacado premium',
+      'Suporte prioritário dedicado',
+      'Dashboard avançado com BI',
+      'Relatórios personalizados',
+      'Gerente de conta exclusivo',
+      'Integração API',
+    ],
+    ativo: true,
+    status: 'HIDDEN',
+    ordem: 4,
   },
 }
 
@@ -101,6 +127,7 @@ async function fetchPlansFromDB(): Promise<Record<PlanType, PlanConfig>> {
         features: plano.features,
         stripePriceId: plano.stripePriceId || undefined,
         ativo: plano.ativo,
+        status: (plano.status || 'ACTIVE') as PlanStatus,
         ordem: plano.ordem,
       }
     }
@@ -110,6 +137,7 @@ async function fetchPlansFromDB(): Promise<Record<PlanType, PlanConfig>> {
       FREE: plansMap.FREE || { ...PLANS_STATIC.FREE, id: 'default-free' },
       BASIC: plansMap.BASIC || { ...PLANS_STATIC.BASIC, id: 'default-basic' },
       PREMIUM: plansMap.PREMIUM || { ...PLANS_STATIC.PREMIUM, id: 'default-premium' },
+      UNLIMITED: plansMap.UNLIMITED || { ...PLANS_STATIC.UNLIMITED, id: 'default-unlimited' },
     }
   } catch (error) {
     console.error('[Plans] Error fetching plans from database:', error)

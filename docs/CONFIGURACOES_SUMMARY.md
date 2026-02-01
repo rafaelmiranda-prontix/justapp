@@ -26,10 +26,10 @@
 - `min_match_score`: 60 pontos
 - `auto_expire_matches`: true
 
-**Planos (3):**
-- `free_plan_monthly_leads`: 3
-- `basic_plan_monthly_leads`: 10
-- `premium_plan_monthly_leads`: 50
+**Planos:**
+- ⚠️ **REMOVIDO**: Limites agora são gerenciados pela tabela `planos`
+- Use o script: `npx tsx scripts/seed-all-plans.ts`
+- 4 planos disponíveis: FREE (3 leads), BASIC (10 leads), PREMIUM (50 leads), UNLIMITED (ilimitado)
 
 **Notificações (3):**
 - `notify_match_created`: true
