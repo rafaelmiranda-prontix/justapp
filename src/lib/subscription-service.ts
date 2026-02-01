@@ -52,13 +52,50 @@ export async function resetMonthlyLeadsIfNeeded(advogadoId: string): Promise<voi
 }
 
 /**
+ * Reseta o contador de casos por hora se necessário
+ */
+export async function resetHourlyCasesIfNeeded(advogadoId: string): Promise<void> {
+  const advogado = await prisma.advogados.findUnique({
+    where: { id: advogadoId },
+  })
+
+  if (!advogado) {
+    return
+  }
+
+  const agora = new Date()
+  const ultimoReset = advogado.ultimoResetCasosHora
+
+  // Verifica se passou 1 hora desde o último reset
+  const diffMs = agora.getTime() - ultimoReset.getTime()
+  const diffHours = diffMs / (1000 * 60 * 60)
+
+  if (diffHours >= 1) {
+    await prisma.advogados.update({
+      where: { id: advogadoId },
+      data: {
+        casosRecebidosHora: 0,
+        ultimoResetCasosHora: agora,
+      },
+    })
+  }
+}
+
+/**
  * Incrementa o contador de leads recebidos
  */
 export async function incrementLeadsReceived(advogadoId: string): Promise<void> {
+  // Resetar contador por hora se necessário
+  await resetHourlyCasesIfNeeded(advogadoId)
+
+  // Incrementar contador mensal
   await prisma.advogados.update({
     where: { id: advogadoId },
     data: {
       leadsRecebidosMes: {
+        increment: 1,
+      },
+      casosRecebidosHora: {
         increment: 1,
       },
     },
@@ -90,8 +127,9 @@ export async function canAdvogadoReceiveLead(advogadoId: string): Promise<{
     return { canReceive: false, reason: 'Plano expirado' }
   }
 
-  // Reseta contador se necessário
+  // Reseta contadores se necessário
   await resetMonthlyLeadsIfNeeded(advogadoId)
+  await resetHourlyCasesIfNeeded(advogadoId)
 
   // Busca novamente para ter os valores atualizados
   const advogadoAtualizado = await prisma.advogados.findUnique({
@@ -104,18 +142,26 @@ export async function canAdvogadoReceiveLead(advogadoId: string): Promise<{
 
   const limits = await getPlanLimits(advogadoAtualizado.plano)
 
-  // Se é ilimitado, pode receber
+  // Se é ilimitado, pode receber (sem verificação de hora)
   if (limits.isUnlimited) {
     return { canReceive: true }
   }
 
-  // Verifica se não excedeu o limite
+  // Verifica limite mensal
   if (
     advogadoAtualizado.leadsRecebidosMes >= advogadoAtualizado.leadsLimiteMes
   ) {
     return {
       canReceive: false,
       reason: `Limite de ${advogadoAtualizado.leadsLimiteMes} leads/mês atingido`,
+    }
+  }
+
+  // Verifica limite por hora (apenas para planos limitados)
+  if (limits.leadsPerHour > 0 && advogadoAtualizado.casosRecebidosHora >= limits.leadsPerHour) {
+    return {
+      canReceive: false,
+      reason: `Limite de ${limits.leadsPerHour} casos/hora atingido`,
     }
   }
 

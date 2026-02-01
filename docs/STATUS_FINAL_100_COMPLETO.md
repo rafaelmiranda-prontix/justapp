@@ -1,7 +1,7 @@
 # 🎉 LegalConnect - STATUS FINAL: 100% COMPLETO
 
-**Data:** 2026-01-31
-**Versão:** 1.2.0
+**Data:** 2026-02-01
+**Versão:** 1.3.0
 **Status:** ✅ PRONTO PARA PRODUÇÃO
 
 ---
@@ -108,9 +108,18 @@ O **LegalConnect** está **100% completo** e pronto para deploy em produção. T
   - Para grandes volumes e escritórios
   - Oculto da listagem pública
   - Features premium: BI, API, gerente de conta
+- [x] **Sistema de Limite por Hora** ⭐ NOVO (2026-02-01)
+  - Planos limitados: máximo 5 casos por hora
+  - Planos ilimitados: sem restrição por hora
+  - Campo `leadsPerHour` no modelo `planos` (padrão: 5)
+  - Campos `casosRecebidosHora` e `ultimoResetCasosHora` no modelo `advogados`
+  - Reset automático do contador a cada hora
+  - Verificação de limite por hora antes de criar matches
+  - Verificação de limite por hora na redistribuição de casos
+  - Função `resetHourlyCasesIfNeeded()` para gerenciar contador
 - [x] **Catálogo de Planos no Banco de Dados**
   - Tabela `planos` com configurações centralizadas
-  - Preços, limites, features no banco
+  - Preços, limites mensais, limites por hora, features no banco
   - Gerenciamento sem alterar código
   - Campo `status` para controle de visibilidade
 - [x] **Histórico de Assinaturas**
@@ -119,11 +128,12 @@ O **LegalConnect** está **100% completo** e pronto para deploy em produção. T
   - Preços pagos, datas, motivos
 - [x] Integração Stripe completa
 - [x] Webhooks configurados
-- [x] Sistema de limites por plano
+- [x] Sistema de limites por plano (mensal e por hora)
 - [x] Reset automático mensal de leads
+- [x] Reset automático por hora de casos
 - [x] Portal de gerenciamento de assinatura
 - [x] Billing automático
-- [x] Verificação de limites antes de enviar leads
+- [x] Verificação de limites antes de enviar leads (mensal e por hora)
 
 ### Fase 7: Polish e Deploy ✓
 - [x] Error handling global
@@ -307,12 +317,13 @@ src/
 │   ├── ai-service.ts
 │   ├── analytics.ts          # ⭐ NOVO - Analytics service (PostHog + GA + GTM)
 │   ├── auth.ts
+│   ├── case-distribution.service.ts # Distribuição automática de casos
 │   ├── email-service.ts      # Serviço de email
 │   ├── geo-service.ts
 │   ├── matching-service.ts
-│   ├── plans.ts              # ⭐ NOVO - Sistema de planos
+│   ├── plans.ts              # ⭐ NOVO - Sistema de planos (com leadsPerHour)
 │   ├── prisma.ts
-│   ├── subscription-service.ts # ⭐ NOVO - Serviço de assinaturas
+│   ├── subscription-service.ts # ⭐ NOVO - Serviço de assinaturas (com reset por hora)
 │   ├── subscription-history.service.ts # ⭐ NOVO - Histórico
 │   ├── stripe.ts             # Cliente Stripe
 │   ├── upload-service.ts     # Upload de arquivos
@@ -481,26 +492,58 @@ public/uploads/attachments/
 **Status:** ✅ 100% Implementado
 
 **Planos:**
-- **FREE:** Gratuito (3 leads/mês)
-- **BASIC:** R$ 99/mês (10 leads/mês)
-- **PREMIUM:** R$ 299/mês (50 leads/mês)
+- **FREE:** Gratuito (3 leads/mês, 5 casos/hora)
+- **BASIC:** R$ 99/mês (10 leads/mês, 5 casos/hora)
+- **PREMIUM:** R$ 299/mês (50 leads/mês, 5 casos/hora)
+- **UNLIMITED:** Ilimitado (leads ilimitados, sem limite por hora)
 
 **Sistema de Planos:**
 - Catálogo de planos no banco de dados (`planos`)
-- Configuração centralizada (preços, limites, features)
+- Configuração centralizada (preços, limites mensais, limites por hora, features)
 - Histórico completo de assinaturas (`historico_assinaturas`)
 - Tracking de upgrades/downgrades
 - Gerenciamento sem alterar código
+
+**Sistema de Limite por Hora** ⭐ NOVO (2026-02-01):
+- **Planos Limitados (FREE, BASIC, PREMIUM):**
+  - Limite de 5 casos por hora
+  - Contador `casosRecebidosHora` no modelo `advogados`
+  - Reset automático a cada hora (`ultimoResetCasosHora`)
+  - Verificação antes de criar matches
+  - Verificação na redistribuição de casos
+  
+- **Planos Ilimitados (UNLIMITED):**
+  - Sem verificação de limite por hora
+  - Sempre podem receber casos
+  - `leadsPerHour: -1` no banco de dados
+  
+- **Implementação Técnica:**
+  - Campo `leadsPerHour` no modelo `planos` (padrão: 5)
+  - Campos `casosRecebidosHora` e `ultimoResetCasosHora` no modelo `advogados`
+  - Função `resetHourlyCasesIfNeeded()` em `subscription-service.ts`
+  - Verificação integrada em `canAdvogadoReceiveLead()`
+  - Verificação integrada em `strictMatching()` do `case-distribution.service.ts`
+  - Verificação integrada em `redistributeCasesForLawyer()`
+
+**Limites e Controles:**
+- **Limite Mensal:** Controla total de leads recebidos no mês
+- **Limite por Hora:** Controla taxa de casos recebidos (5/hora para planos limitados)
+- **Planos Ilimitados:** Sem verificação de limite por hora (sempre podem receber)
+- Reset automático mensal de contador de leads
+- Reset automático por hora de contador de casos
+- Verificação dupla antes de criar matches (mensal + por hora)
+- Incremento automático de ambos os contadores
 
 **Features:**
 - Checkout Stripe completo
 - Webhooks processados (checkout, subscription, invoice)
 - Portal de gerenciamento (Stripe Customer Portal)
 - Billing automático mensal
-- Limites por plano com verificação
+- Limites por plano com verificação (mensal e por hora)
 - Reset automático mensal de leads
-- Verificação antes de enviar leads
-- Incremento automático de contador
+- Reset automático por hora de casos
+- Verificação antes de enviar leads (mensal e por hora)
+- Incremento automático de contadores
 
 **APIs:**
 - `GET /api/plans` - Lista planos disponíveis
@@ -518,9 +561,12 @@ public/uploads/attachments/
 
 **Modelos:**
 - User, Cidadao, Advogado
+  - Advogado: `casosRecebidosHora`, `ultimoResetCasosHora` (novos campos)
 - Caso, Match, Mensagem
 - Avaliacao, Especialidade
+- Plano (com `leadsPerHour` - novo campo)
 - Assinatura (Stripe)
+- HistoricoAssinaturas
 - BetaInvite, Feedback
 
 **Migrations:** Prontas
@@ -639,8 +685,8 @@ O **LegalConnect** está pronto para:
 ---
 
 **Desenvolvido com ❤️ e Claude Code**
-**Versão:** 1.1.0
-**Data:** 2026-01-30
+**Versão:** 1.3.0
+**Data:** 2026-02-01
 
 ---
 
@@ -695,11 +741,14 @@ Este arquivo (`STATUS_FINAL_100_COMPLETO.md`) é o **documento principal consoli
 - Perfil público com avaliações
 
 #### 💳 **Monetização**
-- 3 planos (FREE, BASIC, PREMIUM)
+- 4 planos (FREE, BASIC, PREMIUM, UNLIMITED)
 - Integração Stripe completa
 - Webhooks configurados
 - Portal de gerenciamento
-- Limites por plano
+- Limites por plano (mensal e por hora)
+- Sistema de limite por hora (5 casos/hora para planos limitados)
+- Planos ilimitados sem restrição por hora
+- Reset automático de contadores (mensal e por hora)
 
 #### 📧 **Notificações**
 - Sistema de email (Resend)

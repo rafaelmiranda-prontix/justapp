@@ -56,6 +56,8 @@ model advogados {
   leadsRecebidosMes       Int                       @default(0)
   leadsLimiteMes          Int                       @default(0)
   ultimoResetLeads        DateTime                  @default(now())
+  casosRecebidosHora      Int                       @default(0)
+  ultimoResetCasosHora    DateTime                  @default(now())
   isBeta                  Boolean                   @default(false)
   betaInviteCode          String?                   @unique
   onboardingCompleted     Boolean                   @default(false)
@@ -213,6 +215,7 @@ model planos {
   preco                   Int                       @default(0) // em centavos (R$)
   precoDisplay            Int                       @default(0) // para exibição (R$)
   leadsPerMonth           Int                       @default(0) // -1 = ilimitado
+  leadsPerHour            Int                       @default(5) // -1 = ilimitado (apenas para planos ilimitados)
   features                String[]                  // array de features
   stripePriceId           String?                   @unique
   ativo                   Boolean                   @default(true)

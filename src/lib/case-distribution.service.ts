@@ -2,6 +2,8 @@ import { nanoid } from 'nanoid'
 import { prisma } from '@/lib/prisma'
 import { ConfigService } from '@/lib/config-service'
 import { logger } from '@/lib/logger'
+import { getPlanLimits } from '@/lib/plans'
+import { resetHourlyCasesIfNeeded } from '@/lib/subscription-service'
 
 /**
  * Serviço de Distribuição Automática de Casos
@@ -164,7 +166,7 @@ export class CaseDistributionService {
 
     // TIER 1: Busca normal com todas as regras
     logger.debug('[Distribution] Tier 1: Trying strict matching...')
-    const advogadosCompativeis = this.strictMatching(advogados, caso, minScore)
+    const advogadosCompativeis = await this.strictMatching(advogados, caso, minScore)
 
     if (advogadosCompativeis.length > 0) {
       logger.debug(`[Distribution] Tier 1: Found ${advogadosCompativeis.length} strict matches`)
@@ -196,15 +198,15 @@ export class CaseDistributionService {
   /**
    * Tier 1: Matching estrito com todas as regras
    */
-  private static strictMatching(
+  private static async strictMatching(
     advogados: any[],
     caso: any,
     minScore: number
-  ): Array<{
+  ): Promise<Array<{
     id: string
     matchScore: number
     distanciaKm: number | null
-  }> {
+  }>> {
     const advogadosCompativeis: Array<{
       id: string
       matchScore: number
@@ -212,9 +214,26 @@ export class CaseDistributionService {
     }> = []
 
     for (const advogado of advogados) {
-      // 1. Verificar limite de leads
+      // 1. Verificar limite de leads mensal
       if (advogado.leadsRecebidosMes >= advogado.leadsLimiteMes) {
         continue
+      }
+
+      // 2. Verificar limite por hora (apenas para planos limitados)
+      await resetHourlyCasesIfNeeded(advogado.id)
+      const limits = await getPlanLimits(advogado.plano)
+      
+      // Se não é ilimitado, verificar limite por hora
+      if (!limits.isUnlimited && limits.leadsPerHour > 0) {
+        // Buscar advogado atualizado para ter o contador correto
+        const advogadoAtualizado = await prisma.advogados.findUnique({
+          where: { id: advogado.id },
+          select: { casosRecebidosHora: true },
+        })
+        
+        if (advogadoAtualizado && advogadoAtualizado.casosRecebidosHora >= limits.leadsPerHour) {
+          continue
+        }
       }
 
       // 2. Calcular score de compatibilidade
@@ -224,7 +243,7 @@ export class CaseDistributionService {
         continue
       }
 
-      // 3. Calcular distância (se ambos têm coordenadas)
+      // 4. Calcular distância (se ambos têm coordenadas)
       let distanciaKm: number | null = null
       if (
         caso.cidadaos.latitude &&
@@ -535,12 +554,30 @@ export class CaseDistributionService {
       return { casosDistribuidos: 0, matchesCriados: 0 }
     }
 
-    // Verificar cota de leads
+    // Verificar cota de leads mensal
     if (advogado.leadsRecebidosMes >= advogado.leadsLimiteMes) {
       logger.debug(
         `[Redistribution] Lawyer reached monthly limit (${advogado.leadsRecebidosMes}/${advogado.leadsLimiteMes})`
       )
       return { casosDistribuidos: 0, matchesCriados: 0 }
+    }
+
+    // Verificar limite por hora (apenas para planos limitados)
+    await resetHourlyCasesIfNeeded(advogadoId)
+    const limits = await getPlanLimits(advogado.plano)
+    
+    if (!limits.isUnlimited && limits.leadsPerHour > 0) {
+      const advogadoAtualizado = await prisma.advogados.findUnique({
+        where: { id: advogadoId },
+        select: { casosRecebidosHora: true },
+      })
+      
+      if (advogadoAtualizado && advogadoAtualizado.casosRecebidosHora >= limits.leadsPerHour) {
+        logger.debug(
+          `[Redistribution] Lawyer reached hourly limit (${advogadoAtualizado.casosRecebidosHora}/${limits.leadsPerHour})`
+        )
+        return { casosDistribuidos: 0, matchesCriados: 0 }
+      }
     }
 
     // 2. Buscar casos ABERTOS sem matches

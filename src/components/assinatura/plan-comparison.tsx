@@ -119,7 +119,7 @@ export function PlanComparison({ plans }: PlanComparisonProps) {
                 <tr key={idx} className="border-b">
                   <td className="p-2">{feature.name}</td>
                   {planKeys.map((planKey) => {
-                    const value = feature.values[planKey]
+                    const value = feature.values[planKey as keyof typeof feature.values]
                     return (
                       <td key={planKey} className="text-center p-2">
                         {typeof value === 'boolean' ? (

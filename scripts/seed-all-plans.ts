@@ -15,6 +15,7 @@ async function main() {
       preco: 0,
       precoDisplay: 0,
       leadsPerMonth: 3,
+      leadsPerHour: 5,
       features: [
         'Perfil básico na plataforma',
         'Visualização de casos compatíveis',
@@ -33,6 +34,7 @@ async function main() {
       preco: 0,
       precoDisplay: 0,
       leadsPerMonth: 3,
+      leadsPerHour: 5,
       features: [
         'Perfil básico na plataforma',
         'Visualização de casos compatíveis',
@@ -57,6 +59,7 @@ async function main() {
       preco: 9900,
       precoDisplay: 99,
       leadsPerMonth: 10,
+      leadsPerHour: 5,
       features: [
         'Leads qualificados por mês',
         'Perfil completo destacado',
@@ -77,6 +80,7 @@ async function main() {
       preco: 9900,
       precoDisplay: 99,
       leadsPerMonth: 10,
+      leadsPerHour: 5,
       features: [
         'Leads qualificados por mês',
         'Perfil completo destacado',
@@ -103,6 +107,7 @@ async function main() {
       preco: 29900,
       precoDisplay: 299,
       leadsPerMonth: 50,
+      leadsPerHour: 5,
       features: [
         'Máximo de leads qualificados',
         'Perfil destacado no topo',
@@ -125,6 +130,7 @@ async function main() {
       preco: 29900,
       precoDisplay: 299,
       leadsPerMonth: 50,
+      leadsPerHour: 5,
       features: [
         'Máximo de leads qualificados',
         'Perfil destacado no topo',
@@ -153,6 +159,7 @@ async function main() {
       preco: 0,
       precoDisplay: 0,
       leadsPerMonth: -1,
+      leadsPerHour: -1,
       features: [
         'Leads ilimitados',
         'Perfil destacado premium',
@@ -175,6 +182,7 @@ async function main() {
       preco: 0,
       precoDisplay: 0,
       leadsPerMonth: -1,
+      leadsPerHour: -1,
       features: [
         'Leads ilimitados',
         'Perfil destacado premium',

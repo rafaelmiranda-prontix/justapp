@@ -12,6 +12,7 @@ export interface PlanConfig {
   price: number // em centavos (R$)
   priceDisplay: number // para exibição
   leadsPerMonth: number // -1 = ilimitado
+  leadsPerHour?: number // -1 = ilimitado (apenas para planos ilimitados), padrão 5
   features: string[]
   stripePriceId?: string
   ativo: boolean
@@ -34,6 +35,7 @@ export const PLANS_STATIC: Record<PlanType, Omit<PlanConfig, 'id'>> = {
     price: 0,
     priceDisplay: 0,
     leadsPerMonth: 3,
+    leadsPerHour: 5,
     features: [
       'Perfil básico na plataforma',
       'Visualização de casos compatíveis',
@@ -50,6 +52,7 @@ export const PLANS_STATIC: Record<PlanType, Omit<PlanConfig, 'id'>> = {
     price: 9900,
     priceDisplay: 99,
     leadsPerMonth: 10,
+    leadsPerHour: 5,
     features: [
       'Leads qualificados por mês',
       'Perfil completo destacado',
@@ -68,6 +71,7 @@ export const PLANS_STATIC: Record<PlanType, Omit<PlanConfig, 'id'>> = {
     price: 29900,
     priceDisplay: 299,
     leadsPerMonth: 50,
+    leadsPerHour: 5,
     features: [
       'Máximo de leads qualificados',
       'Perfil destacado no topo',
@@ -88,6 +92,7 @@ export const PLANS_STATIC: Record<PlanType, Omit<PlanConfig, 'id'>> = {
     price: 0,
     priceDisplay: 0,
     leadsPerMonth: -1,
+    leadsPerHour: -1,
     features: [
       'Leads ilimitados',
       'Perfil destacado premium',
@@ -124,6 +129,7 @@ async function fetchPlansFromDB(): Promise<Record<PlanType, PlanConfig>> {
         price: plano.preco,
         priceDisplay: plano.precoDisplay,
         leadsPerMonth: plano.leadsPerMonth,
+        leadsPerHour: plano.leadsPerHour ?? 5, // Default 5 se não definido
         features: plano.features,
         stripePriceId: plano.stripePriceId || undefined,
         ativo: plano.ativo,
@@ -146,6 +152,7 @@ async function fetchPlansFromDB(): Promise<Record<PlanType, PlanConfig>> {
       FREE: { ...PLANS_STATIC.FREE, id: 'default-free' },
       BASIC: { ...PLANS_STATIC.BASIC, id: 'default-basic' },
       PREMIUM: { ...PLANS_STATIC.PREMIUM, id: 'default-premium' },
+      UNLIMITED: { ...PLANS_STATIC.UNLIMITED, id: 'default-unlimited' },
     }
   }
 }
@@ -190,13 +197,16 @@ export async function getPlanLimits(
   plan: PlanType
 ): Promise<{
   leadsPerMonth: number
+  leadsPerHour: number
   isUnlimited: boolean
 }> {
   const planConfig = await getPlanConfig(plan)
   const leadsPerMonth = planConfig.leadsPerMonth
+  const leadsPerHour = planConfig.leadsPerHour ?? 5 // Default 5 se não definido
 
   return {
     leadsPerMonth,
+    leadsPerHour,
     isUnlimited: leadsPerMonth === -1 || leadsPerMonth >= 999,
   }
 }
