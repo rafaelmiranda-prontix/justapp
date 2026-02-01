@@ -57,6 +57,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "date-fns": "^3.6.0",
+    "lottie-react": "^2.4.1",
     "lucide-react": "^0.323.0",
     "nanoid": "^5.1.6",
     "next": "15.1.11",
