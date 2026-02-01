@@ -3,6 +3,7 @@ import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
+import { nanoid } from 'nanoid'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -63,8 +64,79 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // Se for login com Google
+      if (account?.provider === 'google' && user.email) {
+        try {
+          // Buscar usuário existente
+          let dbUser = await prisma.users.findUnique({
+            where: { email: user.email },
+            include: {
+              cidadaos: true,
+              advogados: true,
+            },
+          })
+
+          // Se não existir, criar como CIDADAO por padrão
+          if (!dbUser) {
+            const userId = nanoid()
+            const cidadaoId = nanoid()
+            const now = new Date()
+            
+            await prisma.users.create({
+              data: {
+                id: userId,
+                email: user.email,
+                name: user.name || 'Usuário',
+                image: user.image || null,
+                emailVerified: now,
+                role: 'CIDADAO',
+                status: 'ACTIVE',
+                updatedAt: now,
+                cidadaos: {
+                  create: {
+                    id: cidadaoId,
+                    updatedAt: now,
+                  },
+                },
+              },
+            })
+
+            // Buscar o usuário criado com includes
+            dbUser = await prisma.users.findUnique({
+              where: { id: userId },
+              include: {
+                cidadaos: true,
+                advogados: true,
+              },
+            })
+
+            if (!dbUser) {
+              console.error('Failed to create user')
+              return false
+            }
+          }
+
+          // Atualizar dados do usuário com dados do banco
+          if (dbUser) {
+            user.id = dbUser.id
+            user.role = dbUser.role
+            user.cidadaoId = dbUser.cidadaos?.id
+            user.advogadoId = dbUser.advogados?.id
+          }
+
+          return true
+        } catch (error) {
+          console.error('Error in signIn callback:', error)
+          return false
+        }
+      }
+
+      // Para login com credenciais, já está tratado no authorize
+      return true
+    },
     async jwt({ token, user, trigger, session }) {
-      // Initial sign in
+      // Initial sign in - usar dados do user se disponível
       if (user) {
         token.id = user.id
         token.email = user.email ?? undefined
@@ -72,6 +144,28 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role
         token.cidadaoId = user.cidadaoId
         token.advogadoId = user.advogadoId
+      }
+
+      // Se não tiver role no token, buscar do banco
+      if (token.email && !token.role) {
+        try {
+          const dbUser = await prisma.users.findUnique({
+            where: { email: token.email },
+            include: {
+              cidadaos: true,
+              advogados: true,
+            },
+          })
+
+          if (dbUser) {
+            token.id = dbUser.id
+            token.role = dbUser.role
+            token.cidadaoId = dbUser.cidadaos?.id
+            token.advogadoId = dbUser.advogados?.id
+          }
+        } catch (error) {
+          console.error('Error fetching user in jwt callback:', error)
+        }
       }
 
       // Update session
@@ -91,6 +185,14 @@ export const authOptions: NextAuthOptions = {
         session.user.advogadoId = token.advogadoId
       }
       return session
+    },
+    async redirect({ url, baseUrl }) {
+      // Se a URL for relativa, usar baseUrl
+      if (url.startsWith('/')) return `${baseUrl}${url}`
+      // Se a URL for do mesmo domínio, permitir
+      if (new URL(url).origin === baseUrl) return url
+      // Caso contrário, redirecionar para home (middleware vai redirecionar baseado no role)
+      return baseUrl
     },
   },
   pages: {
