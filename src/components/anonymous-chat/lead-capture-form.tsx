@@ -8,6 +8,7 @@ import { Loader2, Mail, User, Phone, CheckCircle2, MapPin, Navigation } from 'lu
 import { GeolocationModal } from './geolocation-modal'
 import { useGeolocation } from '@/hooks/use-geolocation'
 import { formatPhone, unformatPhone } from '@/lib/utils'
+import Link from 'next/link'
 
 interface LeadCaptureFormProps {
   onSubmit: (data: { name: string; email: string; phone?: string; cidade?: string; estado?: string }) => Promise<void>
@@ -284,7 +285,14 @@ export function LeadCaptureForm({ onSubmit, extractedData }: LeadCaptureFormProp
         </Button>
 
         <p className="text-xs text-center text-muted-foreground">
-          Ao enviar, você concorda com nossos termos de uso
+          Ao enviar, você concorda com nossos{' '}
+          <Link href="/termos" className="underline hover:text-primary">
+            Termos de Uso
+          </Link>{' '}
+          e{' '}
+          <Link href="/privacidade" className="underline hover:text-primary">
+            Política de Privacidade
+          </Link>
         </p>
       </form>
 

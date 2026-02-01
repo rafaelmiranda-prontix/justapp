@@ -73,8 +73,13 @@ export function MarketingFooter() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-foreground">
+                  <Link href="/termos" className="hover:text-foreground">
                     Termos de Uso
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacidade" className="hover:text-foreground">
+                    Política de Privacidade
                   </Link>
                 </li>
               </ul>

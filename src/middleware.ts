@@ -56,7 +56,9 @@ export default withAuth(
           pathname.startsWith('/api/health') || // Health check
           pathname.startsWith('/api/test-') || // Rotas de teste
           pathname.startsWith('/_next') ||
-          pathname.startsWith('/advogado/') // Perfil público de advogado
+          pathname.startsWith('/advogado/') || // Perfil público de advogado
+          pathname === '/termos' || // Termos de Uso
+          pathname === '/privacidade' // Política de Privacidade
         ) {
           return true
         }
