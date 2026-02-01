@@ -1,39 +1,46 @@
 # JustApp Design System
 
-Design system moderno e elegante inspirado no Monday.com, criado para o JustApp.
+Design system moderno e elegante com cores extraídas do logo circular do JustApp.
 
 ## 🎨 Paleta de Cores
 
-### Cores Principais
+### Cores Principais (do Logo)
+
+Todas as cores são baseadas no logo circular dinâmico:
 
 ```css
-/* Primary - Vibrant Purple/Blue */
---primary: 262 83% 58%
-/* Accent - Energetic Pink/Orange */
---accent: 346 77% 60%
-/* Success - Fresh Green */
---success: 142 76% 36%
-/* Warning - Bright Yellow */
---warning: 38 92% 50%
+/* Primary - Deep Blue (logo #0066CC) */
+--primary: 207 100% 40%
+
+/* Accent - Cyan/Teal (logo #00BFBF) */
+--accent: 180 100% 37%
+
+/* Success - Green (logo #7EE8A9) */
+--success: 150 76% 70%
+
+/* Warning - Lime Green (logo #B4F34D) */
+--warning: 75 90% 60%
+
 /* Destructive - Vibrant Red */
---destructive: 0 84.2% 60.2%
-/* Info - Cool Blue */
---info: 199 89% 48%
+--destructive: 0 84% 60%
+
+/* Info - Light Blue (logo #00BFFF) */
+--info: 195 100% 50%
 ```
 
-### Gradientes
+### Gradientes (do Logo Circular)
 
-O design system inclui gradientes vibrantes inspirados no Monday.com:
+Gradientes extraídos diretamente dos arcos do logo:
 
-- **Gradient Primary**: `#6E6FF9 → #9E6FF2 → #FF6B9D`
-- **Gradient Accent**: `#FF6B9D → #FFB36B`
-- **Gradient Success**: `#00CA72 → #00D68F`
+- **Gradient Primary**: `#001F5C → #0066CC → #00BFBF` (Navy → Royal Blue → Cyan)
+- **Gradient Accent**: `#00D4D4 → #7EE8A9` (Cyan Claro → Verde)
+- **Gradient Success**: `#7EE8A9 → #B4F34D` (Verde → Lima)
 
 ## 🎭 Componentes
 
 ### Logo
 
-Novo logo moderno com formato "J" estilizado e gradientes vibrantes:
+Logo circular moderno com as letras "JA" e arcos dinâmicos em gradiente:
 
 ```tsx
 import { Logo } from '@/components/ui/logo'

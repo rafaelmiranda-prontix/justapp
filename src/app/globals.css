@@ -77,94 +77,103 @@
 
 @layer base {
   :root {
-    /* JustApp Design System - Inspirado no Monday.com */
+    /* JustApp Design System - Cores do Logo */
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --foreground: 210 100% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 210 100% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover-foreground: 210 100% 11%;
 
-    /* Primary - Vibrant Purple/Blue (Monday.com style) */
-    --primary: 262 83% 58%;
+    /* Primary - Deep Blue (do logo #0066CC) */
+    --primary: 207 100% 40%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Soft Gray */
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    /* Secondary - Light Blue/Gray */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 210 100% 11%;
 
     /* Muted - Light background */
-    --muted: 240 4.8% 97%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 210 40% 98%;
+    --muted-foreground: 210 20% 50%;
 
-    /* Accent - Energetic Pink/Orange */
-    --accent: 346 77% 60%;
+    /* Accent - Cyan/Teal (do logo #00BFBF) */
+    --accent: 180 100% 37%;
     --accent-foreground: 0 0% 100%;
 
-    /* Success - Fresh Green */
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
+    /* Success - Green (do logo #7EE8A9) */
+    --success: 150 76% 70%;
+    --success-foreground: 210 100% 11%;
 
-    /* Warning - Bright Yellow */
-    --warning: 38 92% 50%;
-    --warning-foreground: 240 10% 3.9%;
+    /* Warning - Lime Green (do logo #B4F34D) */
+    --warning: 75 90% 60%;
+    --warning-foreground: 210 100% 11%;
 
     /* Destructive - Vibrant Red */
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Info - Cool Blue */
-    --info: 199 89% 48%;
+    /* Info - Light Blue (do logo #00BFFF) */
+    --info: 195 100% 50%;
     --info-foreground: 0 0% 100%;
 
     /* Borders & Inputs */
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 262 83% 58%;
+    --border: 210 20% 90%;
+    --input: 210 20% 90%;
+    --ring: 207 100% 40%;
 
-    /* Border radius - mais arredondado (Monday.com style) */
+    /* Border radius - arredondado */
     --radius: 0.75rem;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
+    --background: 210 50% 8%;
     --foreground: 0 0% 98%;
 
-    --card: 240 10% 5%;
+    --card: 210 40% 10%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 240 10% 5%;
+    --popover: 210 40% 10%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 263 70% 60%;
+    /* Primary - Brighter Blue for dark mode */
+    --primary: 207 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 3.7% 15.9%;
+    /* Secondary - Dark Blue/Gray */
+    --secondary: 210 40% 18%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 3.7% 12%;
-    --muted-foreground: 240 5% 64.9%;
+    /* Muted - Dark background */
+    --muted: 210 40% 15%;
+    --muted-foreground: 210 20% 65%;
 
-    --accent: 346 75% 55%;
+    /* Accent - Brighter Cyan for dark mode */
+    --accent: 180 100% 45%;
     --accent-foreground: 0 0% 100%;
 
-    --success: 142 70% 40%;
-    --success-foreground: 0 0% 100%;
+    /* Success - Brighter Green for dark mode */
+    --success: 150 70% 65%;
+    --success-foreground: 210 100% 11%;
 
-    --warning: 38 88% 55%;
-    --warning-foreground: 240 10% 3.9%;
+    /* Warning - Brighter Lime for dark mode */
+    --warning: 75 85% 65%;
+    --warning-foreground: 210 100% 11%;
 
-    --destructive: 0 80% 55%;
+    /* Destructive - Vibrant Red for dark mode */
+    --destructive: 0 75% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --info: 199 85% 50%;
+    /* Info - Brighter Light Blue for dark mode */
+    --info: 195 100% 55%;
     --info-foreground: 0 0% 100%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 263 70% 60%;
+    /* Borders & Inputs - Dark with blue tint */
+    --border: 210 30% 20%;
+    --input: 210 30% 20%;
+    --ring: 207 100% 50%;
   }
 }
 
