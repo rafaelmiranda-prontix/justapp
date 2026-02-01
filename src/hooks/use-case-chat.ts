@@ -134,7 +134,7 @@ export function useCaseChat() {
 
           addMessage({
             role: 'assistant',
-            content: `Perfeito, ${lines[0]}! Baseado no que você me contou, vou buscar advogados especializados em Direito do Consumidor na sua região.\n\nPosso enviar seu caso para eles?`,
+            content: `Perfeito, ${lines[0]}! Baseado no que você me contou, vou buscar advogados especializados na sua região que podem ajudar com seu caso.\n\nPosso enviar seu caso para eles?`,
           })
           setCurrentStep('confirmation')
           break
@@ -150,7 +150,7 @@ export function useCaseChat() {
 
             // Redireciona para busca de advogados
             setTimeout(() => {
-              const especialidade = triageData.especialidadeId || 'Direito do Consumidor'
+              const especialidade = triageData.especialidadeId || ''
               window.location.href = `/buscar-advogados?especialidade=${encodeURIComponent(especialidade)}`
             }, 2000)
           } else {

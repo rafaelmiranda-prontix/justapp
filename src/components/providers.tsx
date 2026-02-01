@@ -5,6 +5,7 @@ import { SessionProvider } from 'next-auth/react'
 import { useState } from 'react'
 import { Toaster } from '@/components/ui/toaster'
 import { AnalyticsProvider } from '@/components/analytics/analytics-provider'
+import { CookieBanner } from '@/components/ui/cookie-banner'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -25,6 +26,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <AnalyticsProvider>
           {children}
           <Toaster />
+          <CookieBanner />
         </AnalyticsProvider>
       </QueryClientProvider>
     </SessionProvider>

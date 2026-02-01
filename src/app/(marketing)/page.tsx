@@ -116,7 +116,7 @@ const testimonials = [
   },
   {
     name: 'Dr. João Santos',
-    role: 'Advogado - Direito do Consumidor',
+    role: 'Advogado - Múltiplas Especialidades',
     text: 'Os leads são muito qualificados. Recebo casos que realmente posso ajudar e a plataforma facilita muito o contato.',
     rating: 5,
     avatar: 'JS',
@@ -196,7 +196,7 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Scale className="h-4 w-4 text-primary" />
-                <span>Direito do Consumidor</span>
+                <span>Todas as áreas do direito</span>
               </div>
             </div>
           </div>

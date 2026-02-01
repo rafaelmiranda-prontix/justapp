@@ -94,7 +94,7 @@ export function analyzeCaseRuleBased(description: string): AIAnalysis {
   }
 
   // Detectar especialidade
-  let especialidade = 'Direito do Consumidor' // default
+  let especialidade = '' // Sem default específico - detecta baseado no conteúdo
   let maxMatches = 0
 
   for (const [area, words] of Object.entries(keywords)) {
@@ -108,8 +108,15 @@ export function analyzeCaseRuleBased(description: string): AIAnalysis {
             ? 'Direito Trabalhista'
             : area === 'familia'
               ? 'Direito de Família'
-              : 'Direito Imobiliário'
+              : area === 'imovel'
+                ? 'Direito Imobiliário'
+                : 'Direito Civil'
     }
+  }
+  
+  // Se não detectou nenhuma especialidade, retorna vazio para buscar em todas
+  if (!especialidade) {
+    especialidade = ''
   }
 
   // Detectar urgência
