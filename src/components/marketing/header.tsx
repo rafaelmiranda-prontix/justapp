@@ -37,8 +37,8 @@ export function MarketingHeader() {
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               <Link
-                href="#solucao"
-                onClick={(e) => handleSmoothScroll(e, '#solucao')}
+                href="#por-que-escolher"
+                onClick={(e) => handleSmoothScroll(e, '#por-que-escolher')}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Funcionalidades

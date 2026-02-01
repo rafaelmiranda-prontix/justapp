@@ -85,35 +85,38 @@ export function AnonymousChatSheet({
             </Avatar>
             <div className="flex-1">
               <SheetTitle className="text-left">Assistente Legal</SheetTitle>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                Online agora
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                  <span>Online agora</span>
+                </div>
+                {onResetChat && messages.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                        disabled={isResetting || isTyping}
+                      >
+                        <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                        Reiniciar
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={handleReset}
+                        disabled={isResetting || isTyping}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        {isResetting ? 'Reiniciando...' : 'Reiniciar chat'}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </div>
-            {onResetChat && messages.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    disabled={isResetting || isTyping}
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={handleReset}
-                    disabled={isResetting || isTyping}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    {isResetting ? 'Reiniciando...' : 'Reiniciar chat'}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
           </div>
         </SheetHeader>
 

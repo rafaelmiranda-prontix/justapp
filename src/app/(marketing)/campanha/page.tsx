@@ -26,10 +26,26 @@ import {
   DollarSign,
 } from 'lucide-react'
 import { AnonymousChatButton } from '@/components/anonymous-chat/anonymous-chat-button'
+import { AnonymousChatSheet } from '@/components/anonymous-chat/anonymous-chat-sheet'
+import { useAnonymousChat } from '@/hooks/use-anonymous-chat'
 import { MarketingHeader } from '@/components/marketing/header'
 import { MarketingFooter } from '@/components/marketing/footer'
 
 export default function CampanhaPage() {
+  const {
+    isOpen,
+    openChat,
+    closeChat,
+    messages,
+    sendMessage,
+    isTyping,
+    shouldCaptureLeadData,
+    sessionId,
+    extractedData,
+    submitLeadData,
+    resetChat,
+  } = useAnonymousChat()
+  
   const [email, setEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -127,12 +143,18 @@ export default function CampanhaPage() {
             </p>
 
             {/* CTA Principal */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <AnonymousChatButton onClick={() => window.location.href = '/'} variant="large" />
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-12 items-stretch sm:items-center">
+              <div className="w-full sm:w-auto sm:max-w-none sm:flex-shrink-0">
+                <AnonymousChatButton 
+                  onClick={openChat} 
+                  variant="large" 
+                  showTrustIndicators={false}
+                />
+              </div>
               <Button
                 size="lg"
                 variant="outline"
-                className="text-lg px-8 py-6 h-auto border-2 border-white/50 bg-white/15 backdrop-blur-sm hover:bg-white/25 hover:border-white/70 text-white font-semibold shadow-lg"
+                className="text-lg px-8 h-14 border-2 border-white/50 bg-white/15 backdrop-blur-sm hover:bg-white/25 hover:border-white/70 text-white font-semibold shadow-lg whitespace-nowrap w-full sm:w-auto"
                 asChild
               >
                 <Link href="/signup/cidadao">
@@ -178,7 +200,7 @@ export default function CampanhaPage() {
       </section>
 
       {/* Benefits Section */}
-      <section className="container mx-auto px-4 py-20 md:py-28">
+      <section id="por-que-escolher" className="container mx-auto px-4 py-20 md:py-28 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -209,7 +231,7 @@ export default function CampanhaPage() {
       </section>
 
       {/* How It Works */}
-      <section className="bg-gradient-to-br from-primary/5 to-purple-500/5 py-20 md:py-28">
+      <section id="como-funciona" className="bg-gradient-to-br from-primary/5 to-purple-500/5 py-20 md:py-28 scroll-mt-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-16">
@@ -307,11 +329,15 @@ export default function CampanhaPage() {
               Comece agora mesmo. É rápido, fácil e <strong className="text-yellow-200">100% gratuito</strong>.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <AnonymousChatButton onClick={() => window.location.href = '/'} variant="large" />
+              <AnonymousChatButton 
+                onClick={openChat} 
+                variant="large" 
+                showTrustIndicators={false}
+              />
               <Button
                 size="lg"
                 variant="outline"
-                className="text-lg px-8 py-6 h-auto border-2 border-white/50 bg-white/15 backdrop-blur-sm hover:bg-white/25 hover:border-white/70 text-white font-semibold shadow-lg"
+                className="text-lg px-8 h-14 border-2 border-white/50 bg-white/15 backdrop-blur-sm hover:bg-white/25 hover:border-white/70 text-white font-semibold shadow-lg"
                 asChild
               >
                 <Link href="/signup/cidadao">
@@ -328,6 +354,20 @@ export default function CampanhaPage() {
       </section>
 
       <MarketingFooter />
+
+      {/* Chat Sheet */}
+      <AnonymousChatSheet
+        open={isOpen}
+        onOpenChange={closeChat}
+        messages={messages}
+        onSendMessage={sendMessage}
+        isTyping={isTyping}
+        sessionId={sessionId}
+        shouldCaptureLeadData={shouldCaptureLeadData}
+        extractedData={extractedData}
+        onSubmitLeadData={submitLeadData}
+        onResetChat={resetChat}
+      />
     </div>
   )
 }
