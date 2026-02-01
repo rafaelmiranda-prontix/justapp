@@ -92,7 +92,15 @@ export function trackEvent(eventName: string, properties?: Record<string, any>) 
     window.posthog.capture(eventName, properties)
   }
 
-  // Google Analytics (se configurado)
+  // Google Tag Manager - dataLayer
+  if (window.dataLayer) {
+    window.dataLayer.push({
+      event: eventName,
+      ...properties,
+    })
+  }
+
+  // Google Analytics (se configurado diretamente, sem GTM)
   if (window.gtag) {
     // Converter propriedades para formato do GA4
     const gaProperties: Record<string, any> = {
@@ -107,6 +115,7 @@ export function trackEvent(eventName: string, properties?: Record<string, any>) 
     // eslint-disable-next-line no-console
     console.log('📊 Analytics Event:', eventName, {
       posthog: !!window.posthog,
+      gtm: !!window.dataLayer,
       ga: !!window.gtag,
       properties,
     })

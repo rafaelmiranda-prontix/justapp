@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 import { ErrorBoundary } from '@/components/ui/error-boundary'
+import { GTMHeadScript, GTMBodyScript } from '@/components/analytics/gtm-scripts'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -54,8 +55,10 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/logo-icon.svg" />
+        <GTMHeadScript />
       </head>
       <body className={inter.className}>
+        <GTMBodyScript />
         <ErrorBoundary>
           <Providers>{children}</Providers>
         </ErrorBoundary>
