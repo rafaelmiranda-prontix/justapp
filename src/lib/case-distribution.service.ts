@@ -245,7 +245,8 @@ export class CaseDistributionService {
         }
       } else {
         // Se não tem coordenadas, verificar se está no mesmo estado
-        if (caso.cidadaos.estado !== advogado.estado) {
+        // OU se o advogado aceita casos de outros estados
+        if (caso.cidadaos.estado !== advogado.estado && !advogado.aceitaOutrosEstados) {
           continue
         }
       }
@@ -288,8 +289,8 @@ export class CaseDistributionService {
         continue
       }
 
-      // Verificar se está no mesmo estado
-      if (caso.cidadaos.estado !== advogado.estado) {
+      // Verificar se está no mesmo estado OU se aceita outros estados
+      if (caso.cidadaos.estado !== advogado.estado && !advogado.aceitaOutrosEstados) {
         continue
       }
 
@@ -360,8 +361,8 @@ export class CaseDistributionService {
         continue
       }
 
-      // Verificar se está no mesmo estado
-      if (caso.cidadaos.estado !== advogado.estado) {
+      // Verificar se está no mesmo estado OU se aceita outros estados
+      if (caso.cidadaos.estado !== advogado.estado && !advogado.aceitaOutrosEstados) {
         continue
       }
 
@@ -435,6 +436,9 @@ export class CaseDistributionService {
       if (caso.cidadaos.cidade === advogado.cidade) {
         score += 10 // Mesma cidade = bonus
       }
+    } else if (advogado.aceitaOutrosEstados) {
+      // Advogado aceita outros estados, mas com score menor
+      score += 10 // Outro estado, mas aceita
     }
 
     // 3. Urgência (0-10 pontos)
@@ -539,17 +543,26 @@ export class CaseDistributionService {
       return { casosDistribuidos: 0, matchesCriados: 0 }
     }
 
-    // 2. Buscar casos ABERTOS sem matches no mesmo estado
-    const casosOrfaos = await prisma.casos.findMany({
-      where: {
-        status: 'ABERTO',
-        matches: {
-          none: {}, // Casos sem nenhum match
-        },
-        cidadaos: {
-          estado: advogado.estado, // Mesmo estado do advogado
-        },
+    // 2. Buscar casos ABERTOS sem matches
+    // Se aceitaOutrosEstados = true, busca todos os estados
+    // Se aceitaOutrosEstados = false, busca apenas mesmo estado
+    const whereClause: any = {
+      status: 'ABERTO',
+      matches: {
+        none: {}, // Casos sem nenhum match
       },
+    }
+
+    if (!advogado.aceitaOutrosEstados) {
+      // Apenas mesmo estado
+      whereClause.cidadaos = {
+        estado: advogado.estado,
+      }
+    }
+    // Se aceitaOutrosEstados = true, não filtra por estado (busca todos)
+
+    const casosOrfaos = await prisma.casos.findMany({
+      where: whereClause,
       include: {
         cidadaos: true,
         especialidades: true,

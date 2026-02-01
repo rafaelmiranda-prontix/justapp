@@ -48,6 +48,7 @@ model advogados {
   raioAtuacao             Int                       @default(50)
   precoConsulta           Float?
   aceitaOnline            Boolean                   @default(true)
+  aceitaOutrosEstados     Boolean                   @default(false)
   plano                   Plano                     @default(FREE)
   planoExpira             DateTime?
   stripeCustomerId        String?                   @unique

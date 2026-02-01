@@ -94,6 +94,7 @@ export async function GET(req: NextRequest) {
         raioAtuacao: advogado.raioAtuacao,
         precoConsulta: advogado.precoConsulta,
         aceitaOnline: advogado.aceitaOnline,
+        aceitaOutrosEstados: advogado.aceitaOutrosEstados,
         plano: advogado.plano,
         planoExpira: advogado.planoExpira,
         leadsRecebidosMes: advogado.leadsRecebidosMes,
@@ -138,6 +139,7 @@ export async function PATCH(req: NextRequest) {
       raioAtuacao,
       precoConsulta,
       aceitaOnline,
+      aceitaOutrosEstados,
       especialidades,
     } = body
 
@@ -185,6 +187,7 @@ export async function PATCH(req: NextRequest) {
         ...(raioAtuacao !== undefined && { raioAtuacao }),
         ...(precoConsulta !== undefined && { precoConsulta }),
         ...(aceitaOnline !== undefined && { aceitaOnline }),
+        ...(aceitaOutrosEstados !== undefined && { aceitaOutrosEstados }),
         ...(allFieldsComplete && { onboardingCompleted: true }),
         updatedAt: new Date(),
       },
@@ -250,6 +253,7 @@ export async function PATCH(req: NextRequest) {
         raioAtuacao: advogadoCompleto!.raioAtuacao,
         precoConsulta: advogadoCompleto!.precoConsulta,
         aceitaOnline: advogadoCompleto!.aceitaOnline,
+        aceitaOutrosEstados: advogadoCompleto!.aceitaOutrosEstados,
         plano: advogadoCompleto!.plano,
         user: advogadoCompleto!.users,
         especialidades: advogadoCompleto!.advogado_especialidades.map((ae) => ({

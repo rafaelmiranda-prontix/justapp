@@ -46,6 +46,7 @@ interface PerfilData {
   raioAtuacao: number
   precoConsulta: number | null
   aceitaOnline: boolean
+  aceitaOutrosEstados: boolean
   plano: string
   planoExpira: string | null
   leadsRecebidosMes: number
@@ -86,6 +87,7 @@ export default function AdvogadoPerfilPage() {
     raioAtuacao: 50,
     precoConsulta: '',
     aceitaOnline: true,
+    aceitaOutrosEstados: false,
   })
 
   useEffect(() => {
@@ -109,6 +111,7 @@ export default function AdvogadoPerfilPage() {
           raioAtuacao: result.data.raioAtuacao || 50,
           precoConsulta: result.data.precoConsulta?.toString() || '',
           aceitaOnline: result.data.aceitaOnline ?? true,
+          aceitaOutrosEstados: result.data.aceitaOutrosEstados ?? false,
         })
         setSelectedEspecialidades(result.data.especialidades.map((e: any) => e.id))
       }
@@ -519,6 +522,21 @@ export default function AdvogadoPerfilPage() {
             <Label htmlFor="aceitaOnline" className="cursor-pointer">
               Aceito consultas online
             </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="aceitaOutrosEstados"
+              checked={formData.aceitaOutrosEstados}
+              onCheckedChange={(checked) =>
+                setFormData({ ...formData, aceitaOutrosEstados: checked as boolean })
+              }
+            />
+            <Label htmlFor="aceitaOutrosEstados" className="cursor-pointer">
+              Aceito casos de outros estados
+            </Label>
+            <p className="text-sm text-muted-foreground ml-2">
+              (Além do seu estado atual: {formData.estado || 'não definido'})
+            </p>
           </div>
         </CardContent>
       </Card>
