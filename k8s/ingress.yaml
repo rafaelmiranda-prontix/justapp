@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: legalconnect-ingress
-  namespace: legalconnect
+  name: justapp-ingress
+  namespace: justapp
   annotations:
     # Cert-manager para SSL automático
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
@@ -21,16 +21,16 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - legalconnect.example.com
-    secretName: legalconnect-tls
+    - justapp.example.com
+    secretName: justapp-tls
   rules:
-  - host: legalconnect.example.com
+  - host: justapp.example.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: legalconnect-app-service
+            name: justapp-app-service
             port:
               number: 80

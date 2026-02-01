@@ -1,13 +1,13 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: legalconnect-app-hpa
-  namespace: legalconnect
+  name: justapp-app-hpa
+  namespace: justapp
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: legalconnect-app
+    name: justapp-app
   minReplicas: 2
   maxReplicas: 10
   metrics:

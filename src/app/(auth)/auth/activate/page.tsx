@@ -159,7 +159,7 @@ export default function ActivatePage() {
           <CardTitle>Ative sua Conta</CardTitle>
           <CardDescription>
             {userName ? `Olá, ${userName}! ` : ''}Crie uma senha para ativar sua conta e começar a
-            usar o LegalConnect.
+            usar o JustApp.
           </CardDescription>
         </CardHeader>
         <CardContent>

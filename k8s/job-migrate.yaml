@@ -1,8 +1,8 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: legalconnect-migrate
-  namespace: legalconnect
+  name: justapp-migrate
+  namespace: justapp
 spec:
   template:
     spec:
@@ -30,26 +30,26 @@ spec:
           echo "Migrations completed!"
         envFrom:
         - configMapRef:
-            name: legalconnect-config
+            name: justapp-config
         - secretRef:
-            name: legalconnect-secrets
+            name: justapp-secrets
         env:
         - name: DATABASE_URL
           value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service:5432/$(POSTGRES_DB)?schema=public"
         - name: POSTGRES_USER
           valueFrom:
             configMapKeyRef:
-              name: legalconnect-config
+              name: justapp-config
               key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: legalconnect-secrets
+              name: justapp-secrets
               key: POSTGRES_PASSWORD
         - name: POSTGRES_DB
           valueFrom:
             configMapKeyRef:
-              name: legalconnect-config
+              name: justapp-config
               key: POSTGRES_DB
       restartPolicy: Never
   backoffLimit: 3

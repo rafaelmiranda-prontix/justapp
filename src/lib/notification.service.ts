@@ -44,7 +44,7 @@ export class NotificationService {
 
     try {
       await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'LegalConnect <noreply@legalconnect.com>',
+        from: process.env.EMAIL_FROM || 'JustApp <noreply@justapp.com.br>',
         to: advogado.users.email,
         subject: `Novo Caso: ${caso.especialidades?.nome || 'Consulta Jurídica'}`,
         html: this.getNewMatchEmailTemplate(match, advogado, caso),
@@ -91,7 +91,7 @@ export class NotificationService {
 
     try {
       await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'LegalConnect <noreply@legalconnect.com>',
+        from: process.env.EMAIL_FROM || 'JustApp <noreply@justapp.com.br>',
         to: cidadao.users.email,
         subject: 'Um advogado aceitou seu caso! 🎉',
         html: this.getMatchAcceptedEmailTemplate(match, cidadao, advogado),
@@ -133,7 +133,7 @@ export class NotificationService {
 
     try {
       await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'LegalConnect <noreply@legalconnect.com>',
+        from: process.env.EMAIL_FROM || 'JustApp <noreply@justapp.com.br>',
         to: match.advogados.user.email,
         subject: `⏰ Caso expira em ${hoursLeft}h`,
         html: this.getMatchExpiringEmailTemplate(match, hoursLeft),
@@ -269,10 +269,10 @@ export class NotificationService {
           <tr>
             <td style="background-color: #f9fafb; padding: 24px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #e5e7eb;">
               <p style="color: #6b7280; margin: 0; font-size: 14px;">
-                LegalConnect - Conexão Inteligente entre Pessoas e Advogados
+                JustApp - Conexão Inteligente entre Pessoas e Advogados
               </p>
               <p style="color: #9ca3af; margin: 8px 0 0 0; font-size: 12px;">
-                © ${new Date().getFullYear()} LegalConnect. Todos os direitos reservados.
+                © ${new Date().getFullYear()} JustApp. Todos os direitos reservados.
               </p>
             </td>
           </tr>

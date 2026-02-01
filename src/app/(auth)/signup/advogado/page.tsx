@@ -23,7 +23,7 @@ export default function SignupAdvogadoPage() {
             <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm group-hover:bg-white/20 transition-colors">
               <Scale className="h-6 w-6" />
             </div>
-            <span className="text-2xl font-bold">LegalConnect</span>
+            <span className="text-2xl font-bold">JustApp</span>
           </Link>
 
           {/* Main Content */}
@@ -62,7 +62,7 @@ export default function SignupAdvogadoPage() {
 
           {/* Footer */}
           <div className="text-sm text-white/70">
-            © 2026 LegalConnect. Todos os direitos reservados.
+            © 2026 JustApp. Todos os direitos reservados.
           </div>
         </div>
       </div>
@@ -74,7 +74,7 @@ export default function SignupAdvogadoPage() {
           <div className="lg:hidden mb-8 text-center">
             <Link href="/" className="inline-flex items-center gap-2 mb-2">
               <Scale className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold">LegalConnect</span>
+              <span className="text-2xl font-bold">JustApp</span>
             </Link>
           </div>
 

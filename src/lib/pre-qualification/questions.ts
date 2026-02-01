@@ -216,7 +216,7 @@ export const PRE_QUALIFICATION_FLOW: QuestionFlow = {
 /**
  * Mensagem inicial do sistema
  */
-export const WELCOME_MESSAGE = `Olá! Sou o assistente da LegalConnect. 👋
+export const WELCOME_MESSAGE = `Olá! Sou o assistente da JustApp. 👋
 
 Vou fazer algumas perguntas rápidas (2-3 minutos) para entender seu caso e conectá-lo aos melhores advogados.
 

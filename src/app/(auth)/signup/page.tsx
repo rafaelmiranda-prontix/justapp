@@ -23,7 +23,7 @@ export default function SignupPage() {
             <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm group-hover:bg-white/20 transition-colors">
               <Scale className="h-6 w-6" />
             </div>
-            <span className="text-2xl font-bold">LegalConnect</span>
+            <span className="text-2xl font-bold">JustApp</span>
           </Link>
 
           {/* Main Content */}
@@ -32,7 +32,7 @@ export default function SignupPage() {
               Junte-se à plataforma que conecta
             </h1>
             <p className="text-xl text-primary-foreground/90 mb-12">
-              Milhares de cidadãos e advogados já estão usando o LegalConnect para resolver casos jurídicos.
+              Milhares de cidadãos e advogados já estão usando o JustApp para resolver casos jurídicos.
             </p>
 
             {/* Stats */}
@@ -50,7 +50,7 @@ export default function SignupPage() {
 
           {/* Footer */}
           <div className="text-sm text-primary-foreground/70">
-            © 2026 LegalConnect. Todos os direitos reservados.
+            © 2026 JustApp. Todos os direitos reservados.
           </div>
         </div>
       </div>
@@ -62,7 +62,7 @@ export default function SignupPage() {
           <div className="lg:hidden mb-8 text-center">
             <Link href="/" className="inline-flex items-center gap-2 mb-2">
               <Scale className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold">LegalConnect</span>
+              <span className="text-2xl font-bold">JustApp</span>
             </Link>
             <p className="text-muted-foreground">Conecte-se ao advogado ideal</p>
           </div>

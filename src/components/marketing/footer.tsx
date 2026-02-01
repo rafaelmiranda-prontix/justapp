@@ -10,7 +10,7 @@ export function MarketingFooter() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Scale className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold">LegalConnect</span>
+                <span className="text-xl font-bold">JustApp</span>
               </div>
               <p className="text-sm text-muted-foreground mb-2 font-semibold">
                 Plataforma Jurídica Inteligente
@@ -82,7 +82,7 @@ export function MarketingFooter() {
           </div>
           <div className="border-t pt-8 text-center text-sm text-muted-foreground">
             <p>
-              © {new Date().getFullYear()} LegalConnect - Plataforma Jurídica Inteligente. Todos
+              © {new Date().getFullYear()} JustApp - Plataforma Jurídica Inteligente. Todos
               os direitos reservados.
             </p>
           </div>

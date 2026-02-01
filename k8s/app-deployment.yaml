@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: legalconnect-app
-  namespace: legalconnect
+  name: justapp-app
+  namespace: justapp
   labels:
     app: legalconnect-app
 spec:
@@ -14,11 +14,11 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: legalconnect-app
+      app: justapp-app
   template:
     metadata:
       labels:
-        app: legalconnect-app
+        app: justapp-app
     spec:
       initContainers:
       # Aguardar PostgreSQL estar pronto
@@ -53,9 +53,9 @@ spec:
           name: http
         envFrom:
         - configMapRef:
-            name: legalconnect-config
+            name: justapp-config
         - secretRef:
-            name: legalconnect-secrets
+            name: justapp-secrets
         env:
         # Sobrescrever DATABASE_URL com senha do secret
         - name: DATABASE_URL
@@ -63,17 +63,17 @@ spec:
         - name: POSTGRES_USER
           valueFrom:
             configMapKeyRef:
-              name: legalconnect-config
+              name: justapp-config
               key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: legalconnect-secrets
+              name: justapp-secrets
               key: POSTGRES_PASSWORD
         - name: POSTGRES_DB
           valueFrom:
             configMapKeyRef:
-              name: legalconnect-config
+              name: justapp-config
               key: POSTGRES_DB
         resources:
           requests:
@@ -110,10 +110,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: legalconnect-app-service
-  namespace: legalconnect
+  name: justapp-app-service
+  namespace: justapp
   labels:
-    app: legalconnect-app
+    app: justapp-app
 spec:
   type: ClusterIP
   ports:
@@ -122,14 +122,14 @@ spec:
     protocol: TCP
     name: http
   selector:
-    app: legalconnect-app
+    app: justapp-app
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: app-uploads-pvc
-  namespace: legalconnect
+  namespace: justapp
 spec:
   accessModes:
     - ReadWriteMany  # Para múltiplos pods

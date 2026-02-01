@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: legalconnect
+  name: justapp
   labels:
-    name: legalconnect
+    name: justapp
     environment: production

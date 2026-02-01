@@ -10,7 +10,7 @@ services:
   # PostgreSQL Database
   db:
     image: postgres:15-alpine
-    container_name: legalconnect-db-dev
+    container_name: justapp-db-dev
     environment:
       - POSTGRES_USER=legalconnect
       - POSTGRES_PASSWORD=password
@@ -22,7 +22,7 @@ services:
       - "5432:5432"
     restart: unless-stopped
     networks:
-      - legalconnect-dev-network
+      - justapp-dev-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U legalconnect -d legalconnect"]
       interval: 10s
@@ -33,7 +33,7 @@ services:
   # Redis Cache/Queue
   redis:
     image: redis:7-alpine
-    container_name: legalconnect-redis-dev
+    container_name: justapp-redis-dev
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
@@ -41,7 +41,7 @@ services:
       - redis_dev_data:/data
     restart: unless-stopped
     networks:
-      - legalconnect-dev-network
+      - justapp-dev-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -56,5 +56,5 @@ volumes:
     driver: local
 
 networks:
-  legalconnect-dev-network:
+  justapp-dev-network:
     driver: bridge

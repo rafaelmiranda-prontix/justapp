@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=pt-BR`,
       {
         headers: {
-          'User-Agent': 'LegalConnect/1.0', // Nominatim requer User-Agent
+          'User-Agent': 'JustApp/1.0', // Nominatim requer User-Agent
         },
       }
     )

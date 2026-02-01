@@ -263,7 +263,7 @@ export default function LandingPage() {
               A solução é simples
             </h2>
             <p className="text-xl text-muted-foreground">
-              LegalConnect conecta você ao advogado ideal de forma rápida e inteligente
+              JustApp conecta você ao advogado ideal de forma rápida e inteligente
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
@@ -447,7 +447,7 @@ export default function LandingPage() {
               </h2>
               <p className="text-xl text-muted-foreground mb-8">
                 Junte-se a milhares de pessoas que já resolveram seus problemas jurídicos
-                através do LegalConnect. Comece agora, é grátis!
+                através do JustApp. Comece agora, é grátis!
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <AnonymousChatButton onClick={openChat} variant="large" />

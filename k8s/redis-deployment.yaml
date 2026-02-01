@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis
-  namespace: legalconnect
+  namespace: justapp
   labels:
     app: redis
 spec:
@@ -81,7 +81,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: redis-service
-  namespace: legalconnect
+  namespace: justapp
   labels:
     app: redis
 spec:

@@ -50,11 +50,11 @@ export function DashboardHeader({ mobileNav }: DashboardHeaderProps) {
           )}
 
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg group-hover:from-blue-500 group-hover:to-indigo-500 transition-all">
-              <Scale className="h-5 w-5 text-white" />
+            <div className="p-1.5 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-lg group-hover:from-indigo-500 group-hover:via-purple-500 group-hover:to-pink-500 transition-all">
+              <img src="/logo-icon.svg" alt="JustApp" className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              LegalConnect
+            <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              JustApp
             </span>
           </Link>
         </div>

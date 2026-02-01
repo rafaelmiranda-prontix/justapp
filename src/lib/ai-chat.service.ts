@@ -76,7 +76,7 @@ export class AIChatService {
    * Prompt do sistema para o assistente jurídico
    */
   private static getSystemPrompt(): string {
-    return `Você é um assistente virtual especializado em direito brasileiro, parte da plataforma LegalConnect.
+    return `Você é um assistente virtual especializado em direito brasileiro, parte da plataforma JustApp.
 
 SEU OBJETIVO:
 - Ajudar pessoas a entenderem se têm um caso jurídico válido
@@ -257,7 +257,7 @@ IMPORTANTE: Retorne APENAS o JSON, sem texto adicional.`
     const lowerMessage = userMessage.toLowerCase()
 
     if (lowerMessage.includes('olá') || lowerMessage.includes('oi') || lowerMessage.includes('bom dia')) {
-      return 'Olá! Sou o assistente da LegalConnect. Estou aqui para entender sua situação jurídica e conectá-lo ao advogado ideal. Pode me contar o que aconteceu?'
+      return 'Olá! Sou o assistente da JustApp. Estou aqui para entender sua situação jurídica e conectá-lo ao advogado ideal. Pode me contar o que aconteceu?'
     }
 
     if (lowerMessage.includes('compra') || lowerMessage.includes('produto') || lowerMessage.includes('loja')) {

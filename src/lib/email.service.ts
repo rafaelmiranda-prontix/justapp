@@ -31,9 +31,9 @@ export class EmailService {
 
     try {
       const result = await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'LegalConnect <noreply@legalconnect.com>',
+        from: process.env.EMAIL_FROM || 'JustApp <noreply@justapp.com.br>',
         to: email,
-        subject: 'Ative sua conta no LegalConnect',
+        subject: 'Ative sua conta no JustApp',
         html: this.getActivationEmailTemplate(firstName, activationUrl),
       })
 
@@ -60,7 +60,7 @@ export class EmailService {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ative sua conta - LegalConnect</title>
+    <title>Ative sua conta - JustApp</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
@@ -69,9 +69,9 @@ export class EmailService {
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); padding: 40px; text-align: center; border-radius: 8px 8px 0 0;">
+            <td style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%); padding: 40px; text-align: center; border-radius: 8px 8px 0 0;">
               <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold;">
-                LegalConnect
+                JustApp
               </h1>
               <p style="color: #e0e7ff; margin: 8px 0 0 0; font-size: 16px;">
                 Sua conexão inteligente com advogados
@@ -87,7 +87,7 @@ export class EmailService {
               </h2>
 
               <p style="color: #4b5563; margin: 0 0 24px 0; font-size: 16px; line-height: 1.6;">
-                Obrigado por se cadastrar no <strong>LegalConnect</strong>!
+                Obrigado por se cadastrar no <strong>JustApp</strong>!
               </p>
 
               <p style="color: #4b5563; margin: 0 0 24px 0; font-size: 16px; line-height: 1.6;">
@@ -98,7 +98,7 @@ export class EmailService {
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="padding: 20px 0;">
-                    <a href="${activationUrl}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                    <a href="${activationUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                       Ativar Minha Conta
                     </a>
                   </td>
@@ -125,7 +125,7 @@ export class EmailService {
               </table>
 
               <p style="color: #6b7280; margin: 32px 0 0 0; font-size: 14px; line-height: 1.6;">
-                Se você não se cadastrou no LegalConnect, ignore este email.
+                Se você não se cadastrou no JustApp, ignore este email.
               </p>
             </td>
           </tr>
@@ -134,10 +134,10 @@ export class EmailService {
           <tr>
             <td style="background-color: #f9fafb; padding: 32px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #e5e7eb;">
               <p style="color: #6b7280; margin: 0 0 8px 0; font-size: 14px;">
-                LegalConnect - Conexão Inteligente entre Pessoas e Advogados
+                JustApp - Conexão Inteligente entre Pessoas e Advogados
               </p>
               <p style="color: #9ca3af; margin: 0; font-size: 12px;">
-                © ${new Date().getFullYear()} LegalConnect. Todos os direitos reservados.
+                © ${new Date().getFullYear()} JustApp. Todos os direitos reservados.
               </p>
             </td>
           </tr>
@@ -170,16 +170,16 @@ export class EmailService {
 
     try {
       const result = await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'LegalConnect <noreply@legalconnect.com>',
+        from: process.env.EMAIL_FROM || 'JustApp <noreply@justapp.com.br>',
         to: email,
-        subject: 'Bem-vindo ao LegalConnect! 🎉',
+        subject: 'Bem-vindo ao JustApp! 🎉',
         html: `
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bem-vindo - LegalConnect</title>
+  <title>Bem-vindo - JustApp</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
@@ -204,7 +204,7 @@ export class EmailService {
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
-                    <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600;">
+                    <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600;">
                       Acessar Dashboard
                     </a>
                   </td>
