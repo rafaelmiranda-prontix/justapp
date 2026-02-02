@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { MessageSquare } from 'lucide-react'
 import dynamic from 'next/dynamic'
+// import loadingDotsAnimation from '../../../public/animations/loading-dots.json'
 
 const Lottie = dynamic(() => import('lottie-react'), { ssr: false })
 
