@@ -66,9 +66,12 @@ async function removeExampleCases() {
     console.log('\n🗑️  Removendo...')
 
     await prisma.$transaction(async (tx) => {
-      // Coletar todos os matchIds primeiro
+      // Coletar todos os matchIds e casoIds primeiro
       const matchIds: string[] = []
+      const casoIds: string[] = []
+      
       for (const caso of casosExemplo) {
+        casoIds.push(caso.id)
         matchIds.push(...caso.matches.map((m) => m.id))
       }
 
@@ -79,13 +82,11 @@ async function removeExampleCases() {
         })
       }
 
-      // Remover matches
-      for (const caso of casosExemplo) {
-        if (caso.matches.length > 0) {
-          await tx.matches.deleteMany({
-            where: { casoId: caso.id },
-          })
-        }
+      // Remover todos os matches de uma vez
+      if (casoIds.length > 0) {
+        await tx.matches.deleteMany({
+          where: { casoId: { in: casoIds } },
+        })
       }
 
       // Remover casos
@@ -119,17 +120,21 @@ async function removeExampleCases() {
       console.log(`\n👥 Encontrados ${cidadaosSemCasos.length} cidadãos de exemplo sem casos`)
       console.log('   (Cidadãos com casos não serão removidos)')
 
-      if (cidadaosSemCasos.length > 0) {
-        await prisma.$transaction(async (tx) => {
-          for (const cidadao of cidadaosSemCasos) {
-            await tx.users.delete({
-              where: { id: cidadao.userId },
-            })
-          }
+      const userIds = cidadaosSemCasos.map((c) => c.userId)
+
+      await prisma.$transaction(async (tx) => {
+        // Remover cidadãos primeiro (devido a foreign keys)
+        await tx.cidadaos.deleteMany({
+          where: { userId: { in: userIds } },
         })
 
-        console.log(`✅ ${cidadaosSemCasos.length} cidadãos de exemplo removidos`)
-      }
+        // Remover usuários
+        await tx.users.deleteMany({
+          where: { id: { in: userIds } },
+        })
+      })
+
+      console.log(`✅ ${cidadaosSemCasos.length} cidadãos de exemplo removidos`)
     }
 
     console.log('\n🎉 Limpeza concluída!')

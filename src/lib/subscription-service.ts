@@ -147,8 +147,10 @@ export async function canAdvogadoReceiveLead(advogadoId: string): Promise<{
     return { canReceive: true }
   }
 
-  // Verifica limite mensal
+  // Verifica limite mensal (trata -1 como ilimitado)
   if (
+    advogadoAtualizado.leadsLimiteMes !== -1 &&
+    advogadoAtualizado.leadsLimiteMes < 999 &&
     advogadoAtualizado.leadsRecebidosMes >= advogadoAtualizado.leadsLimiteMes
   ) {
     return {

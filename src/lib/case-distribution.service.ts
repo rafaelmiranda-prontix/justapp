@@ -214,8 +214,12 @@ export class CaseDistributionService {
     }> = []
 
     for (const advogado of advogados) {
-      // 1. Verificar limite de leads mensal
-      if (advogado.leadsRecebidosMes >= advogado.leadsLimiteMes) {
+      // 1. Verificar limite de leads mensal (trata -1 e >= 999 como ilimitado)
+      if (
+        advogado.leadsLimiteMes !== -1 &&
+        advogado.leadsLimiteMes < 999 &&
+        advogado.leadsRecebidosMes >= advogado.leadsLimiteMes
+      ) {
         continue
       }
 
@@ -303,8 +307,12 @@ export class CaseDistributionService {
     }> = []
 
     for (const advogado of advogados) {
-      // Verificar limite de leads
-      if (advogado.leadsRecebidosMes >= advogado.leadsLimiteMes) {
+      // Verificar limite de leads (trata -1 e >= 999 como ilimitado)
+      if (
+        advogado.leadsLimiteMes !== -1 &&
+        advogado.leadsLimiteMes < 999 &&
+        advogado.leadsRecebidosMes >= advogado.leadsLimiteMes
+      ) {
         continue
       }
 
@@ -375,8 +383,12 @@ export class CaseDistributionService {
     }> = []
 
     for (const advogado of advogados) {
-      // Verificar limite de leads
-      if (advogado.leadsRecebidosMes >= advogado.leadsLimiteMes) {
+      // Verificar limite de leads (trata -1 e >= 999 como ilimitado)
+      if (
+        advogado.leadsLimiteMes !== -1 &&
+        advogado.leadsLimiteMes < 999 &&
+        advogado.leadsRecebidosMes >= advogado.leadsLimiteMes
+      ) {
         continue
       }
 
@@ -554,8 +566,12 @@ export class CaseDistributionService {
       return { casosDistribuidos: 0, matchesCriados: 0 }
     }
 
-    // Verificar cota de leads mensal
-    if (advogado.leadsRecebidosMes >= advogado.leadsLimiteMes) {
+    // Verificar cota de leads mensal (trata -1 e >= 999 como ilimitado)
+    if (
+      advogado.leadsLimiteMes !== -1 &&
+      advogado.leadsLimiteMes < 999 &&
+      advogado.leadsRecebidosMes >= advogado.leadsLimiteMes
+    ) {
       logger.debug(
         `[Redistribution] Lawyer reached monthly limit (${advogado.leadsRecebidosMes}/${advogado.leadsLimiteMes})`
       )

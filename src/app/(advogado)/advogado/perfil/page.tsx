@@ -577,11 +577,13 @@ export default function AdvogadoPerfilPage() {
                   <p className="text-2xl font-bold">
                     {perfil.leadsRecebidosMes} / {perfil.leadsLimiteMes}
                   </p>
-                  {perfil.leadsRecebidosMes >= perfil.leadsLimiteMes && (
-                    <p className="text-sm text-yellow-600 mt-1">
-                      Limite atingido. Considere fazer upgrade do plano.
-                    </p>
-                  )}
+                  {perfil.leadsLimiteMes !== -1 &&
+                    perfil.leadsLimiteMes < 999 &&
+                    perfil.leadsRecebidosMes >= perfil.leadsLimiteMes && (
+                      <p className="text-sm text-yellow-600 mt-1">
+                        Limite atingido. Considere fazer upgrade do plano.
+                      </p>
+                    )}
                 </div>
               )}
             </div>

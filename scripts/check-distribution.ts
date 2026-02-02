@@ -35,9 +35,15 @@ async function checkDistribution() {
       console.log(`     Cidade/Estado: ${adv.cidade}, ${adv.estado}`)
       console.log(`     Especialidades: ${adv.advogado_especialidades.map(e => e.especialidades.nome).join(', ') || 'Nenhuma'}`)
 
-      // Verificar se tem capacidade
-      if (adv.leadsRecebidosMes >= adv.leadsLimiteMes) {
+      // Verificar se tem capacidade (trata -1 como ilimitado)
+      if (
+        adv.leadsLimiteMes !== -1 &&
+        adv.leadsLimiteMes < 999 &&
+        adv.leadsRecebidosMes >= adv.leadsLimiteMes
+      ) {
         console.log(`     ⚠️  Limite de leads atingido!`)
+      } else if (adv.leadsLimiteMes === -1 || adv.leadsLimiteMes >= 999) {
+        console.log(`     ✅ Plano ilimitado`)
       }
       console.log('')
     }
@@ -139,7 +145,11 @@ async function checkDistribution() {
   // 5. Resumo de diagnóstico
   console.log('\n=== RESUMO DO DIAGNÓSTICO ===')
   console.log(`✓ Advogados ativos: ${advogados.length}`)
-  console.log(`✓ Advogados com capacidade: ${advogados.filter(a => a.leadsRecebidosMes < a.leadsLimiteMes).length}`)
+  console.log(`✓ Advogados com capacidade: ${advogados.filter(a => {
+    // Trata -1 e >= 999 como ilimitado
+    if (a.leadsLimiteMes === -1 || a.leadsLimiteMes >= 999) return true
+    return a.leadsRecebidosMes < a.leadsLimiteMes
+  }).length}`)
   console.log(`✓ Casos ABERTOS: ${casosAbertos.length}`)
   console.log(`✓ Casos PENDENTE_ATIVACAO: ${casosPendentes.length}`)
   console.log(`✓ Matches criados: ${matches.length}`)
@@ -150,7 +160,13 @@ async function checkDistribution() {
     console.log('❌ Não há advogados ativos com onboarding completo')
   }
 
-  if (advogados.filter(a => a.leadsRecebidosMes < a.leadsLimiteMes).length === 0 && advogados.length > 0) {
+  const advogadosComCapacidade = advogados.filter(a => {
+    // Trata -1 e >= 999 como ilimitado
+    if (a.leadsLimiteMes === -1 || a.leadsLimiteMes >= 999) return true
+    return a.leadsRecebidosMes < a.leadsLimiteMes
+  })
+  
+  if (advogadosComCapacidade.length === 0 && advogados.length > 0) {
     console.log('❌ Todos os advogados atingiram o limite de leads')
   }
 
