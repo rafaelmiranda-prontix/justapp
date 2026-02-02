@@ -12,8 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Scale, LogOut, User, Settings, Menu } from 'lucide-react'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Scale, LogOut, User, Menu } from 'lucide-react'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
 interface DashboardHeaderProps {
   mobileNav?: React.ReactNode
@@ -31,6 +31,18 @@ export function DashboardHeader({ mobileNav }: DashboardHeaderProps) {
       .toUpperCase()
   }
 
+  // Determinar o link do perfil baseado no role
+  const getPerfilLink = () => {
+    if (session?.user?.role === 'CIDADAO') {
+      return '/cidadao/perfil'
+    } else if (session?.user?.role === 'ADVOGADO') {
+      return '/advogado/perfil'
+    } else if (session?.user?.role === 'ADMIN') {
+      return '/admin'
+    }
+    return '/'
+  }
+
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
@@ -44,6 +56,9 @@ export function DashboardHeader({ mobileNav }: DashboardHeaderProps) {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-64 p-0">
+                <SheetHeader className="sr-only">
+                  <SheetTitle>Menu de Navegação</SheetTitle>
+                </SheetHeader>
                 {mobileNav}
               </SheetContent>
             </Sheet>
@@ -78,15 +93,9 @@ export function DashboardHeader({ mobileNav }: DashboardHeaderProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/perfil" className="cursor-pointer">
+              <Link href={getPerfilLink()} className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
                 Meu Perfil
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/configuracoes" className="cursor-pointer">
-                <Settings className="mr-2 h-4 w-4" />
-                Configurações
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
