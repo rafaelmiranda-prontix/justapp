@@ -67,11 +67,11 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.supabase.co https://*.supabase.in",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.supabase.co https://*.supabase.in https://www.googletagmanager.com https://*.googletagmanager.com https://*.posthog.com https://us-assets.i.posthog.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https: wss: ws:",
+              "connect-src 'self' https: wss: ws: https://*.supabase.co https://*.supabase.in https://www.google-analytics.com https://*.google-analytics.com https://*.posthog.com https://us-assets.i.posthog.com",
               "media-src 'self' blob: data: https://*.supabase.co https://*.supabase.in",
               "frame-ancestors 'self'",
             ].join('; '),
