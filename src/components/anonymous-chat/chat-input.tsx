@@ -7,6 +7,7 @@ import { useAudioRecorder } from '@/hooks/use-audio-recorder'
 import { useSpeechRecognition } from '@/hooks/use-speech-recognition'
 import { AudioPreview } from '@/components/chat/audio-preview'
 import { Send, Loader2, Mic, Square, X } from 'lucide-react'
+import { clientLogger } from '@/lib/client-logger'
 
 interface ChatInputProps {
   onSend: (message: string, audioUrl?: string) => Promise<void>
@@ -108,7 +109,7 @@ export function ChatInput({ onSend, disabled, sessionId }: ChatInputProps) {
       await onSend(message.trim())
       setMessage('')
     } catch (error) {
-      console.error('Error sending message:', error)
+      clientLogger.error('Error sending message:', error)
     } finally {
       setIsSending(false)
     }
@@ -135,7 +136,7 @@ export function ChatInput({ onSend, disabled, sessionId }: ChatInputProps) {
       const extension = blobType.includes('ogg') ? 'ogg' : blobType.includes('mp4') ? 'mp4' : 'webm'
       const fileName = `audio.${extension}`
       
-      console.log('[ChatInput] Creating audio file:', {
+      clientLogger.log('[ChatInput] Creating audio file:', {
         blobType,
         blobSize: audioBlob.size,
         fileName,
@@ -152,7 +153,7 @@ export function ChatInput({ onSend, disabled, sessionId }: ChatInputProps) {
       }
       formData.append('sessionId', sessionId)
 
-      console.log('[ChatInput] Uploading audio to /api/anonymous/audio...')
+      clientLogger.log('[ChatInput] Uploading audio to /api/anonymous/audio...')
       const uploadResponse = await fetch('/api/anonymous/audio', {
         method: 'POST',
         body: formData,
@@ -160,15 +161,15 @@ export function ChatInput({ onSend, disabled, sessionId }: ChatInputProps) {
 
       if (!uploadResponse.ok) {
         const error = await uploadResponse.json()
-        console.error('[ChatInput] Upload error:', error)
+        clientLogger.error('[ChatInput] Upload error:', error)
         throw new Error(error.error || 'Erro ao fazer upload do áudio')
       }
 
       const uploadData = await uploadResponse.json()
       const audioUrl = uploadData.data.url
 
-      console.log('[ChatInput] Audio uploaded successfully:', audioUrl)
-      console.log('[ChatInput] Sending message with transcript:', transcript || '🎤 Mensagem de áudio')
+      clientLogger.log('[ChatInput] Audio uploaded successfully:', audioUrl)
+      clientLogger.log('[ChatInput] Sending message with transcript:', transcript || '🎤 Mensagem de áudio')
 
       // 2. Enviar mensagem com áudio e transcrição
       await onSend(transcript || '🎤 Mensagem de áudio', audioUrl)
@@ -177,7 +178,7 @@ export function ChatInput({ onSend, disabled, sessionId }: ChatInputProps) {
       handleCancelRecording()
       setAudioUrl(null)
     } catch (error) {
-      console.error('[ChatInput] Error sending audio:', error)
+      clientLogger.error('[ChatInput] Error sending audio:', error)
       alert(error instanceof Error ? error.message : 'Erro ao enviar áudio')
     } finally {
       setIsSending(false)

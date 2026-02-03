@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ChatMessage } from '@/lib/anonymous-session.service'
 import { trackEvent, AnalyticsEvents } from '@/lib/analytics'
+import { clientLogger } from '@/lib/client-logger'
 
 const SESSION_STORAGE_KEY = 'anonymous_session_id'
 
@@ -41,7 +42,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
   // Função para carregar estado completo da sessão
   const loadSessionState = useCallback(async (sessionIdToLoad: string) => {
     try {
-      console.log('[Hook] Loading session state for:', sessionIdToLoad)
+      clientLogger.log('[Hook] Loading session state for:', sessionIdToLoad)
       // Buscar sessão via API para obter estado completo
       const response = await fetch(`/api/anonymous/session?sessionId=${sessionIdToLoad}`)
       if (response.ok) {
@@ -49,12 +50,12 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
         if (data.success && data.data) {
           // Se uma nova sessão foi criada (sessão antiga não encontrada)
           if (data.data.isNewSession && data.data.sessionId !== sessionIdToLoad) {
-            console.log('[Hook] New session created, updating sessionId:', data.data.sessionId)
+            clientLogger.log('[Hook] New session created, updating sessionId:', data.data.sessionId)
             setSessionId(data.data.sessionId)
             localStorage.setItem(SESSION_STORAGE_KEY, data.data.sessionId)
           }
 
-          console.log('[Hook] Session data loaded:', {
+          clientLogger.log('[Hook] Session data loaded:', {
             mensagens: data.data.mensagens?.length || 0,
             shouldCaptureLeadData: data.data.shouldCaptureLeadData,
             especialidade: data.data.especialidadeDetectada,
@@ -70,7 +71,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
           
           // Verificar se deve mostrar formulário de captura
           if (data.data.shouldCaptureLeadData) {
-            console.log('[Hook] Setting shouldCaptureLeadData to true')
+            clientLogger.log('[Hook] Setting shouldCaptureLeadData to true')
             setShouldCaptureLeadData(true)
             setExtractedData({
               especialidade: data.data.especialidadeDetectada,
@@ -84,10 +85,10 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
           }
         }
       } else {
-        console.warn('[Hook] Failed to load session state:', response.status)
+        clientLogger.warn('[Hook] Failed to load session state:', response.status)
       }
     } catch (error) {
-      console.error('[Hook] Error loading session state:', error)
+      clientLogger.error('[Hook] Error loading session state:', error)
       // Não falhar silenciosamente - apenas logar o erro
     }
   }, [])
@@ -96,12 +97,12 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
   useEffect(() => {
     const storedSessionId = localStorage.getItem(SESSION_STORAGE_KEY)
     if (storedSessionId) {
-      console.log('[Hook] Found stored sessionId on mount:', storedSessionId)
+      clientLogger.log('[Hook] Found stored sessionId on mount:', storedSessionId)
       setSessionId(storedSessionId)
       // Carregar estado completo da sessão imediatamente
       // Isso garante que o formulário apareça após reload da página
       loadSessionState(storedSessionId).catch((error) => {
-        console.error('[Hook] Error loading session state on mount:', error)
+        clientLogger.error('[Hook] Error loading session state on mount:', error)
       })
     }
   }, [loadSessionState])
@@ -118,7 +119,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
 
       if (!response.ok) {
         const text = await response.text()
-        console.error('Session creation failed:', text)
+        clientLogger.error('Session creation failed:', text)
         throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}`)
       }
 
@@ -153,7 +154,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
       try {
         await createSession()
       } catch (error) {
-        console.error('Failed to create session:', error)
+        clientLogger.error('Failed to create session:', error)
         alert('Erro ao iniciar conversa. Tente novamente.')
         return
       }
@@ -177,7 +178,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
   const sendMessage = useCallback(
     async (message: string, audioUrl?: string) => {
       if (!sessionId) {
-        console.error('No session ID')
+        clientLogger.error('No session ID')
         return
       }
 
@@ -208,7 +209,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
 
         if (!response.ok) {
           const text = await response.text()
-          console.error('Message send failed:', text)
+          clientLogger.error('Message send failed:', text)
           throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}`)
         }
 
@@ -250,7 +251,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
           throw new Error(data.error || 'Erro ao enviar mensagem')
         }
       } catch (error) {
-        console.error('Error sending message:', error)
+        clientLogger.error('Error sending message:', error)
         // Remover mensagem do usuário em caso de erro
         setMessages((prev) => prev.filter((m) => m !== userMessage))
         alert('Erro ao enviar mensagem. Tente novamente.')
@@ -265,7 +266,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
   const submitLeadData = useCallback(
     async (data: { name: string; email: string; phone?: string; cidade?: string; estado?: string }) => {
       if (!sessionId) {
-        console.error('No session ID')
+        clientLogger.error('No session ID')
         throw new Error('Sessão não encontrada')
       }
 
@@ -283,7 +284,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
 
         if (!response.ok) {
           const text = await response.text()
-          console.error('Lead submission failed:', text)
+          clientLogger.error('Lead submission failed:', text)
           
           // Tentar parsear JSON para obter mensagem de erro mais específica
           let errorMessage = `Erro ao enviar dados (${response.status})`
@@ -333,7 +334,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
           throw new Error(result.error || 'Erro ao registrar lead')
         }
       } catch (error) {
-        console.error('Error submitting lead:', error)
+        clientLogger.error('Error submitting lead:', error)
         // NÃO limpar shouldCaptureLeadData em caso de erro
         // O formulário deve permanecer visível para permitir reenvio
         throw error
@@ -358,7 +359,7 @@ export function useAnonymousChat(): UseAnonymousChatReturn {
     try {
       await createSession()
     } catch (error) {
-      console.error('Failed to create new session after reset:', error)
+      clientLogger.error('Failed to create new session after reset:', error)
       // Não mostrar erro ao usuário, apenas logar
     }
   }, [createSession])

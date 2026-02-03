@@ -6,6 +6,13 @@ const nextConfig = {
   swcMinify: true,
   compress: true,
   
+  // Remover console.log em produção
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'], // Manter apenas error e warn em produção
+    } : false,
+  },
+  
   // Images
   images: {
     domains: ['localhost'],

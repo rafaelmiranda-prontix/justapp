@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Play, Pause, X, Send, RotateCcw } from 'lucide-react'
+import { clientLogger } from '@/lib/client-logger'
 
 interface AudioPreviewProps {
   audioBlob: Blob
@@ -28,7 +29,7 @@ export function AudioPreview({
   useEffect(() => {
     // Verificar se o blob tem um tipo válido
     if (!audioBlob || audioBlob.size === 0) {
-      console.error('[AudioPreview] Invalid audio blob:', audioBlob)
+      clientLogger.error('[AudioPreview] Invalid audio blob:', audioBlob)
       return
     }
 
@@ -56,7 +57,7 @@ export function AudioPreview({
         const loadMetadata = () => {
           if (audioRef.current && audioRef.current.duration && !isNaN(audioRef.current.duration) && isFinite(audioRef.current.duration)) {
             setDuration(audioRef.current.duration)
-            console.log('[AudioPreview] Duration loaded:', audioRef.current.duration)
+            clientLogger.log('[AudioPreview] Duration loaded:', audioRef.current.duration)
           }
         }
         
@@ -79,9 +80,9 @@ export function AudioPreview({
           }
         }
       } catch (error) {
-        console.error('[AudioPreview] Error loading audio:', error)
-        console.error('[AudioPreview] Blob type:', audioBlob.type)
-        console.error('[AudioPreview] Blob size:', audioBlob.size)
+        clientLogger.error('[AudioPreview] Error loading audio:', error)
+        clientLogger.error('[AudioPreview] Blob type:', audioBlob.type)
+        clientLogger.error('[AudioPreview] Blob size:', audioBlob.size)
       }
     }
 
@@ -105,9 +106,9 @@ export function AudioPreview({
           setIsPlaying(true)
         }
       } catch (error) {
-        console.error('[AudioPreview] Error playing audio:', error)
-        console.error('[AudioPreview] Audio src:', audioRef.current.src)
-        console.error('[AudioPreview] Audio readyState:', audioRef.current.readyState)
+        clientLogger.error('[AudioPreview] Error playing audio:', error)
+        clientLogger.error('[AudioPreview] Audio src:', audioRef.current.src)
+        clientLogger.error('[AudioPreview] Audio readyState:', audioRef.current.readyState)
         alert('Erro ao reproduzir áudio. O formato pode não ser suportado pelo navegador.')
         setIsPlaying(false)
       }
@@ -125,9 +126,9 @@ export function AudioPreview({
       const dur = audioRef.current.duration
       if (dur && !isNaN(dur) && isFinite(dur) && dur > 0 && dur !== Infinity) {
         setDuration(dur)
-        console.log('[AudioPreview] Metadata loaded, duration:', dur)
+        clientLogger.log('[AudioPreview] Metadata loaded, duration:', dur)
       } else {
-        console.warn('[AudioPreview] Invalid duration:', dur)
+        clientLogger.warn('[AudioPreview] Invalid duration:', dur)
         // Tentar obter duração de outra forma
         if (audioRef.current.readyState >= 2) {
           // Se o áudio já está carregado, tentar obter duração novamente
@@ -147,7 +148,7 @@ export function AudioPreview({
       const dur = audioRef.current.duration
       if (dur && !isNaN(dur) && isFinite(dur) && dur > 0 && dur !== Infinity) {
         setDuration(dur)
-        console.log('[AudioPreview] Can play, duration:', dur)
+        clientLogger.log('[AudioPreview] Can play, duration:', dur)
       }
     }
   }
@@ -157,7 +158,7 @@ export function AudioPreview({
       const dur = audioRef.current.duration
       if (dur && !isNaN(dur) && isFinite(dur) && dur > 0 && dur !== Infinity) {
         setDuration(dur)
-        console.log('[AudioPreview] Duration changed:', dur)
+        clientLogger.log('[AudioPreview] Duration changed:', dur)
       }
     }
   }
@@ -174,7 +175,7 @@ export function AudioPreview({
   }
 
   const handleSendClick = () => {
-    console.log('[AudioPreview] Transcript:', transcript)
+    clientLogger.log('[AudioPreview] Transcript:', transcript)
     onSend()
   }
 
@@ -253,13 +254,13 @@ export function AudioPreview({
         onDurationChange={handleDurationChange}
         onEnded={handleEnded}
         onError={(e) => {
-          console.error('[AudioPreview] Audio element error:', e)
+          clientLogger.error('[AudioPreview] Audio element error:', e)
           const audio = e.currentTarget
-          console.error('[AudioPreview] Error code:', audio.error?.code)
-          console.error('[AudioPreview] Error message:', audio.error?.message)
-          console.error('[AudioPreview] Audio src:', audio.src)
-          console.error('[AudioPreview] Audio networkState:', audio.networkState)
-          console.error('[AudioPreview] Audio readyState:', audio.readyState)
+          clientLogger.error('[AudioPreview] Error code:', audio.error?.code)
+          clientLogger.error('[AudioPreview] Error message:', audio.error?.message)
+          clientLogger.error('[AudioPreview] Audio src:', audio.src)
+          clientLogger.error('[AudioPreview] Audio networkState:', audio.networkState)
+          clientLogger.error('[AudioPreview] Audio readyState:', audio.readyState)
         }}
         preload="auto"
         style={{ display: 'none' }}

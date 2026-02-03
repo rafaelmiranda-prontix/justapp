@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { clientLogger } from '@/lib/client-logger'
 
 interface UseAudioRecorderReturn {
   isRecording: boolean
@@ -97,7 +98,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 
       // Tratamento de erros do MediaRecorder
       mediaRecorder.onerror = (event: any) => {
-        console.error('MediaRecorder error:', event)
+        clientLogger.error('MediaRecorder error:', event)
         setError('Erro durante a gravação. Tente novamente.')
         setIsRecording(false)
         if (timerRef.current) {
@@ -115,7 +116,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         setRecordingTime((prev) => prev + 1)
       }, 1000)
     } catch (err: any) {
-      console.error('Error starting recording:', err)
+      clientLogger.error('Error starting recording:', err)
       
       let errorMessage = 'Erro ao iniciar gravação. Verifique se seu navegador suporta gravação de áudio.'
       
