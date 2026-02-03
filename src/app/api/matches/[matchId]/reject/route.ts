@@ -98,6 +98,9 @@ export async function POST(
     let redistributionResult = null
     if (match.casos && match.casos.status === 'ABERTO') {
       try {
+        logger.info(
+          `[Match] Attempting to redistribute case ${match.casos.id} after rejection by lawyer ${match.advogados.id}`
+        )
         redistributionResult = await CaseDistributionService.redistributeCaseAfterRejection(
           match.casos.id,
           match.advogados.id
@@ -105,17 +108,21 @@ export async function POST(
 
         if (redistributionResult.redistributed) {
           logger.info(
-            `[Match] Case ${match.casos.id} redistributed after rejection. Created ${redistributionResult.matchesCreated} new matches.`
+            `[Match] ✅ Case ${match.casos.id} redistributed successfully. Created ${redistributionResult.matchesCreated} new matches.`
           )
         } else {
-          logger.debug(
-            `[Match] Case ${match.casos.id} not redistributed: ${redistributionResult.reason}`
+          logger.warn(
+            `[Match] ⚠️ Case ${match.casos.id} not redistributed: ${redistributionResult.reason || 'Unknown reason'}`
           )
         }
       } catch (error: any) {
-        logger.error(`[Match] Error redistributing case after rejection:`, error)
+        logger.error(`[Match] ❌ Error redistributing case after rejection:`, error)
         // Não falha a request, apenas loga o erro
       }
+    } else {
+      logger.debug(
+        `[Match] Case ${match.casos?.id} not redistributed: status is ${match.casos?.status || 'unknown'} (must be ABERTO)`
+      )
     }
 
     return NextResponse.json({

@@ -54,13 +54,37 @@ export class CaseDistributionService {
     const minScore = await ConfigService.get<number>('min_match_score', 60)
     const expirationHours = await ConfigService.get<number>('match_expiration_hours', 48)
 
+    // Buscar todos os matches existentes para este caso (para excluir advogados que já têm match)
+    const matchesExistentes = await prisma.matches.findMany({
+      where: { casoId: caso.id },
+      select: { advogadoId: true, status: true },
+    })
+    const advogadosComMatch = new Set(matchesExistentes.map((m) => m.advogadoId))
+    
+    // Buscar advogados que já recusaram este caso
+    const advogadosQueRecusaram = matchesExistentes
+      .filter((m) => m.status === 'RECUSADO')
+      .map((m) => m.advogadoId)
+    const advogadosRecusadosSet = new Set(advogadosQueRecusaram)
+
+    logger.debug(
+      `[Distribution] Case ${casoId} has ${matchesExistentes.length} existing matches, ${advogadosQueRecusaram.length} rejected`
+    )
+
     // Buscar advogados compatíveis
     const advogadosCompativeis = await this.findCompatibleLawyers(caso, minScore)
 
-    logger.debug(`[Distribution] Found ${advogadosCompativeis.length} compatible lawyers`)
+    // Filtrar advogados que já têm match ou que recusaram
+    const advogadosDisponiveis = advogadosCompativeis.filter(
+      (adv) => !advogadosComMatch.has(adv.id) && !advogadosRecusadosSet.has(adv.id)
+    )
+
+    logger.debug(
+      `[Distribution] Found ${advogadosCompativeis.length} compatible lawyers, ${advogadosDisponiveis.length} available (after filtering)`
+    )
 
     // Limitar ao máximo configurado
-    const advogadosParaMatch = advogadosCompativeis.slice(0, maxMatches)
+    const advogadosParaMatch = advogadosDisponiveis.slice(0, maxMatches)
 
     // Criar matches
     const expiresAt = new Date()
@@ -70,7 +94,7 @@ export class CaseDistributionService {
 
     for (const advogado of advogadosParaMatch) {
       try {
-        // Verificar se já existe match
+        // Verificar se já existe match (verificação adicional de segurança)
         const existingMatch = await prisma.matches.findUnique({
           where: {
             casoId_advogadoId: {
@@ -597,14 +621,11 @@ export class CaseDistributionService {
       }
     }
 
-    // 2. Buscar casos ABERTOS sem matches
+    // 2. Buscar casos ABERTOS sem matches ativos OU apenas com matches RECUSADOS/EXPIRADOS
     // Se aceitaOutrosEstados = true, busca todos os estados
     // Se aceitaOutrosEstados = false, busca apenas mesmo estado
     const whereClause: any = {
       status: 'ABERTO',
-      matches: {
-        none: {}, // Casos sem nenhum match
-      },
     }
 
     if (!advogado.aceitaOutrosEstados) {
@@ -615,19 +636,78 @@ export class CaseDistributionService {
     }
     // Se aceitaOutrosEstados = true, não filtra por estado (busca todos)
 
-    const casosOrfaos = await prisma.casos.findMany({
+    const todosCasos = await prisma.casos.findMany({
       where: whereClause,
       include: {
         cidadaos: true,
         especialidades: true,
+        matches: {
+          include: {
+            advogados: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
         createdAt: 'asc', // Casos mais antigos primeiro
       },
     })
 
+    // Filtrar casos que precisam redistribuição:
+    // - Sem matches
+    // - Apenas com matches RECUSADOS ou EXPIRADOS
+    // - Com matches ativos mas ainda pode receber mais (dentro do limite) E não tem aceitos
+    const maxRedistributions = await ConfigService.getMaxRedistributionsPerCase()
+    const maxMatches = await ConfigService.get<number>('max_matches_per_caso', 5)
+
+    const casosOrfaos = todosCasos.filter((caso) => {
+      const matchesAtivos = caso.matches.filter(
+        (m) =>
+          (m.status === 'PENDENTE' ||
+            m.status === 'VISUALIZADO' ||
+            m.status === 'ACEITO' ||
+            m.status === 'CONTRATADO') &&
+          (!m.expiresAt || m.expiresAt > new Date())
+      )
+      const matchesRecusados = caso.matches.filter((m) => m.status === 'RECUSADO')
+      const matchesAceitos = caso.matches.filter(
+        (m) => m.status === 'ACEITO' || m.status === 'CONTRATADO'
+      )
+
+      // Verificar se o advogado já tem match com este caso (qualquer status)
+      const advogadoJaTemMatch = caso.matches.some((m) => m.advogados.id === advogadoId)
+      if (advogadoJaTemMatch) {
+        return false // Advogado já tem match com este caso
+      }
+
+      // Caso precisa redistribuição se:
+      // 1. Não tem matches ativos E (não tem matches ou só tem recusados/expirados)
+      // 2. Tem matches ativos mas ainda pode receber mais (dentro do limite) E não tem aceitos
+      const semMatchesAtivos = matchesAtivos.length === 0
+      const soMatchesRecusadosOuExpirados =
+        caso.matches.length > 0 &&
+        caso.matches.every(
+          (m) =>
+            m.status === 'RECUSADO' ||
+            m.status === 'EXPIRADO' ||
+            (m.expiresAt && m.expiresAt <= new Date())
+        )
+      const podeReceberMais =
+        matchesAtivos.length < maxMatches &&
+        matchesAceitos.length === 0 &&
+        caso.redistribuicoes < maxRedistributions
+
+      return (
+        (semMatchesAtivos && (caso.matches.length === 0 || soMatchesRecusadosOuExpirados)) ||
+        (podeReceberMais && matchesRecusados.length > 0)
+      )
+    })
+
     logger.debug(
-      `[Redistribution] Found ${casosOrfaos.length} orphan cases in state ${advogado.estado}`
+      `[Redistribution] Found ${casosOrfaos.length} cases needing redistribution in state ${advogado.estado}`
     )
 
     if (casosOrfaos.length === 0) {
@@ -796,7 +876,9 @@ export class CaseDistributionService {
       // Verificar quantos matches ativos o caso já tem
       const maxMatches = await ConfigService.get<number>('max_matches_per_caso', 5)
       const matchesAtivos = caso.matches.filter(
-        (m) => m.status === 'PENDENTE' || m.status === 'VISUALIZADO'
+        (m) => 
+          (m.status === 'PENDENTE' || m.status === 'VISUALIZADO' || m.status === 'ACEITO' || m.status === 'CONTRATADO') &&
+          (!m.expiresAt || m.expiresAt > new Date())
       )
 
       if (matchesAtivos.length >= maxMatches) {
@@ -811,18 +893,44 @@ export class CaseDistributionService {
       }
 
       // Buscar advogados compatíveis, excluindo:
-      // 1. O advogado que recusou
-      // 2. Advogados que já têm match com este caso
-      const advogadosComMatch = new Set(
-        caso.matches.map((m) => m.advogadoId).filter((id) => id !== advogadoRecusouId)
-      )
+      // 1. O advogado que recusou (neste momento)
+      // 2. Advogados que já têm match ATIVO com este caso (PENDENTE, VISUALIZADO, ACEITO, CONTRATADO)
+      // 3. Advogados que já recusaram este caso anteriormente
+      
+      // Buscar matches ativos (não recusados, não expirados)
+      const matchesAtivosIds = caso.matches
+        .filter((m) => 
+          m.status !== 'RECUSADO' && 
+          m.status !== 'EXPIRADO' &&
+          (!m.expiresAt || m.expiresAt > new Date())
+        )
+        .map((m) => m.advogadoId)
+      const advogadosComMatchAtivo = new Set(matchesAtivosIds)
+      
+      // Buscar todos os advogados que já recusaram este caso (incluindo o que acabou de recusar)
+      const advogadosQueRecusaram = await prisma.matches.findMany({
+        where: {
+          casoId: caso.id,
+          status: 'RECUSADO',
+        },
+        select: {
+          advogadoId: true,
+        },
+      })
+      const advogadosRecusadosSet = new Set(advogadosQueRecusaram.map((m) => m.advogadoId))
 
       const minScore = await ConfigService.get<number>('min_match_score', 60)
       const allCompatibleLawyers = await this.findCompatibleLawyers(caso, minScore)
 
-      // Filtrar advogados que já têm match ou que recusaram
+      // Filtrar advogados que:
+      // - Já têm match ATIVO com este caso (PENDENTE, VISUALIZADO, ACEITO, CONTRATADO)
+      // - Já recusaram este caso anteriormente
+      // - É o advogado que acabou de recusar
       const advogadosDisponiveis = allCompatibleLawyers.filter(
-        (adv) => adv.id !== advogadoRecusouId && !advogadosComMatch.has(adv.id)
+        (adv) => 
+          adv.id !== advogadoRecusouId && 
+          !advogadosComMatchAtivo.has(adv.id) &&
+          !advogadosRecusadosSet.has(adv.id)
       )
 
       if (advogadosDisponiveis.length === 0) {
@@ -847,6 +955,23 @@ export class CaseDistributionService {
 
       for (const advogado of advogadosParaMatch) {
         try {
+          // Verificar se já existe match (verificação adicional de segurança)
+          const existingMatch = await prisma.matches.findUnique({
+            where: {
+              casoId_advogadoId: {
+                casoId: caso.id,
+                advogadoId: advogado.id,
+              },
+            },
+          })
+
+          if (existingMatch) {
+            logger.debug(
+              `[Redistribution] Match already exists for case ${casoId} and lawyer ${advogado.id}`
+            )
+            continue
+          }
+
           const match = await prisma.matches.create({
             data: {
               id: nanoid(),
@@ -859,13 +984,27 @@ export class CaseDistributionService {
             },
           })
 
+          // Incrementar contador de leads do advogado (redistribuição também conta como lead)
+          await prisma.advogados.update({
+            where: { id: advogado.id },
+            data: {
+              leadsRecebidosMes: {
+                increment: 1,
+              },
+              casosRecebidosHora: {
+                increment: 1,
+              },
+              updatedAt: new Date(),
+            },
+          })
+
           matchesCreated++
-          logger.debug(
-            `[Redistribution] Created match ${match.id} for case ${casoId} and lawyer ${advogado.id}`
+          logger.info(
+            `[Redistribution] ✅ Created match ${match.id} for case ${casoId} and lawyer ${advogado.id} (score: ${advogado.matchScore})`
           )
         } catch (error: any) {
           logger.error(
-            `[Redistribution] Failed to create match for lawyer ${advogado.id}:`,
+            `[Redistribution] ❌ Failed to create match for lawyer ${advogado.id}:`,
             error
           )
         }
