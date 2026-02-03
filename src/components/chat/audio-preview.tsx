@@ -26,28 +26,91 @@ export function AudioPreview({
   const audioUrlRef = useRef<string>('')
 
   useEffect(() => {
+    // Verificar se o blob tem um tipo válido
+    if (!audioBlob || audioBlob.size === 0) {
+      console.error('[AudioPreview] Invalid audio blob:', audioBlob)
+      return
+    }
+
+    // Resetar estados
+    setDuration(0)
+    setCurrentTime(0)
+    setIsPlaying(false)
+
     // Criar URL do blob de áudio
     const url = URL.createObjectURL(audioBlob)
     audioUrlRef.current = url
 
     if (audioRef.current) {
+      // Limpar src anterior se existir
+      audioRef.current.src = ''
+      
+      // Definir novo src
       audioRef.current.src = url
+      
+      // Carregar o áudio
+      try {
+        audioRef.current.load()
+        
+        // Tentar carregar metadata de forma assíncrona
+        const loadMetadata = () => {
+          if (audioRef.current && audioRef.current.duration && !isNaN(audioRef.current.duration) && isFinite(audioRef.current.duration)) {
+            setDuration(audioRef.current.duration)
+            console.log('[AudioPreview] Duration loaded:', audioRef.current.duration)
+          }
+        }
+        
+        // Tentar múltiplas vezes para garantir que a metadata seja carregada
+        audioRef.current.addEventListener('loadedmetadata', loadMetadata)
+        audioRef.current.addEventListener('canplay', loadMetadata)
+        audioRef.current.addEventListener('durationchange', loadMetadata)
+        
+        // Timeout para tentar carregar após um delay
+        const timeout = setTimeout(() => {
+          loadMetadata()
+        }, 100)
+        
+        return () => {
+          clearTimeout(timeout)
+          if (audioRef.current) {
+            audioRef.current.removeEventListener('loadedmetadata', loadMetadata)
+            audioRef.current.removeEventListener('canplay', loadMetadata)
+            audioRef.current.removeEventListener('durationchange', loadMetadata)
+          }
+        }
+      } catch (error) {
+        console.error('[AudioPreview] Error loading audio:', error)
+        console.error('[AudioPreview] Blob type:', audioBlob.type)
+        console.error('[AudioPreview] Blob size:', audioBlob.size)
+      }
     }
 
     // Cleanup
     return () => {
+      if (audioRef.current) {
+        audioRef.current.src = ''
+      }
       URL.revokeObjectURL(url)
     }
   }, [audioBlob])
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause()
-      } else {
-        audioRef.current.play()
+      try {
+        if (isPlaying) {
+          audioRef.current.pause()
+          setIsPlaying(false)
+        } else {
+          await audioRef.current.play()
+          setIsPlaying(true)
+        }
+      } catch (error) {
+        console.error('[AudioPreview] Error playing audio:', error)
+        console.error('[AudioPreview] Audio src:', audioRef.current.src)
+        console.error('[AudioPreview] Audio readyState:', audioRef.current.readyState)
+        alert('Erro ao reproduzir áudio. O formato pode não ser suportado pelo navegador.')
+        setIsPlaying(false)
       }
-      setIsPlaying(!isPlaying)
     }
   }
 
@@ -59,7 +122,33 @@ export function AudioPreview({
 
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
-      setDuration(audioRef.current.duration)
+      const dur = audioRef.current.duration
+      if (dur && !isNaN(dur) && isFinite(dur)) {
+        setDuration(dur)
+        console.log('[AudioPreview] Metadata loaded, duration:', dur)
+      } else {
+        console.warn('[AudioPreview] Invalid duration:', dur)
+      }
+    }
+  }
+  
+  const handleCanPlay = () => {
+    if (audioRef.current) {
+      const dur = audioRef.current.duration
+      if (dur && !isNaN(dur) && isFinite(dur) && dur > 0) {
+        setDuration(dur)
+        console.log('[AudioPreview] Can play, duration:', dur)
+      }
+    }
+  }
+  
+  const handleDurationChange = () => {
+    if (audioRef.current) {
+      const dur = audioRef.current.duration
+      if (dur && !isNaN(dur) && isFinite(dur) && dur > 0) {
+        setDuration(dur)
+        console.log('[AudioPreview] Duration changed:', dur)
+      }
     }
   }
 
@@ -102,7 +191,7 @@ export function AudioPreview({
               />
             </div>
             <span className="text-xs text-green-700 dark:text-green-400 font-mono min-w-[40px]">
-              {formatTime(currentTime)}
+              {formatTime(currentTime)} / {formatTime(duration || 0)}
             </span>
           </div>
           {transcript ? (
@@ -150,7 +239,19 @@ export function AudioPreview({
         ref={audioRef}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
+        onCanPlay={handleCanPlay}
+        onDurationChange={handleDurationChange}
         onEnded={handleEnded}
+        onError={(e) => {
+          console.error('[AudioPreview] Audio element error:', e)
+          const audio = e.currentTarget
+          console.error('[AudioPreview] Error code:', audio.error?.code)
+          console.error('[AudioPreview] Error message:', audio.error?.message)
+          console.error('[AudioPreview] Audio src:', audio.src)
+          console.error('[AudioPreview] Audio networkState:', audio.networkState)
+          console.error('[AudioPreview] Audio readyState:', audio.readyState)
+        }}
+        preload="auto"
         style={{ display: 'none' }}
       />
     </div>

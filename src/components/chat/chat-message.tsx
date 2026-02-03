@@ -54,7 +54,19 @@ export function ChatMessage({ role, content, timestamp, audioUrl }: ChatMessageP
         >
           {audioUrl && (
             <div className="mb-2">
-              <audio controls className="w-full max-w-xs" src={audioUrl}>
+              <audio
+                controls
+                className="w-full max-w-xs"
+                src={audioUrl}
+                onError={(e) => {
+                  console.error('[ChatMessage] Audio element error:', e)
+                  const audio = e.currentTarget
+                  console.error('[ChatMessage] Error code:', audio.error?.code)
+                  console.error('[ChatMessage] Error message:', audio.error?.message)
+                  console.error('[ChatMessage] Audio src:', audio.src)
+                }}
+                preload="metadata"
+              >
                 Seu navegador não suporta áudio.
               </audio>
             </div>

@@ -137,8 +137,20 @@ export function ChatInput({
     try {
       // 1. Fazer upload do áudio para Supabase
       const formData = new FormData()
-      const audioFile = new File([audioBlob], 'audio.webm', {
-        type: 'audio/webm;codecs=opus',
+      
+      // Usar o tipo MIME do blob original (já detectado pelo hook)
+      const blobType = audioBlob.type || 'audio/webm'
+      const extension = blobType.includes('ogg') ? 'ogg' : blobType.includes('mp4') ? 'mp4' : 'webm'
+      const fileName = `audio.${extension}`
+      
+      console.log('[ChatInput] Creating audio file:', {
+        blobType,
+        blobSize: audioBlob.size,
+        fileName,
+      })
+      
+      const audioFile = new File([audioBlob], fileName, {
+        type: blobType,
       })
       formData.append('audio', audioFile)
       
@@ -146,6 +158,7 @@ export function ChatInput({
       const uploadId = casoId || `temp-${Date.now()}`
       formData.append('casoId', uploadId)
 
+      console.log('[ChatInput] Uploading audio to /api/casos/audio...')
       const uploadResponse = await fetch('/api/casos/audio', {
         method: 'POST',
         body: formData,
@@ -153,13 +166,15 @@ export function ChatInput({
 
       if (!uploadResponse.ok) {
         const error = await uploadResponse.json()
+        console.error('[ChatInput] Upload error:', error)
         throw new Error(error.error || 'Erro ao fazer upload do áudio')
       }
 
       const uploadData = await uploadResponse.json()
       const audioUrl = uploadData.data.url
 
-      console.log('[ChatInput] Audio uploaded:', audioUrl)
+      console.log('[ChatInput] Audio uploaded successfully:', audioUrl)
+      console.log('[ChatInput] Sending message with transcript:', transcript || '🎤 Mensagem de áudio')
 
       // 2. Enviar mensagem com áudio e transcrição
       await onSend(transcript || '🎤 Mensagem de áudio', audioUrl)

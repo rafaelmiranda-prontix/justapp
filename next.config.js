@@ -61,7 +61,7 @@ const nextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self)',
+            value: 'camera=(self), microphone=(self), geolocation=(self)',
           },
           {
             key: 'Content-Security-Policy',
@@ -72,6 +72,7 @@ const nextConfig = {
               "img-src 'self' data: https:",
               "font-src 'self' data:",
               "connect-src 'self' https:",
+              "media-src 'self' blob: data:",
               "frame-ancestors 'self'",
             ].join('; '),
           },

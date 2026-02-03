@@ -74,7 +74,11 @@ export function AnonymousChatSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col">
+      <SheetContent 
+        side="right" 
+        className="w-full sm:max-w-lg p-0 flex flex-col"
+        aria-describedby="chat-description"
+      >
         {/* Header */}
         <SheetHeader className="p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
           <div className="flex items-center gap-3">
@@ -85,6 +89,9 @@ export function AnonymousChatSheet({
             </Avatar>
             <div className="flex-1">
               <SheetTitle className="text-left">Assistente Legal</SheetTitle>
+              <p id="chat-description" className="sr-only">
+                Chat para conversar com o assistente jurídico e obter ajuda com questões legais
+              </p>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />

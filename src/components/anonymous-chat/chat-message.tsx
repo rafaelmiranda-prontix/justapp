@@ -22,18 +22,38 @@ export function ChatMessage({ message }: ChatMessageProps) {
 
   useEffect(() => {
     if (message.audioUrl && audioRef.current) {
+      // Limpar src anterior
+      audioRef.current.src = ''
+      
+      // Definir novo src
       audioRef.current.src = message.audioUrl
+      
+      // Carregar o áudio
+      try {
+        audioRef.current.load()
+      } catch (error) {
+        console.error('[ChatMessage] Error loading audio:', error)
+        console.error('[ChatMessage] Audio URL:', message.audioUrl)
+      }
     }
   }, [message.audioUrl])
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause()
-      } else {
-        audioRef.current.play()
+      try {
+        if (isPlaying) {
+          audioRef.current.pause()
+          setIsPlaying(false)
+        } else {
+          await audioRef.current.play()
+          setIsPlaying(true)
+        }
+      } catch (error) {
+        console.error('[ChatMessage] Error playing audio:', error)
+        console.error('[ChatMessage] Audio src:', audioRef.current.src)
+        alert('Erro ao reproduzir áudio. O formato pode não ser suportado pelo navegador.')
+        setIsPlaying(false)
       }
-      setIsPlaying(!isPlaying)
     }
   }
 
