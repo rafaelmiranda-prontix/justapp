@@ -15,6 +15,7 @@ import { LeadStats } from '@/components/advogado/lead-stats'
 import { LeadFilters } from '@/components/advogado/lead-filters'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { JustAppLoading } from '@/components/ui/justapp-loading'
 
 interface Match {
   id: string
@@ -428,10 +429,8 @@ export default function AdvogadoDashboardPage() {
 
         <TabsContent value="pendentes" className="mt-6">
           {isLoading ? (
-            <div className="grid md:grid-cols-2 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-[300px]" />
-              ))}
+            <div className="py-16">
+              <JustAppLoading size="lg" text="Carregando seus leads..." />
             </div>
           ) : pendingMatches.length === 0 ? (
             <Card>

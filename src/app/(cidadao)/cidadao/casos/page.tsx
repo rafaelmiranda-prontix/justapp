@@ -12,6 +12,7 @@ import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
 import { CasoStats } from '@/components/cidadao/caso-stats'
 import { CasoFilters } from '@/components/cidadao/caso-filters'
+import { JustAppLoading } from '@/components/ui/justapp-loading'
 
 interface Caso {
   id: string
@@ -168,10 +169,8 @@ export default function MeusCasosPage() {
         <div>
           <h2 className="text-xl font-semibold mb-4">Casos Ativos</h2>
           {isLoading ? (
-            <div className="space-y-4">
-              {[...Array(2)].map((_, i) => (
-                <Skeleton key={i} className="h-[300px]" />
-              ))}
+            <div className="py-16">
+              <JustAppLoading size="lg" text="Carregando seus casos..." />
             </div>
           ) : activeCasos.length === 0 ? (
             <Card>

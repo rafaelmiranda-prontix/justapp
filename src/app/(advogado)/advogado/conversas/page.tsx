@@ -10,6 +10,7 @@ import { MessageSquare, Search, Clock, User } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
+import { JustAppLoading } from '@/components/ui/justapp-loading'
 
 interface Conversation {
   id: string
@@ -108,10 +109,8 @@ export default function ConversasPage() {
 
       {/* Lista de conversas */}
       {isLoading ? (
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
+        <div className="py-16">
+          <JustAppLoading size="lg" text="Carregando suas conversas..." />
         </div>
       ) : filteredConversations.length === 0 ? (
         <Card>

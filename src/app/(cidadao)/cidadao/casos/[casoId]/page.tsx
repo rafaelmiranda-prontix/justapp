@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { CaseDetails } from '@/components/casos/case-details'
 import { ArrowLeft, AlertCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { JustAppLoading } from '@/components/ui/justapp-loading'
 
 export default function CidadaoCasoDetailsPage() {
   const params = useParams()
@@ -44,12 +45,7 @@ export default function CidadaoCasoDetailsPage() {
   if (isLoading) {
     return (
       <div className="container max-w-4xl py-8">
-        <Skeleton className="h-10 w-32 mb-6" />
-        <div className="space-y-6">
-          <Skeleton className="h-[200px]" />
-          <Skeleton className="h-[300px]" />
-          <Skeleton className="h-[400px]" />
-        </div>
+        <JustAppLoading size="lg" text="Carregando detalhes do caso..." fullScreen={false} />
       </div>
     )
   }
