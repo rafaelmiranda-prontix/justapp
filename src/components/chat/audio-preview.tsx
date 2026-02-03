@@ -123,11 +123,21 @@ export function AudioPreview({
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       const dur = audioRef.current.duration
-      if (dur && !isNaN(dur) && isFinite(dur)) {
+      if (dur && !isNaN(dur) && isFinite(dur) && dur > 0 && dur !== Infinity) {
         setDuration(dur)
         console.log('[AudioPreview] Metadata loaded, duration:', dur)
       } else {
         console.warn('[AudioPreview] Invalid duration:', dur)
+        // Tentar obter duração de outra forma
+        if (audioRef.current.readyState >= 2) {
+          // Se o áudio já está carregado, tentar obter duração novamente
+          setTimeout(() => {
+            const newDur = audioRef.current?.duration
+            if (newDur && !isNaN(newDur) && isFinite(newDur) && newDur > 0 && newDur !== Infinity) {
+              setDuration(newDur)
+            }
+          }, 100)
+        }
       }
     }
   }
@@ -135,7 +145,7 @@ export function AudioPreview({
   const handleCanPlay = () => {
     if (audioRef.current) {
       const dur = audioRef.current.duration
-      if (dur && !isNaN(dur) && isFinite(dur) && dur > 0) {
+      if (dur && !isNaN(dur) && isFinite(dur) && dur > 0 && dur !== Infinity) {
         setDuration(dur)
         console.log('[AudioPreview] Can play, duration:', dur)
       }
@@ -145,7 +155,7 @@ export function AudioPreview({
   const handleDurationChange = () => {
     if (audioRef.current) {
       const dur = audioRef.current.duration
-      if (dur && !isNaN(dur) && isFinite(dur) && dur > 0) {
+      if (dur && !isNaN(dur) && isFinite(dur) && dur > 0 && dur !== Infinity) {
         setDuration(dur)
         console.log('[AudioPreview] Duration changed:', dur)
       }
