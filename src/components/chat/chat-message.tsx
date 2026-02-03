@@ -7,9 +7,10 @@ export interface ChatMessageProps {
   role: MessageRole
   content: string
   timestamp?: Date
+  audioUrl?: string
 }
 
-export function ChatMessage({ role, content, timestamp }: ChatMessageProps) {
+export function ChatMessage({ role, content, timestamp, audioUrl }: ChatMessageProps) {
   const isUser = role === 'user'
   const isSystem = role === 'system'
 
@@ -25,7 +26,7 @@ export function ChatMessage({ role, content, timestamp }: ChatMessageProps) {
 
   return (
     <div
-      className={cn('flex gap-3 mb-4', isUser ? 'flex-row-reverse' : 'flex-row')}
+      className={cn('flex gap-3 mb-4 min-w-0', isUser ? 'flex-row-reverse' : 'flex-row')}
     >
       {/* Avatar */}
       <div
@@ -42,16 +43,23 @@ export function ChatMessage({ role, content, timestamp }: ChatMessageProps) {
       </div>
 
       {/* Message Content */}
-      <div className={cn('flex flex-col gap-1', isUser ? 'items-end' : 'items-start')}>
+      <div className={cn('flex flex-col gap-1 min-w-0 flex-1', isUser ? 'items-end' : 'items-start')}>
         <div
           className={cn(
-            'max-w-[80%] rounded-2xl px-4 py-2',
+            'max-w-[80%] rounded-2xl px-4 py-2 min-w-0',
             isUser
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted text-foreground'
           )}
         >
-          <p className="text-sm whitespace-pre-wrap break-words">{content}</p>
+          {audioUrl && (
+            <div className="mb-2">
+              <audio controls className="w-full max-w-xs" src={audioUrl}>
+                Seu navegador não suporta áudio.
+              </audio>
+            </div>
+          )}
+          <p className="text-sm whitespace-pre-wrap break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{content}</p>
         </div>
         {timestamp && (
           <span className="text-xs text-muted-foreground px-2">

@@ -45,9 +45,13 @@ export function useCaseChat() {
   }, [])
 
   const handleUserResponse = useCallback(
-    async (content: string) => {
+    async (content: string, audioUrl?: string) => {
       // Adiciona mensagem do usuário
-      addMessage({ role: 'user', content })
+      addMessage({ 
+        role: 'user', 
+        content,
+        audioUrl,
+      })
 
       // Processa baseado na etapa atual
       switch (currentStep) {
@@ -56,11 +60,14 @@ export function useCaseChat() {
           setIsAnalyzing(true)
 
           try {
-            // Analisa com IA
+            // Analisa com IA (pode incluir áudio)
             const res = await fetch('/api/ai/analyze', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ description: content }),
+              body: JSON.stringify({ 
+                description: content,
+                audioUrl: audioUrl,
+              }),
             })
 
             const result = await res.json()
