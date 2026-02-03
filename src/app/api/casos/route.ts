@@ -38,7 +38,7 @@ export async function GET() {
         matches: {
           where: {
             status: {
-              not: 'RECUSADO', // Não incluir matches recusados
+              in: ['ACEITO', 'CONTRATADO'], // Cidadão só vê advogados que aceitaram
             },
           },
           include: {

@@ -167,7 +167,7 @@ export async function GET(req: Request) {
             cidadaoId: cidadao.id,
           },
           status: {
-            not: 'RECUSADO', // Não mostrar matches recusados para o cidadão
+            in: ['ACEITO', 'CONTRATADO'], // Cidadão só vê advogados que aceitaram
           },
         },
         include: {

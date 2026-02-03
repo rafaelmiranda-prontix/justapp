@@ -3,7 +3,11 @@ import { hash } from 'bcryptjs'
 import { nanoid } from 'nanoid'
 
 async function seedLawyers() {
-  console.log('🌱 Criando advogados de teste...\n')
+  // Verificar se deve criar apenas 1 advogado
+  const count = process.env.COUNT ? parseInt(process.env.COUNT) : process.argv[2] ? parseInt(process.argv[2]) : undefined
+  const createOnlyOne = count === 1
+
+  console.log(`🌱 Criando ${createOnlyOne ? '1 advogado' : 'advogados'} de teste...\n`)
 
   // Buscar especialidades existentes
   const especialidades = await prisma.especialidades.findMany()
@@ -78,7 +82,10 @@ async function seedLawyers() {
   // Senha padrão: "senha123"
   const defaultPassword = await hash('senha123', 10)
 
-  for (const lawyer of lawyers) {
+  // Se criar apenas 1, usar apenas o primeiro
+  const lawyersToCreate = createOnlyOne ? [lawyers[0]] : lawyers
+
+  for (const lawyer of lawyersToCreate) {
     // Verificar se já existe
     const existing = await prisma.users.findUnique({
       where: { email: lawyer.email },

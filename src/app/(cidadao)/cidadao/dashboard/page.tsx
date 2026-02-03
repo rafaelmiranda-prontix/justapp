@@ -270,7 +270,7 @@ export default function CidadaoDashboardPage() {
                     </div>
 
                     {/* Mensagem de busca ativa de advogados */}
-                    {caso.podeSerRedistribuido && caso.status === 'ABERTO' && (
+                    {caso.podeSerRedistribuido && caso.status === 'ABERTO' && caso.matches.length === 0 && (
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
                         <div className="flex items-start gap-3">
                           <div className="p-2 bg-blue-100 rounded-full">
@@ -289,13 +289,13 @@ export default function CidadaoDashboardPage() {
                     )}
 
                     {/* Conexões com Advogados */}
-                    {caso.matches.filter((m) => m.status !== 'RECUSADO').length > 0 && (
+                    {caso.matches.length > 0 && (
                       <div>
                         <p className="text-sm font-medium mb-2">
-                          Advogados Contatados ({caso.matches.filter((m) => m.status !== 'RECUSADO').length}):
+                          Advogados ({caso.matches.length}):
                         </p>
                         <div className="space-y-2">
-                          {caso.matches.filter((m) => m.status !== 'RECUSADO').map((match) => (
+                          {caso.matches.map((match) => (
                             <div
                               key={match.id}
                               className="flex items-center justify-between p-3 bg-muted rounded-lg"
@@ -315,27 +315,21 @@ export default function CidadaoDashboardPage() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Badge
-                                  variant={match.status === 'ACEITO' ? 'default' : 'secondary'}
-                                >
-                                  {matchStatusLabels[match.status]}
+                                <Badge variant="default">
+                                  Aceito
                                 </Badge>
-                                {match.status === 'ACEITO' && (
-                                  <>
-                                    <Button size="sm" asChild>
-                                      <Link href={`/chat/${match.id}`}>
-                                        <MessageSquare className="h-4 w-4 mr-2" />
-                                        Chat
-                                      </Link>
-                                    </Button>
-                                    {caso.status === 'FECHADO' && (
-                                      <Button size="sm" variant="outline" asChild>
-                                        <Link href={`/casos/${caso.id}/avaliar?matchId=${match.id}`}>
-                                          Avaliar
-                                        </Link>
-                                      </Button>
-                                    )}
-                                  </>
+                                <Button size="sm" asChild>
+                                  <Link href={`/chat/${match.id}`}>
+                                    <MessageSquare className="h-4 w-4 mr-2" />
+                                    Chat
+                                  </Link>
+                                </Button>
+                                {caso.status === 'FECHADO' && (
+                                  <Button size="sm" variant="outline" asChild>
+                                    <Link href={`/casos/${caso.id}/avaliar?matchId=${match.id}`}>
+                                      Avaliar
+                                    </Link>
+                                  </Button>
                                 )}
                               </div>
                             </div>

@@ -53,11 +53,8 @@ export default function ConversasPage() {
       const result = await res.json()
 
       if (result.success) {
-        // Filtrar apenas matches aceitos (que têm conversas ativas)
-        const activeMatches = result.data.filter(
-          (m: any) => m.status === 'ACEITO' || m.status === 'CONTRATADO'
-        )
-        setConversations(activeMatches)
+        // API já retorna apenas matches aceitos
+        setConversations(result.data)
       }
     } catch (error) {
       console.error('Error fetching conversations:', error)
