@@ -1,11 +1,16 @@
 #!/usr/bin/env tsx
 
 /**
- * Script para criar 100 casos de exemplo
+ * Script para criar casos de exemplo
  * 
  * Casos são marcados com:
  * - Prefixo "[EXEMPLO]" na descricao
  * - sessionId com padrão "EXAMPLE_..."
+ * 
+ * Uso:
+ *   npm run seed:examples          # Cria 100 casos (padrão)
+ *   CASOS=1 npm run seed:examples   # Cria 1 caso
+ *   CASOS=10 npm run seed:examples  # Cria 10 casos
  * 
  * Para remover: npm run seed:remove-examples
  */
@@ -141,7 +146,20 @@ const localizacoes = [
 ]
 
 async function seedExampleCases() {
-  console.log('🌱 Criando 100 casos de exemplo...\n')
+  // Permite definir quantidade via variável de ambiente ou argumento
+  const casosCount = process.env.CASOS 
+    ? parseInt(process.env.CASOS, 10) 
+    : process.argv[2] 
+      ? parseInt(process.argv[2], 10)
+      : 100
+
+  if (isNaN(casosCount) || casosCount < 1) {
+    console.log('❌ Quantidade inválida. Use um número maior que 0.')
+    console.log('   Exemplo: CASOS=1 npm run seed:examples')
+    process.exit(1)
+  }
+
+  console.log(`🌱 Criando ${casosCount} caso${casosCount > 1 ? 's' : ''} de exemplo...\n`)
 
   try {
     // Buscar especialidades existentes
@@ -157,11 +175,13 @@ async function seedExampleCases() {
       especialidades.map((esp) => [esp.nome, esp])
     )
 
-    // Criar ou buscar cidadãos de exemplo
-    console.log('👥 Criando/buscando cidadãos de exemplo...')
+    // Criar ou buscar cidadãos de exemplo (ajustar quantidade baseado em casosCount)
+    const cidadaosNecessarios = casosCount <= 1 ? 1 : Math.min(20, Math.ceil(casosCount / 5))
+    
+    console.log(`👥 Criando/buscando ${cidadaosNecessarios} cidadão${cidadaosNecessarios > 1 ? 's' : ''} de exemplo...`)
     const cidadaosExemplo: string[] = []
 
-    for (let i = 1; i <= 20; i++) {
+    for (let i = 1; i <= cidadaosNecessarios; i++) {
       const email = `exemplo.cidadao${i}@example.com`
       const localizacao = localizacoes[i % localizacoes.length]
 
@@ -215,12 +235,12 @@ async function seedExampleCases() {
 
     console.log(`✅ ${cidadaosExemplo.length} cidadãos de exemplo prontos\n`)
 
-    // Criar 100 casos
+    // Criar casos
     console.log('📋 Criando casos de exemplo...')
     let created = 0
     let errors = 0
 
-    for (let i = 1; i <= 100; i++) {
+    for (let i = 1; i <= casosCount; i++) {
       try {
         // Selecionar template aleatório
         const template = casoTemplates[i % casoTemplates.length]
@@ -264,8 +284,10 @@ async function seedExampleCases() {
 
         created++
 
-        if (i % 10 === 0) {
-          console.log(`   ✅ ${i}/100 casos criados...`)
+        if (casosCount > 10 && i % 10 === 0) {
+          console.log(`   ✅ ${i}/${casosCount} casos criados...`)
+        } else if (casosCount <= 10) {
+          console.log(`   ✅ Caso ${i}/${casosCount} criado`)
         }
       } catch (error) {
         console.error(`   ❌ Erro ao criar caso ${i}:`, error)
@@ -276,7 +298,7 @@ async function seedExampleCases() {
     console.log('\n' + '='.repeat(60))
     console.log('📊 RESUMO')
     console.log('='.repeat(60))
-    console.log(`✅ Casos criados: ${created}/100`)
+    console.log(`✅ Casos criados: ${created}/${casosCount}`)
     console.log(`❌ Erros: ${errors}`)
     console.log(`\n📌 Casos marcados com: "${EXAMPLE_MARKER}" na descrição`)
     console.log(`📌 SessionIds com prefixo: "${EXAMPLE_SESSION_PREFIX}"`)

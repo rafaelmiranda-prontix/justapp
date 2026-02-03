@@ -62,6 +62,48 @@ async function removeExampleCases() {
     console.log(`   - Matches associados: ${totalMatches}`)
     console.log(`   - Mensagens associadas: ${totalMensagens}`)
 
+    // Buscar cidadãos de exemplo ANTES de remover casos para verificar se têm casos reais
+    const cidadaosExemplo = await prisma.cidadaos.findMany({
+      where: {
+        users: {
+          email: { startsWith: EXAMPLE_EMAIL_PREFIX },
+        },
+      },
+      include: {
+        casos: {
+          select: {
+            id: true,
+            descricao: true,
+            sessionId: true,
+          },
+        },
+        users: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+    })
+
+    // Separar cidadãos que têm apenas casos de exemplo dos que têm casos reais
+    const cidadaosParaRemover: typeof cidadaosExemplo = []
+    const cidadaosComCasosReais: typeof cidadaosExemplo = []
+
+    for (const cidadao of cidadaosExemplo) {
+      // Verificar se tem casos que NÃO são de exemplo
+      const temCasosReais = cidadao.casos.some((caso) => {
+        return !caso.descricao?.startsWith(EXAMPLE_MARKER) && 
+               !caso.sessionId?.startsWith(EXAMPLE_SESSION_PREFIX)
+      })
+
+      if (temCasosReais) {
+        cidadaosComCasosReais.push(cidadao)
+      } else {
+        cidadaosParaRemover.push(cidadao)
+      }
+    }
+
     // Remover em transação
     console.log('\n🗑️  Removendo...')
 
@@ -102,25 +144,11 @@ async function removeExampleCases() {
 
     console.log(`✅ ${casosExemplo.length} casos removidos com sucesso`)
 
-    // Perguntar se quer remover cidadãos de exemplo também
-    const cidadaosExemplo = await prisma.cidadaos.findMany({
-      where: {
-        users: {
-          email: { startsWith: EXAMPLE_EMAIL_PREFIX },
-        },
-      },
-      include: {
-        casos: true,
-      },
-    })
-
-    const cidadaosSemCasos = cidadaosExemplo.filter((c) => c.casos.length === 0)
-
-    if (cidadaosSemCasos.length > 0) {
-      console.log(`\n👥 Encontrados ${cidadaosSemCasos.length} cidadãos de exemplo sem casos`)
-      console.log('   (Cidadãos com casos não serão removidos)')
-
-      const userIds = cidadaosSemCasos.map((c) => c.userId)
+    // Remover cidadãos de exemplo (apenas os que não têm casos reais)
+    if (cidadaosParaRemover.length > 0) {
+      console.log(`\n👥 Removendo ${cidadaosParaRemover.length} cidadão${cidadaosParaRemover.length > 1 ? 's' : ''} de exemplo...`)
+      
+      const userIds = cidadaosParaRemover.map((c) => c.userId)
 
       await prisma.$transaction(async (tx) => {
         // Remover cidadãos primeiro (devido a foreign keys)
@@ -134,7 +162,13 @@ async function removeExampleCases() {
         })
       })
 
-      console.log(`✅ ${cidadaosSemCasos.length} cidadãos de exemplo removidos`)
+      console.log(`✅ ${cidadaosParaRemover.length} cidadão${cidadaosParaRemover.length > 1 ? 's' : ''} de exemplo removido${cidadaosParaRemover.length > 1 ? 's' : ''}`)
+    }
+
+    if (cidadaosComCasosReais.length > 0) {
+      console.log(`\n⚠️  ${cidadaosComCasosReais.length} cidadão${cidadaosComCasosReais.length > 1 ? 's' : ''} de exemplo mantido${cidadaosComCasosReais.length > 1 ? 's' : ''} (possuem casos reais não de exemplo)`)
+    } else if (cidadaosExemplo.length === 0) {
+      console.log('\n✅ Nenhum cidadão de exemplo encontrado')
     }
 
     console.log('\n🎉 Limpeza concluída!')
