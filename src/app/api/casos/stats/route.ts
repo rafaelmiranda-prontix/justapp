@@ -27,6 +27,11 @@ export async function GET() {
       },
       include: {
         matches: {
+          where: {
+            status: {
+              not: 'RECUSADO', // Não incluir matches recusados nas estatísticas
+            },
+          },
           include: {
             advogados: {
               select: {

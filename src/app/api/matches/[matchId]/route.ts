@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { CaseDistributionService } from '@/lib/case-distribution.service'
+import { logger } from '@/lib/logger'
 
 const updateMatchSchema = z.object({
   status: z.enum(['ACEITO', 'RECUSADO']),
@@ -32,6 +34,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ matchI
         casos: {
           select: {
             id: true,
+            status: true,
+            redistribuicoes: true,
           },
         },
       },
@@ -61,6 +65,29 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ matchI
         where: { id: match.casos.id },
         data: { status: 'EM_ANDAMENTO' },
       })
+    }
+
+    // Se recusado, tentar redistribuir o caso
+    if (status === 'RECUSADO' && match.casos.status === 'ABERTO') {
+      try {
+        const redistributionResult = await CaseDistributionService.redistributeCaseAfterRejection(
+          match.casos.id,
+          match.advogados.id
+        )
+
+        if (redistributionResult.redistributed) {
+          logger.info(
+            `[Match] Case ${match.casos.id} redistributed after rejection via PATCH. Created ${redistributionResult.matchesCreated} new matches.`
+          )
+        } else {
+          logger.debug(
+            `[Match] Case ${match.casos.id} not redistributed via PATCH: ${redistributionResult.reason}`
+          )
+        }
+      } catch (error: any) {
+        logger.error(`[Match] Error redistributing case after rejection via PATCH:`, error)
+        // Não falha a request, apenas loga o erro
+      }
     }
 
     // TODO: Enviar notificação para o cidadão

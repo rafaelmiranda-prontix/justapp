@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Plus, FileText, MessageSquare, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Plus, FileText, MessageSquare, Clock, CheckCircle, XCircle, AlertCircle, Search } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
@@ -20,6 +20,9 @@ interface Caso {
   status: 'ABERTO' | 'EM_ANDAMENTO' | 'FECHADO' | 'CANCELADO'
   urgencia: 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE'
   createdAt: string
+  redistribuicoes?: number
+  podeSerRedistribuido?: boolean
+  maxRedistributions?: number
   especialidade: {
     nome: string
   } | null
@@ -267,14 +270,33 @@ export default function CidadaoDashboardPage() {
                       </p>
                     </div>
 
+                    {/* Mensagem de busca ativa de advogados */}
+                    {caso.podeSerRedistribuido && caso.status === 'ABERTO' && (
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 bg-blue-100 rounded-full">
+                            <Search className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-blue-900 mb-1">
+                              Estamos buscando o advogado ideal para você
+                            </p>
+                            <p className="text-xs text-blue-700">
+                              Estamos buscando advogados compatíveis com o seu caso. Você será notificado assim que encontrarmos as melhores opções.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Conexões com Advogados */}
-                    {caso.matches.length > 0 && (
+                    {caso.matches.filter((m) => m.status !== 'RECUSADO').length > 0 && (
                       <div>
                         <p className="text-sm font-medium mb-2">
-                          Advogados Contatados ({caso.matches.length}):
+                          Advogados Contatados ({caso.matches.filter((m) => m.status !== 'RECUSADO').length}):
                         </p>
                         <div className="space-y-2">
-                          {caso.matches.map((match) => (
+                          {caso.matches.filter((m) => m.status !== 'RECUSADO').map((match) => (
                             <div
                               key={match.id}
                               className="flex items-center justify-between p-3 bg-muted rounded-lg"

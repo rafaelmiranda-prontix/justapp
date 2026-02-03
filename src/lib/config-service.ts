@@ -204,6 +204,13 @@ export class ConfigService {
   static async isReviewCommentRequired(): Promise<boolean> {
     return this.get<boolean>('require_review_comment', false)
   }
+
+  /**
+   * Retorna o número máximo de redistribuições permitidas por caso
+   */
+  static async getMaxRedistributionsPerCase(): Promise<number> {
+    return this.get<number>('max_redistributions_per_case', 3)
+  }
 }
 
 // Exporta instância padrão e helpers individuais

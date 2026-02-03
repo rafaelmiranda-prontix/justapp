@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { CaseDistributionService } from '@/lib/case-distribution.service'
 
 /**
  * POST /api/matches/[matchId]/reject
@@ -23,8 +24,19 @@ export async function POST(
     }
 
     const { matchId } = await params
-    const body = await request.json()
-    const { motivo } = body // Motivo opcional da recusa
+    
+    // Parse body opcional (pode estar vazio)
+    let motivo: string | undefined
+    try {
+      const text = await request.text()
+      if (text) {
+        const body = JSON.parse(text)
+        motivo = body.motivo
+      }
+    } catch (error) {
+      // Body vazio ou inválido - não é problema, motivo é opcional
+      motivo = undefined
+    }
 
     // Buscar match
     const match = await prisma.matches.findUnique({
@@ -33,6 +45,13 @@ export async function POST(
         advogados: {
           include: {
             users: true,
+          },
+        },
+        casos: {
+          select: {
+            id: true,
+            status: true,
+            redistribuicoes: true,
           },
         },
       },
@@ -70,13 +89,34 @@ export async function POST(
       },
     })
 
-    console.log(`[Match] Match ${matchId} rejected by lawyer ${match.advogados.id}`)
+    logger.info(`[Match] Match ${matchId} rejected by lawyer ${match.advogados.id}`)
     if (motivo) {
-      console.log(`[Match] Rejection reason: ${motivo}`)
+      logger.info(`[Match] Rejection reason: ${motivo}`)
     }
 
-    // TODO: Se configurado, podemos criar novo match com outro advogado
-    // para substituir este que foi recusado
+    // Tentar redistribuir o caso se ainda estiver aberto
+    let redistributionResult = null
+    if (match.casos && match.casos.status === 'ABERTO') {
+      try {
+        redistributionResult = await CaseDistributionService.redistributeCaseAfterRejection(
+          match.casos.id,
+          match.advogados.id
+        )
+
+        if (redistributionResult.redistributed) {
+          logger.info(
+            `[Match] Case ${match.casos.id} redistributed after rejection. Created ${redistributionResult.matchesCreated} new matches.`
+          )
+        } else {
+          logger.debug(
+            `[Match] Case ${match.casos.id} not redistributed: ${redistributionResult.reason}`
+          )
+        }
+      } catch (error: any) {
+        logger.error(`[Match] Error redistributing case after rejection:`, error)
+        // Não falha a request, apenas loga o erro
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -84,6 +124,8 @@ export async function POST(
         matchId: updatedMatch.id,
         status: updatedMatch.status,
         respondidoEm: updatedMatch.respondidoEm,
+        redistributed: redistributionResult?.redistributed || false,
+        newMatchesCreated: redistributionResult?.matchesCreated || 0,
       },
     })
   } catch (error: any) {

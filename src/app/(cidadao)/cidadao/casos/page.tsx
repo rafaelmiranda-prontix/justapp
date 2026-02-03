@@ -20,6 +20,9 @@ interface Caso {
   status: 'ABERTO' | 'EM_ANDAMENTO' | 'FECHADO' | 'CANCELADO'
   urgencia: 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE'
   createdAt: string
+  redistribuicoes?: number
+  podeSerRedistribuido?: boolean
+  maxRedistributions?: number
   especialidades: {
     nome: string
   } | null
@@ -223,6 +226,26 @@ export default function MeusCasosPage() {
                       <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                         {caso.descricao}
                       </p>
+
+                      {/* Mensagem de busca ativa de advogados */}
+                      {caso.podeSerRedistribuido && caso.status === 'ABERTO' && (
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-4">
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 bg-blue-100 rounded-full">
+                              <Search className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-semibold text-blue-900 mb-1">
+                                Estamos buscando o advogado ideal para você
+                              </p>
+                              <p className="text-xs text-blue-700">
+                                Estamos buscando advogados compatíveis com o seu caso. Você será notificado assim que encontrarmos as melhores opções.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {acceptedMatch && (
                         <div className="flex items-center justify-between pt-4 border-t">
                           <div className="flex items-center gap-2">

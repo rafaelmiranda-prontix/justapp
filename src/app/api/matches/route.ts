@@ -166,6 +166,9 @@ export async function GET(req: Request) {
           casos: {
             cidadaoId: cidadao.id,
           },
+          status: {
+            not: 'RECUSADO', // Não mostrar matches recusados para o cidadão
+          },
         },
         include: {
           advogados: {
@@ -229,6 +232,34 @@ export async function GET(req: Request) {
         orderBy: {
           enviadoEm: 'desc',
         },
+      })
+
+      // Para matches recusados, ocultar informações sensíveis do caso
+      matches = matches.map((match) => {
+        if (match.status === 'RECUSADO') {
+          return {
+            ...match,
+            casos: {
+              id: match.casos.id,
+              status: match.casos.status,
+              // Remover todas as outras informações do caso
+              descricao: null as any,
+              descricaoIA: null as any,
+              conversaHistorico: null as any,
+              especialidadeId: null as any,
+              urgencia: null as any,
+              complexidade: null as any,
+              sessionId: null as any,
+              redistribuicoes: null as any,
+              createdAt: null as any,
+              updatedAt: null as any,
+              cidadaoId: match.casos.cidadaoId,
+              cidadaos: null as any,
+              especialidades: null as any,
+            },
+          } as any
+        }
+        return match
       })
     } else {
       return NextResponse.json({ error: 'Role inválido' }, { status: 400 })

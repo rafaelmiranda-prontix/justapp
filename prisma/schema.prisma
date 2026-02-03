@@ -122,6 +122,7 @@ model casos {
   complexidade       Int             @default(1)
   status             CasoStatus      @default(PENDENTE_ATIVACAO)
   sessionId          String?         @unique
+  redistribuicoes    Int             @default(0) // Contador de redistribuições após recusas
   createdAt          DateTime        @default(now())
   updatedAt          DateTime
   cidadaos           cidadaos        @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)

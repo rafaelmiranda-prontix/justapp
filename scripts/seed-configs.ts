@@ -34,6 +34,13 @@ async function seedConfigs() {
       descricao: 'Expirar matches automaticamente via cron job',
       categoria: 'matching',
     },
+    {
+      chave: 'max_redistributions_per_case',
+      valor: '3',
+      tipo: 'NUMBER' as const,
+      descricao: 'Número máximo de redistribuições permitidas para um caso após recusas',
+      categoria: 'matching',
+    },
 
     // === PLANOS / LEADS ===
     // REMOVIDO: Limites agora são gerenciados pela tabela 'planos'

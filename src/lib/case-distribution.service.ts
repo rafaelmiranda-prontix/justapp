@@ -730,4 +730,171 @@ export class CaseDistributionService {
 
     return advogadosParaResetar.length
   }
+
+  /**
+   * Redistribui um caso específico após recusa
+   * Verifica se o caso ainda pode ser redistribuído (dentro do limite configurado)
+   * e cria novos matches excluindo o advogado que recusou
+   */
+  static async redistributeCaseAfterRejection(
+    casoId: string,
+    advogadoRecusouId: string
+  ): Promise<{
+    redistributed: boolean
+    matchesCreated: number
+    reason?: string
+  }> {
+    try {
+      // Buscar caso
+      const caso = await prisma.casos.findUnique({
+        where: { id: casoId },
+        include: {
+          cidadaos: {
+            include: {
+              users: true,
+            },
+          },
+          especialidades: true,
+          matches: {
+            include: {
+              advogados: true,
+            },
+          },
+        },
+      })
+
+      if (!caso) {
+        return {
+          redistributed: false,
+          matchesCreated: 0,
+          reason: 'Caso não encontrado',
+        }
+      }
+
+      // Verificar se o caso está aberto
+      if (caso.status !== 'ABERTO') {
+        return {
+          redistributed: false,
+          matchesCreated: 0,
+          reason: `Caso não está aberto (status: ${caso.status})`,
+        }
+      }
+
+      // Verificar limite de redistribuições
+      const maxRedistributions = await ConfigService.getMaxRedistributionsPerCase()
+      if (caso.redistribuicoes >= maxRedistributions) {
+        logger.debug(
+          `[Redistribution] Case ${casoId} reached max redistributions (${caso.redistribuicoes}/${maxRedistributions})`
+        )
+        return {
+          redistributed: false,
+          matchesCreated: 0,
+          reason: `Limite de redistribuições atingido (${caso.redistribuicoes}/${maxRedistributions})`,
+        }
+      }
+
+      // Verificar quantos matches ativos o caso já tem
+      const maxMatches = await ConfigService.get<number>('max_matches_per_caso', 5)
+      const matchesAtivos = caso.matches.filter(
+        (m) => m.status === 'PENDENTE' || m.status === 'VISUALIZADO'
+      )
+
+      if (matchesAtivos.length >= maxMatches) {
+        logger.debug(
+          `[Redistribution] Case ${casoId} already has ${matchesAtivos.length} active matches (max: ${maxMatches})`
+        )
+        return {
+          redistributed: false,
+          matchesCreated: 0,
+          reason: `Caso já possui ${matchesAtivos.length} matches ativos (máximo: ${maxMatches})`,
+        }
+      }
+
+      // Buscar advogados compatíveis, excluindo:
+      // 1. O advogado que recusou
+      // 2. Advogados que já têm match com este caso
+      const advogadosComMatch = new Set(
+        caso.matches.map((m) => m.advogadoId).filter((id) => id !== advogadoRecusouId)
+      )
+
+      const minScore = await ConfigService.get<number>('min_match_score', 60)
+      const allCompatibleLawyers = await this.findCompatibleLawyers(caso, minScore)
+
+      // Filtrar advogados que já têm match ou que recusaram
+      const advogadosDisponiveis = allCompatibleLawyers.filter(
+        (adv) => adv.id !== advogadoRecusouId && !advogadosComMatch.has(adv.id)
+      )
+
+      if (advogadosDisponiveis.length === 0) {
+        logger.debug(`[Redistribution] No available lawyers for case ${casoId}`)
+        return {
+          redistributed: false,
+          matchesCreated: 0,
+          reason: 'Nenhum advogado disponível para redistribuição',
+        }
+      }
+
+      // Limitar ao máximo de matches restantes
+      const slotsDisponiveis = maxMatches - matchesAtivos.length
+      const advogadosParaMatch = advogadosDisponiveis.slice(0, slotsDisponiveis)
+
+      // Criar novos matches
+      const expirationHours = await ConfigService.get<number>('match_expiration_hours', 48)
+      const expiresAt = new Date()
+      expiresAt.setHours(expiresAt.getHours() + expirationHours)
+
+      let matchesCreated = 0
+
+      for (const advogado of advogadosParaMatch) {
+        try {
+          const match = await prisma.matches.create({
+            data: {
+              id: nanoid(),
+              casoId: caso.id,
+              advogadoId: advogado.id,
+              score: advogado.matchScore,
+              distanciaKm: advogado.distanciaKm,
+              status: 'PENDENTE',
+              expiresAt,
+            },
+          })
+
+          matchesCreated++
+          logger.debug(
+            `[Redistribution] Created match ${match.id} for case ${casoId} and lawyer ${advogado.id}`
+          )
+        } catch (error: any) {
+          logger.error(
+            `[Redistribution] Failed to create match for lawyer ${advogado.id}:`,
+            error
+          )
+        }
+      }
+
+      // Incrementar contador de redistribuições
+      await prisma.casos.update({
+        where: { id: casoId },
+        data: {
+          redistribuicoes: caso.redistribuicoes + 1,
+          updatedAt: new Date(),
+        },
+      })
+
+      logger.info(
+        `[Redistribution] Case ${casoId} redistributed (${caso.redistribuicoes + 1}/${maxRedistributions}). Created ${matchesCreated} new matches.`
+      )
+
+      return {
+        redistributed: true,
+        matchesCreated,
+      }
+    } catch (error: any) {
+      logger.error(`[Redistribution] Error redistributing case ${casoId}:`, error)
+      return {
+        redistributed: false,
+        matchesCreated: 0,
+        reason: error.message || 'Erro ao redistribuir caso',
+      }
+    }
+  }
 }

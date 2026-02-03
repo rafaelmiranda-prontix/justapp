@@ -181,66 +181,110 @@ export default function AdvogadoDashboardPage() {
   const acceptedMatches = filteredMatches.filter((m) => m.status === 'ACEITO')
   const rejectedMatches = filteredMatches.filter((m) => m.status === 'RECUSADO')
 
-  const renderMatchCard = (match: Match) => (
-    <Card key={match.id} className="hover:shadow-lg transition-shadow">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <CardTitle className="text-lg line-clamp-1">
-                {match.casos.descricao.substring(0, 60) + '...'}
-              </CardTitle>
-              <Badge
-                variant={match.status === 'ACEITO' ? 'default' : 'secondary'}
-                className="ml-auto"
-              >
-                {statusLabels[match.status]}
-              </Badge>
+  const renderMatchCard = (match: Match) => {
+    // Se o match foi recusado, mostrar apenas ID e data
+    if (match.status === 'RECUSADO') {
+      return (
+        <Card key={match.id} className="hover:shadow-lg transition-shadow opacity-75">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <CardTitle className="text-lg">Caso #{match.casos.id}</CardTitle>
+                  <Badge variant="secondary" className="ml-auto">
+                    {statusLabels[match.status]}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    Recusado {match.respondidoEm 
+                      ? formatDistanceToNow(new Date(match.respondidoEm), {
+                          addSuffix: true,
+                          locale: ptBR,
+                        })
+                      : 'recentemente'}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                {formatDistanceToNow(new Date(match.enviadoEm), {
-                  addSuffix: true,
-                  locale: ptBR,
-                })}
-              </span>
-              {match.casos.cidadaos.cidade && (
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground italic">
+              Informações do caso não estão mais disponíveis após a recusa.
+            </p>
+          </CardContent>
+        </Card>
+      )
+    }
+
+    // Renderização normal para outros status
+    return (
+      <Card key={match.id} className="hover:shadow-lg transition-shadow">
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <CardTitle className="text-lg line-clamp-1">
+                  {match.casos.descricao.substring(0, 60) + '...'}
+                </CardTitle>
+                <Badge
+                  variant={match.status === 'ACEITO' ? 'default' : 'secondary'}
+                  className="ml-auto"
+                >
+                  {statusLabels[match.status]}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  {match.casos.cidadaos.cidade}, {match.casos.cidadaos.estado}
+                  <Clock className="h-4 w-4" />
+                  {formatDistanceToNow(new Date(match.enviadoEm), {
+                    addSuffix: true,
+                    locale: ptBR,
+                  })}
                 </span>
-              )}
+                {match.casos.cidadaos?.cidade && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    {match.casos.cidadaos.cidade}, {match.casos.cidadaos.estado}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Badges de informação */}
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline" className="flex items-center gap-1">
-            <div className={`h-2 w-2 rounded-full ${urgenciaColors[match.casos.urgencia]}`} />
-            Urgência: {match.casos.urgencia}
-          </Badge>
-          {match.casos.especialidades && (
-            <Badge variant="outline">{match.casos.especialidades.nome}</Badge>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Badges de informação */}
+          <div className="flex flex-wrap gap-2">
+            {match.casos.urgencia && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <div className={`h-2 w-2 rounded-full ${urgenciaColors[match.casos.urgencia]}`} />
+                Urgência: {match.casos.urgencia}
+              </Badge>
+            )}
+            {match.casos.especialidades && (
+              <Badge variant="outline">{match.casos.especialidades.nome}</Badge>
+            )}
+          </div>
+
+          {/* Descrição do caso */}
+          {match.casos.descricao && (
+            <div>
+              <p className="text-sm font-medium mb-1">Descrição do caso:</p>
+              <p className="text-sm text-muted-foreground line-clamp-3">{match.casos.descricao}</p>
+            </div>
           )}
-        </div>
 
-        {/* Descrição do caso */}
-        <div>
-          <p className="text-sm font-medium mb-1">Descrição do caso:</p>
-          <p className="text-sm text-muted-foreground line-clamp-3">{match.casos.descricao}</p>
-        </div>
+          {/* Cliente */}
+          {match.casos.cidadaos?.users?.name && (
+            <div>
+              <p className="text-sm font-medium">Cliente:</p>
+              <p className="text-sm text-muted-foreground">{match.casos.cidadaos.users.name}</p>
+            </div>
+          )}
 
-        {/* Cliente */}
-        <div>
-          <p className="text-sm font-medium">Cliente:</p>
-          <p className="text-sm text-muted-foreground">{match.casos.cidadaos.users.name}</p>
-        </div>
-
-        {/* Ações */}
-        <div className="flex gap-2 pt-2">
+          {/* Ações */}
+          <div className="flex gap-2 pt-2">
           {match.status === 'PENDENTE' && (
             <>
               <Button
@@ -289,10 +333,11 @@ export default function AdvogadoDashboardPage() {
               </Button>
             </>
           )}
-        </div>
-      </CardContent>
-    </Card>
-  )
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   // Verificar se precisa mostrar notificações
   const precisaEspecialidades = perfil && perfil.especialidades.length === 0

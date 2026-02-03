@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { ConfigService } from '@/lib/config-service'
 
 export async function GET() {
   try {
@@ -20,6 +21,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Cidadão não encontrado' }, { status: 404 })
     }
 
+    // Buscar limite de redistribuições
+    const maxRedistributions = await ConfigService.getMaxRedistributionsPerCase()
+
     // Busca todos os casos do cidadão
     const casos = await prisma.casos.findMany({
       where: {
@@ -32,6 +36,11 @@ export async function GET() {
           },
         },
         matches: {
+          where: {
+            status: {
+              not: 'RECUSADO', // Não incluir matches recusados
+            },
+          },
           include: {
             advogados: {
               select: {
@@ -55,9 +64,16 @@ export async function GET() {
       },
     })
 
+    // Adicionar informações sobre redistribuição
+    const casosComRedistribuicao = casos.map((caso) => ({
+      ...caso,
+      podeSerRedistribuido: caso.status === 'ABERTO' && caso.redistribuicoes < maxRedistributions,
+      maxRedistributions,
+    }))
+
     return NextResponse.json({
       success: true,
-      data: casos,
+      data: casosComRedistribuicao,
     })
   } catch (error) {
     console.error('Error fetching casos:', error)
