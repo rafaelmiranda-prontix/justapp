@@ -18,6 +18,8 @@ interface Match {
   score: number
   status: 'PENDENTE' | 'ACEITO' | 'RECUSADO' | 'CONTRATADO' | 'EXPIRADO'
   enviadoEm: string
+  visualizadoEm: string | null
+  respondidoEm: string | null
   casos: {
     id: string
     descricao: string
