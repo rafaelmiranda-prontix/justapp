@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/reset-lead-counters",
       "schedule": "0 0 1 * *"
+    },
+    {
+      "path": "/api/cron/notify-lawyers",
+      "schedule": "*/30 * * * *"
     }
   ]
 }

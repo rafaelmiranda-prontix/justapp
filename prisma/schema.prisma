@@ -185,6 +185,7 @@ model matches {
   visualizadoEm DateTime?
   respondidoEm  DateTime?
   expiresAt     DateTime?
+  notificadoEm DateTime?
   advogados     advogados   @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
   casos         casos       @relation(fields: [casoId], references: [id], onDelete: Cascade)
   mensagens     mensagens[]
@@ -192,6 +193,7 @@ model matches {
   @@unique([casoId, advogadoId])
   @@index([advogadoId])
   @@index([status])
+  @@index([notificadoEm])
 }
 
 model mensagens {

@@ -51,7 +51,13 @@ export class NotificationService {
         html: this.getNewMatchEmailTemplate(match, advogado, caso),
       })
 
-      logger.info(`[Notification] New match email sent`)
+      // Marcar como notificado
+      await prisma.matches.update({
+        where: { id: matchId },
+        data: { notificadoEm: new Date() },
+      })
+
+      logger.info(`[Notification] New match email sent and marked as notified`)
     } catch (error) {
       logger.error('[Notification] Failed to send new match email:', error)
       // Não lança erro - notificação não deve impedir o fluxo
