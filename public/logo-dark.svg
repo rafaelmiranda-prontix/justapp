@@ -1,132 +1,273 @@
-<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="200"
+   height="200"
+   viewBox="0 0 200 200"
+   fill="none"
+   version="1.1"
+   id="svg26"
+   sodipodi:docname="logo-dark.svg"
+   inkscape:version="1.4.2 (ebf0e940, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview26"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="6.9374624"
+     inkscape:cx="94.342853"
+     inkscape:cy="114.379"
+     inkscape:window-width="1728"
+     inkscape:window-height="1382"
+     inkscape:window-x="1720"
+     inkscape:window-y="30"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg26" />
   <!-- Circular ring segments (brighter for dark mode) -->
-  <g transform="translate(100, 100)">
+  <g
+     transform="translate(100, 100)"
+     id="g4">
     <!-- Top-right arc (cyan to green) -->
-    <path d="M 45 -45 A 63.64 63.64 0 0 1 63.64 45"
-          stroke="url(#dark-gradient-cyan-green)"
-          stroke-width="14"
-          stroke-linecap="round"
-          fill="none"/>
-
+    <path
+       d="M 45 -45 A 63.64 63.64 0 0 1 63.64 45"
+       stroke="url(#dark-gradient-cyan-green)"
+       stroke-width="14"
+       stroke-linecap="round"
+       fill="none"
+       id="path1" />
     <!-- Bottom-right arc (green accent) -->
-    <path d="M 63.64 45 A 63.64 63.64 0 0 1 45 63.64"
-          stroke="url(#dark-gradient-green-lime)"
-          stroke-width="14"
-          stroke-linecap="round"
-          fill="none"/>
-
+    <path
+       d="M 63.64 45 A 63.64 63.64 0 0 1 45 63.64"
+       stroke="url(#dark-gradient-green-lime)"
+       stroke-width="14"
+       stroke-linecap="round"
+       fill="none"
+       id="path2" />
     <!-- Bottom-left arc (blue to cyan) -->
-    <path d="M -45 45 A 63.64 63.64 0 0 1 -63.64 -45"
-          stroke="url(#dark-gradient-blue-cyan)"
-          stroke-width="14"
-          stroke-linecap="round"
-          fill="none"/>
-
+    <path
+       d="M -45 45 A 63.64 63.64 0 0 1 -63.64 -45"
+       stroke="url(#dark-gradient-blue-cyan)"
+       stroke-width="14"
+       stroke-linecap="round"
+       fill="none"
+       id="path3" />
     <!-- Top-left arc (dark blue) -->
-    <path d="M -63.64 -45 A 63.64 63.64 0 0 1 -45 -63.64"
-          stroke="url(#dark-gradient-navy-blue)"
-          stroke-width="14"
-          stroke-linecap="round"
-          fill="none"/>
+    <path
+       d="M -63.64 -45 A 63.64 63.64 0 0 1 -45 -63.64"
+       stroke="url(#dark-gradient-navy-blue)"
+       stroke-width="14"
+       stroke-linecap="round"
+       fill="none"
+       id="path4" />
   </g>
-
   <!-- Letters J and A (brighter for dark mode) -->
   <!-- Letter J (blue gradient) -->
-  <g transform="translate(65, 75)">
+  <g
+     transform="matrix(-1.0598293,0,0,0.97636075,97.629334,75.505935)"
+     id="g6">
     <!-- J shape -->
-    <path d="M 12 5 L 12 40 Q 12 50, 20 50 L 25 50"
-          stroke="url(#dark-gradient-j)"
-          stroke-width="14"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          fill="none"/>
+    <path
+       d="m 12,5 v 35 q 0,10 8,10 h 5"
+       stroke="url(#dark-gradient-j)"
+       stroke-width="14"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       fill="none"
+       id="path5"
+       style="stroke:url(#dark-gradient-j)" />
     <!-- 3D effect highlight -->
-    <path d="M 10 5 L 10 40 Q 10 48, 18 48 L 23 48"
-          stroke="url(#dark-gradient-j-light)"
-          stroke-width="3"
-          stroke-linecap="round"
-          opacity="0.6"
-          fill="none"/>
+    <path
+       d="m 10,5 v 35 q 0,8 8,8 h 5"
+       stroke="url(#dark-gradient-j-light)"
+       stroke-width="3"
+       stroke-linecap="round"
+       opacity="0.6"
+       fill="none"
+       id="path6"
+       style="stroke:url(#dark-gradient-j-light)" />
   </g>
-
   <!-- Letter A (cyan/green gradient) -->
-  <g transform="translate(95, 75)">
+  <g
+     transform="translate(95, 75)"
+     id="g11">
     <!-- Left stroke of A -->
-    <path d="M 5 50 L 20 5"
-          stroke="url(#dark-gradient-a)"
-          stroke-width="14"
-          stroke-linecap="round"
-          fill="none"/>
+    <path
+       d="M 5 50 L 20 5"
+       stroke="url(#dark-gradient-a)"
+       stroke-width="14"
+       stroke-linecap="round"
+       fill="none"
+       id="path7" />
     <!-- Right stroke of A -->
-    <path d="M 20 5 L 35 50"
-          stroke="url(#dark-gradient-a)"
-          stroke-width="14"
-          stroke-linecap="round"
-          fill="none"/>
+    <path
+       d="M 20 5 L 35 50"
+       stroke="url(#dark-gradient-a)"
+       stroke-width="14"
+       stroke-linecap="round"
+       fill="none"
+       id="path8" />
     <!-- Crossbar of A -->
-    <path d="M 13 30 L 27 30"
-          stroke="url(#dark-gradient-a)"
-          stroke-width="14"
-          stroke-linecap="round"
-          fill="none"/>
+    <path
+       d="M 13 30 L 27 30"
+       stroke="url(#dark-gradient-a)"
+       stroke-width="14"
+       stroke-linecap="round"
+       fill="none"
+       id="path9" />
     <!-- 3D effect highlights -->
-    <path d="M 7 50 L 22 5"
-          stroke="url(#dark-gradient-a-light)"
-          stroke-width="3"
-          stroke-linecap="round"
-          opacity="0.6"
-          fill="none"/>
-    <path d="M 22 5 L 37 50"
-          stroke="url(#dark-gradient-a-light)"
-          stroke-width="3"
-          stroke-linecap="round"
-          opacity="0.6"
-          fill="none"/>
+    <path
+       d="M 7 50 L 22 5"
+       stroke="url(#dark-gradient-a-light)"
+       stroke-width="3"
+       stroke-linecap="round"
+       opacity="0.6"
+       fill="none"
+       id="path10" />
+    <path
+       d="M 22 5 L 37 50"
+       stroke="url(#dark-gradient-a-light)"
+       stroke-width="3"
+       stroke-linecap="round"
+       opacity="0.6"
+       fill="none"
+       id="path11" />
   </g>
-
   <!-- Gradient Definitions (Brighter for dark mode) -->
-  <defs>
+  <defs
+     id="defs26">
     <!-- Ring gradients (brighter versions) -->
-    <linearGradient id="dark-gradient-cyan-green" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#33E5E5;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#99F0C3;stop-opacity:1" />
+    <linearGradient
+       id="dark-gradient-cyan-green"
+       x1="0%"
+       y1="0%"
+       x2="100%"
+       y2="100%">
+      <stop
+         offset="0%"
+         style="stop-color:#33E5E5;stop-opacity:1"
+         id="stop11" />
+      <stop
+         offset="100%"
+         style="stop-color:#99F0C3;stop-opacity:1"
+         id="stop12" />
     </linearGradient>
-
-    <linearGradient id="dark-gradient-green-lime" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#99F0C3;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#CCF876;stop-opacity:1" />
+    <linearGradient
+       id="dark-gradient-green-lime"
+       x1="0%"
+       y1="0%"
+       x2="100%"
+       y2="100%">
+      <stop
+         offset="0%"
+         style="stop-color:#99F0C3;stop-opacity:1"
+         id="stop13" />
+      <stop
+         offset="100%"
+         style="stop-color:#CCF876;stop-opacity:1"
+         id="stop14" />
     </linearGradient>
-
-    <linearGradient id="dark-gradient-blue-cyan" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#3399DD;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#33CCFF;stop-opacity:1" />
+    <linearGradient
+       id="dark-gradient-blue-cyan"
+       x1="0%"
+       y1="100%"
+       x2="100%"
+       y2="0%">
+      <stop
+         offset="0%"
+         style="stop-color:#3399DD;stop-opacity:1"
+         id="stop15" />
+      <stop
+         offset="100%"
+         style="stop-color:#33CCFF;stop-opacity:1"
+         id="stop16" />
     </linearGradient>
-
-    <linearGradient id="dark-gradient-navy-blue" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#334B7F;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#3399DD;stop-opacity:1" />
+    <linearGradient
+       id="dark-gradient-navy-blue"
+       x1="0%"
+       y1="100%"
+       x2="100%"
+       y2="0%">
+      <stop
+         offset="0%"
+         style="stop-color:#334B7F;stop-opacity:1"
+         id="stop17" />
+      <stop
+         offset="100%"
+         style="stop-color:#3399DD;stop-opacity:1"
+         id="stop18" />
     </linearGradient>
-
     <!-- Letter J gradients (brighter blue tones) -->
-    <linearGradient id="dark-gradient-j" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#3375C6;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#33B3FF;stop-opacity:1" />
+    <linearGradient
+       id="dark-gradient-j"
+       x1="7.3911859"
+       y1="-1.3529629"
+       x2="47.30359"
+       y2="38.559441"
+       gradientTransform="scale(0.67648143,1.4782372)"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0%"
+         style="stop-color:#3375C6;stop-opacity:1"
+         id="stop19" />
+      <stop
+         offset="100%"
+         style="stop-color:#33B3FF;stop-opacity:1"
+         id="stop20" />
     </linearGradient>
-
-    <linearGradient id="dark-gradient-j-light" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#99DDFF;stop-opacity:1" />
+    <linearGradient
+       id="dark-gradient-j-light"
+       x1="14.412451"
+       y1="2.0641874"
+       x2="41.541771"
+       y2="29.193507"
+       gradientTransform="scale(0.58976782,1.6955825)"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0%"
+         style="stop-color:#FFFFFF;stop-opacity:1"
+         id="stop21" />
+      <stop
+         offset="100%"
+         style="stop-color:#99DDFF;stop-opacity:1"
+         id="stop22" />
     </linearGradient>
-
     <!-- Letter A gradients (brighter cyan/green tones) -->
-    <linearGradient id="dark-gradient-a" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#33D9D9;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#99F0CC;stop-opacity:1" />
+    <linearGradient
+       id="dark-gradient-a"
+       x1="0%"
+       y1="0%"
+       x2="100%"
+       y2="100%">
+      <stop
+         offset="0%"
+         style="stop-color:#33D9D9;stop-opacity:1"
+         id="stop23" />
+      <stop
+         offset="100%"
+         style="stop-color:#99F0CC;stop-opacity:1"
+         id="stop24" />
     </linearGradient>
-
-    <linearGradient id="dark-gradient-a-light" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#CCFFE5;stop-opacity:1" />
+    <linearGradient
+       id="dark-gradient-a-light"
+       x1="0%"
+       y1="0%"
+       x2="100%"
+       y2="100%">
+      <stop
+         offset="0%"
+         style="stop-color:#FFFFFF;stop-opacity:1"
+         id="stop25" />
+      <stop
+         offset="100%"
+         style="stop-color:#CCFFE5;stop-opacity:1"
+         id="stop26" />
     </linearGradient>
   </defs>
 </svg>
