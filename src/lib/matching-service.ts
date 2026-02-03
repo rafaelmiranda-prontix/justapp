@@ -53,7 +53,7 @@ export async function findMatchingAdvogados(
     return []
   }
 
-  // Busca advogados com a especialidade
+  // Busca advogados com a especialidade (apenas aprovados)
   const advogados = await prisma.advogados.findMany({
     where: {
       advogado_especialidades: {
@@ -61,6 +61,7 @@ export async function findMatchingAdvogados(
           especialidadeId: especialidade.id,
         },
       },
+      aprovado: true, // Apenas advogados aprovados pelo admin
       // Apenas advogados com plano ativo (depois implementar lógica de plano)
     },
     include: {

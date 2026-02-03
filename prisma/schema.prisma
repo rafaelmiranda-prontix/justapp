@@ -39,6 +39,7 @@ model advogados {
   userId                  String                    @unique
   oab                     String                    @unique
   oabVerificado           Boolean                   @default(false)
+  aprovado                Boolean                   @default(false) // Aprovação manual pelo admin
   bio                     String?
   fotoUrl                 String?
   cidade                  String

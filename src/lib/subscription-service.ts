@@ -117,6 +117,11 @@ export async function canAdvogadoReceiveLead(advogadoId: string): Promise<{
     return { canReceive: false, reason: 'Advogado não encontrado' }
   }
 
+  // Verifica se o advogado foi aprovado pelo admin
+  if (!advogado.aprovado) {
+    return { canReceive: false, reason: 'Advogado aguardando aprovação do administrador' }
+  }
+
   // Verifica se o plano está ativo
   if (advogado.plano === 'FREE') {
     return { canReceive: false, reason: 'Plano gratuito não permite receber leads' }

@@ -146,13 +146,14 @@ export class CaseDistributionService {
       distanciaKm: number | null
     }>
   > {
-    // Buscar todos os advogados ativos
+    // Buscar todos os advogados ativos e aprovados
     const advogados = await prisma.advogados.findMany({
       where: {
         users: {
           status: 'ACTIVE',
         },
         onboardingCompleted: true,
+        aprovado: true, // Apenas advogados aprovados pelo admin
       },
       include: {
         users: true,

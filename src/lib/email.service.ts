@@ -232,4 +232,134 @@ export class EmailService {
       // Não lançar erro pois email de boas-vindas não é crítico
     }
   }
+
+  /**
+   * Envia email de aprovação para advogado
+   */
+  static async sendApprovalEmail(email: string, name: string): Promise<void> {
+    // Para advogados com prefixo (Dr./Dra.), pegar prefixo + primeiro nome
+    // Caso contrário, pegar apenas o primeiro nome
+    const nameParts = name.split(' ')
+    const firstName = nameParts[0] === 'Dr.' || nameParts[0] === 'Dra.'
+      ? `${nameParts[0]} ${nameParts[1] || ''}`.trim()
+      : nameParts[0]
+    const dashboardUrl = `${process.env.NEXTAUTH_URL}/advogado/dashboard`
+
+    // Verificar se Resend está configurado
+    if (!resend) {
+      logger.warn('[Email] Resend não configurado. Email de aprovação não enviado.')
+      return
+    }
+
+    try {
+      const result = await resend.emails.send({
+        from: process.env.EMAIL_FROM || 'JustApp <noreply@justapp.com.br>',
+        to: email,
+        subject: 'Sua conta foi aprovada! 🎉 - JustApp',
+        html: this.getApprovalEmailTemplate(firstName, dashboardUrl),
+      })
+
+      if (result.error) {
+        logger.error('[Email] Resend error:', result.error)
+        return
+      }
+
+      logger.info(`[Email] Approval email sent (ID: ${result.data?.id})`)
+    } catch (error: any) {
+      logger.error('[Email] Failed to send approval email:', error)
+      // Não lançar erro pois email de aprovação não deve impedir a aprovação
+    }
+  }
+
+  /**
+   * Template HTML para email de aprovação
+   */
+  private static getApprovalEmailTemplate(name: string, dashboardUrl: string): string {
+    return `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conta Aprovada - JustApp</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px; text-align: center; border-radius: 8px 8px 0 0;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold;">
+                ✅ Conta Aprovada!
+              </h1>
+              <p style="color: #d1fae5; margin: 8px 0 0 0; font-size: 16px;">
+                Você já pode começar a receber leads
+              </p>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 24px;">
+                Olá, ${name}! 👋
+              </h2>
+
+              <p style="color: #4b5563; margin: 0 0 24px 0; font-size: 16px; line-height: 1.6;">
+                Temos uma ótima notícia! Sua conta no <strong>JustApp</strong> foi aprovada pela nossa equipe.
+              </p>
+
+              <p style="color: #4b5563; margin: 0 0 24px 0; font-size: 16px; line-height: 1.6;">
+                Agora você já pode começar a receber casos compatíveis com suas especialidades e localização. Os leads serão enviados automaticamente para seu dashboard.
+              </p>
+
+              <!-- Info Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0; background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 4px;">
+                <tr>
+                  <td style="padding: 16px;">
+                    <p style="color: #065f46; margin: 0; font-size: 14px; line-height: 1.6;">
+                      💡 <strong>Dica:</strong> Mantenha seu perfil atualizado e complete todas as informações para receber mais leads compatíveis com sua área de atuação.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding: 20px 0;">
+                    <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                      Acessar Dashboard
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="color: #6b7280; margin: 32px 0 0 0; font-size: 14px; line-height: 1.6;">
+                Se você tiver alguma dúvida, nossa equipe está sempre pronta para ajudar.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 32px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; margin: 0 0 8px 0; font-size: 14px;">
+                JustApp - Conexão Inteligente entre Pessoas e Advogados
+              </p>
+              <p style="color: #9ca3af; margin: 0; font-size: 12px;">
+                © ${new Date().getFullYear()} JustApp. Todos os direitos reservados.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `
+  }
 }

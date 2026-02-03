@@ -21,6 +21,7 @@ interface Advogado {
   id: string
   oab: string
   oabVerificado: boolean
+  aprovado: boolean
   cidade: string
   estado: string
   createdAt: string

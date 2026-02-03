@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CheckCircle, XCircle, Eye, AlertCircle, Clock, MapPin } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { CheckCircle, XCircle, Eye, AlertCircle, Clock, MapPin, Info, User, ArrowRight } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useMatchActions } from '@/hooks/use-match-actions'
@@ -62,13 +63,34 @@ export default function AdvogadoDashboardPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [especialidadeFilter, setEspecialidadeFilter] = useState('all')
   const [urgenciaFilter, setUrgenciaFilter] = useState('all')
+  const [perfil, setPerfil] = useState<{
+    aprovado: boolean
+    especialidades: Array<{ id: string; nome: string }>
+  } | null>(null)
   const { respondMatch, isLoading: isActing } = useMatchActions()
   const router = useRouter()
 
   useEffect(() => {
     fetchMatches()
+    fetchPerfil()
     redistributeCases()
   }, [])
+
+  const fetchPerfil = async () => {
+    try {
+      const res = await fetch('/api/advogado/perfil')
+      const result = await res.json()
+
+      if (result.success) {
+        setPerfil({
+          aprovado: result.data.aprovado,
+          especialidades: result.data.especialidades || [],
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching perfil:', error)
+    }
+  }
 
   const redistributeCases = async () => {
     try {
@@ -272,6 +294,10 @@ export default function AdvogadoDashboardPage() {
     </Card>
   )
 
+  // Verificar se precisa mostrar notificações
+  const precisaEspecialidades = perfil && perfil.especialidades.length === 0
+  const pendenteAprovacao = perfil && !perfil.aprovado
+
   return (
     <div className="container max-w-7xl py-8">
       <div className="mb-8">
@@ -279,6 +305,50 @@ export default function AdvogadoDashboardPage() {
         <p className="text-muted-foreground">
           Gerencie suas oportunidades de atendimento e casos em andamento
         </p>
+      </div>
+
+      {/* Notificações */}
+      <div className="mb-6 space-y-4">
+        {pendenteAprovacao && (
+          <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900/50">
+            <Info className="h-5 w-5 text-amber-600 dark:text-amber-500" />
+            <AlertTitle className="text-amber-900 dark:text-amber-100">
+              Conta em Análise
+            </AlertTitle>
+            <AlertDescription className="text-amber-800 dark:text-amber-200">
+              <p className="mb-2">
+                Sua conta está sendo analisada pela nossa equipe. Você receberá uma notificação assim que sua conta for aprovada.
+              </p>
+              <p className="text-sm">
+                Enquanto isso, complete seu perfil para agilizar o processo de aprovação.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {precisaEspecialidades && (
+          <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900/50">
+            <User className="h-5 w-5 text-blue-600 dark:text-blue-500" />
+            <AlertTitle className="text-blue-900 dark:text-blue-100">
+              Complete seu Perfil
+            </AlertTitle>
+            <AlertDescription className="text-blue-800 dark:text-blue-200">
+              <p className="mb-3">
+                Para receber leads compatíveis com sua área de atuação, selecione suas especialidades no seu perfil.
+              </p>
+              <Button
+                size="sm"
+                asChild
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Link href="/advogado/perfil">
+                  Ir para Meu Perfil
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
 
       {/* Estatísticas */}

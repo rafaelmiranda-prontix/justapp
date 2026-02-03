@@ -18,9 +18,9 @@ export async function GET(req: Request) {
     const where: any = {}
 
     if (status === 'pendentes') {
-      where.oabVerificado = false
+      where.aprovado = false
     } else if (status === 'aprovados') {
-      where.oabVerificado = true
+      where.aprovado = true
     }
 
     const [advogados, total] = await Promise.all([
@@ -59,17 +59,25 @@ export async function GET(req: Request) {
       prisma.advogados.count({ where }),
     ])
 
-    // Calcula média de avaliações para cada advogado
+    // Calcula média de avaliações para cada advogado e transforma especialidades
     const advogadosComMedia = advogados.map((advogado) => {
-      const totalAvaliacoes = advogado.avaliacoes.length
+      const totalAvaliacoes = advogado.avaliacoes?.length || 0
       const media =
         totalAvaliacoes > 0
           ? advogado.avaliacoes.reduce((acc, av) => acc + av.nota, 0) /
             totalAvaliacoes
           : 0
 
+      // Transforma advogado_especialidades em especialidades no formato esperado
+      const especialidades = (advogado.advogado_especialidades || []).map((ae) => ({
+        especialidade: {
+          nome: ae.especialidades.nome,
+        },
+      }))
+
       return {
         ...advogado,
+        especialidades, // Adiciona especialidades no formato esperado
         avaliacaoMedia: Math.round(media * 10) / 10,
         totalAvaliacoes,
       }

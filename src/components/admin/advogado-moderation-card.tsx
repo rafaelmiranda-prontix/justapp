@@ -12,6 +12,7 @@ interface AdvogadoModerationCardProps {
     id: string
     oab: string
     oabVerificado: boolean
+    aprovado: boolean
     cidade: string
     estado: string
     createdAt: string
@@ -20,7 +21,7 @@ interface AdvogadoModerationCardProps {
       name: string
       email: string
     }
-    especialidades: Array<{
+    especialidades?: Array<{
       especialidade: {
         nome: string
       }
@@ -56,7 +57,7 @@ export function AdvogadoModerationCard({
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <CardTitle className="text-lg">{advogado.users.name}</CardTitle>
-              {advogado.oabVerificado ? (
+              {advogado.aprovado ? (
                 <Badge variant="default" className="bg-green-500">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
                   Aprovado
@@ -86,13 +87,13 @@ export function AdvogadoModerationCard({
           <p className="text-sm text-muted-foreground">{advogado.users.email}</p>
         </div>
 
-        {advogado.especialidades.length > 0 && (
+        {advogado.especialidades && advogado.especialidades.length > 0 && (
           <div>
             <p className="text-sm font-medium mb-2">Especialidades:</p>
             <div className="flex flex-wrap gap-2">
               {advogado.especialidades.map((esp, idx) => (
                 <Badge key={idx} variant="outline">
-                  {esp.especialidade.nome}
+                  {esp.especialidade?.nome || 'N/A'}
                 </Badge>
               ))}
             </div>
@@ -112,7 +113,7 @@ export function AdvogadoModerationCard({
           </div>
         )}
 
-        {!advogado.oabVerificado && (
+        {!advogado.aprovado && (
           <div className="flex gap-2 pt-2">
             <Button
               onClick={onApprove}
@@ -120,7 +121,7 @@ export function AdvogadoModerationCard({
               size="sm"
             >
               <CheckCircle2 className="h-4 w-4 mr-2" />
-              Aprovar
+              Aprovar e Liberar
             </Button>
             <Button
               onClick={onReject}
@@ -130,6 +131,19 @@ export function AdvogadoModerationCard({
             >
               <XCircle className="h-4 w-4 mr-2" />
               Rejeitar
+            </Button>
+          </div>
+        )}
+        {advogado.aprovado && (
+          <div className="pt-2">
+            <Button
+              onClick={onReject}
+              variant="outline"
+              className="w-full"
+              size="sm"
+            >
+              <XCircle className="h-4 w-4 mr-2" />
+              Revogar Aprovação
             </Button>
           </div>
         )}

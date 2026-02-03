@@ -118,6 +118,7 @@ async function seedLawyers() {
         userId: user.id,
         oab: lawyer.oab,
         oabVerificado: true,
+        aprovado: false, // Não aprovar automaticamente - precisa aprovação manual
         cidade: lawyer.cidade,
         estado: lawyer.estado,
         plano: lawyer.plano,

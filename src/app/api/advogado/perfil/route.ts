@@ -85,6 +85,7 @@ export async function GET(req: NextRequest) {
         userId: advogado.userId,
         oab: advogado.oab,
         oabVerificado: advogado.oabVerificado,
+        aprovado: advogado.aprovado,
         bio: advogado.bio,
         fotoUrl: advogado.fotoUrl,
         cidade: advogado.cidade,
