@@ -10,6 +10,7 @@ import {
   Scale,
   Shield,
   Settings,
+  Cog,
 } from 'lucide-react'
 
 const navItems = [
@@ -32,6 +33,11 @@ const navItems = [
     title: 'Usuários',
     href: '/admin/usuarios',
     icon: Users,
+  },
+  {
+    title: 'Configurações',
+    href: '/admin/configuracoes',
+    icon: Cog,
   },
   {
     title: 'Config. Chat',
