@@ -90,7 +90,7 @@ export function AnonymousChatSheet({
             <div className="flex-1">
               <SheetTitle className="text-left">Assistente Legal</SheetTitle>
               <p id="chat-description" className="sr-only">
-                Chat para conversar com o assistente jurídico e obter ajuda com questões legais
+                Chat para conversar com o assistente JustApp e obter ajuda com questões legais
               </p>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">

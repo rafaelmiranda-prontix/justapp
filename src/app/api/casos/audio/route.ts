@@ -29,12 +29,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!casoId) {
-      return NextResponse.json(
-        { success: false, error: 'casoId é obrigatório' },
-        { status: 400 }
-      )
-    }
+    // Aceitar casoId ou userId para uploads temporários durante criação do caso
+    const userId = session.user.id
+    const uploadId = casoId || `temp-${userId}`
 
     // Validar tipo de arquivo
     if (!audioFile.type.startsWith('audio/')) {
@@ -58,8 +55,8 @@ export async function POST(request: NextRequest) {
       type: audioFile.type,
     })
 
-    // Fazer upload para Supabase usando casoId como identificador
-    const result = await uploadAudioToSupabase(audioBlob, casoId)
+    // Fazer upload para Supabase usando casoId ou userId temporário
+    const result = await uploadAudioToSupabase(audioBlob, uploadId)
 
     if (!result.success) {
       return NextResponse.json(

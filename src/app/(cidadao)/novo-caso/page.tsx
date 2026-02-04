@@ -8,7 +8,14 @@ import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 export default function NovoCasoPage() {
-  const { messages, isAnalyzing, handleUserResponse } = useCaseChat()
+  const {
+    messages,
+    isAnalyzing,
+    handleUserResponse,
+    currentStep,
+    triageData,
+    handleSubmitCase,
+  } = useCaseChat()
 
   return (
     <div className="container max-w-4xl py-8">
@@ -21,27 +28,38 @@ export default function NovoCasoPage() {
       </Link>
 
       <Card className="h-[calc(100vh-200px)] flex flex-col">
-        <CardHeader className="border-b">
+        <CardHeader className="flex-shrink-0 border-b">
           <CardTitle>Descreva seu caso</CardTitle>
           <p className="text-sm text-muted-foreground">
             Responda algumas perguntas para encontrarmos o advogado ideal
           </p>
         </CardHeader>
 
-        <CardContent className="flex-1 flex flex-col p-0">
-          <ChatContainer messages={messages} className="flex-1" />
+        <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden">
+          <ChatContainer
+            messages={messages}
+            className="flex-1 min-h-0"
+            showSubmitForm={currentStep === 'confirmation'}
+            onSubmitCase={handleSubmitCase}
+            extractedData={{
+              cidade: undefined, // Pode ser extraído do perfil do usuário
+              estado: undefined,
+            }}
+          />
 
-          <div className="p-4 border-t bg-muted/50">
-            <ChatInput
-              onSend={handleUserResponse}
-              disabled={isAnalyzing}
-              placeholder={
-                isAnalyzing
-                  ? 'Analisando sua resposta...'
-                  : 'Digite sua resposta...'
-              }
-            />
-          </div>
+          {currentStep !== 'confirmation' && currentStep !== 'completed' && (
+            <div className="flex-shrink-0 p-4 border-t bg-muted/50">
+              <ChatInput
+                onSend={handleUserResponse}
+                disabled={isAnalyzing}
+                placeholder={
+                  isAnalyzing
+                    ? 'Analisando sua resposta...'
+                    : 'Digite sua resposta...'
+                }
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

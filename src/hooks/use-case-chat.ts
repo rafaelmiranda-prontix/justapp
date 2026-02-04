@@ -9,7 +9,6 @@ export type TriageStep =
   | 'date'
   | 'evidence'
   | 'attempted_resolution'
-  | 'contact_info'
   | 'confirmation'
   | 'completed'
 
@@ -29,7 +28,7 @@ export function useCaseChat() {
     {
       role: 'assistant',
       content:
-        'Olá! Sou seu assistente jurídico. Vou te ajudar a encontrar o advogado ideal para o seu caso.\n\nPara começar, conte com suas palavras o que aconteceu.',
+        'Olá! Sou seu assistente JustApp. Vou te ajudar a encontrar o advogado ideal para o seu caso.\n\nPara começar, conte com suas palavras o que aconteceu.',
       timestamp: new Date(),
     },
   ])
@@ -125,52 +124,72 @@ export function useCaseChat() {
           addMessage({
             role: 'assistant',
             content:
-              'Ótimo! Para finalizar, como posso te chamar? E qual o melhor contato (email ou telefone)?',
-          })
-          setCurrentStep('contact_info')
-          break
-
-        case 'contact_info':
-          // Extrai nome e contato (simplificado)
-          const lines = content.split('\n')
-          setTriageData((prev) => ({
-            ...prev,
-            name: lines[0],
-            contact: lines[1] || lines[0],
-          }))
-
-          addMessage({
-            role: 'assistant',
-            content: `Perfeito, ${lines[0]}! Baseado no que você me contou, vou buscar advogados especializados na sua região que podem ajudar com seu caso.\n\nPosso enviar seu caso para eles?`,
+              'Ótimo! Baseado no que você me contou, vou buscar advogados especializados na sua região que podem ajudar com seu caso.\n\nPosso enviar seu caso para eles?',
           })
           setCurrentStep('confirmation')
           break
 
         case 'confirmation':
-          if (content.toLowerCase().includes('sim')) {
-            addMessage({
-              role: 'assistant',
-              content:
-                '✅ Caso registrado com sucesso!\n\nEstou buscando os melhores advogados para você...',
-            })
-            setCurrentStep('completed')
-
-            // Redireciona para busca de advogados
-            setTimeout(() => {
-              const especialidade = triageData.especialidadeId || ''
-              window.location.href = `/buscar-advogados?especialidade=${encodeURIComponent(especialidade)}`
-            }, 2000)
-          } else {
-            addMessage({
-              role: 'assistant',
-              content:
-                'Sem problemas! Se mudar de ideia, estou aqui para ajudar. Quer modificar alguma informação?',
-            })
-          }
+          // Não processa resposta de texto na etapa de confirmação
+          // O formulário aparece e o usuário preenche cidade/estado
           break
       }
     },
     [currentStep, addMessage]
+  )
+
+  const handleSubmitCase = useCallback(
+    async (data: { cidade: string; estado: string }) => {
+      try {
+        // Coletar URLs de áudio das mensagens
+        const audioUrls = messages
+          .filter((m) => m.role === 'user' && m.audioUrl)
+          .map((m) => m.audioUrl!)
+          .slice(0, 4) // Limitar a 4 URLs
+
+        const response = await fetch('/api/casos/create-and-distribute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            description: triageData.description,
+            date: triageData.date,
+            hasEvidence: triageData.hasEvidence,
+            attemptedResolution: triageData.attemptedResolution,
+            especialidadeId: triageData.especialidadeId,
+            urgencia: triageData.urgencia,
+            cidade: data.cidade,
+            estado: data.estado,
+            audioUrls,
+          }),
+        })
+
+        const result = await response.json()
+
+        if (!result.success) {
+          throw new Error(result.error || 'Erro ao criar caso')
+        }
+
+        // Adicionar mensagem de sucesso
+        addMessage({
+          role: 'assistant',
+          content: `✅ Caso registrado com sucesso!\n\nEncontramos ${result.data.matchesCreated} advogado(s) compatível(is) com seu caso. Eles serão notificados e entrarão em contato em breve.`,
+        })
+
+        setCurrentStep('completed')
+
+        // Redirecionar para dashboard após 3 segundos
+        setTimeout(() => {
+          window.location.href = '/cidadao/dashboard'
+        }, 3000)
+      } catch (error: any) {
+        addMessage({
+          role: 'assistant',
+          content: `❌ Erro ao criar caso: ${error.message || 'Tente novamente mais tarde.'}`,
+        })
+        throw error
+      }
+    },
+    [triageData, messages, addMessage]
   )
 
   return {
@@ -179,6 +198,7 @@ export function useCaseChat() {
     triageData,
     isAnalyzing,
     handleUserResponse,
+    handleSubmitCase,
     addMessage,
   }
 }
