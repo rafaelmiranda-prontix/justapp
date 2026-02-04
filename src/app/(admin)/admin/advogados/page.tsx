@@ -22,6 +22,7 @@ interface Advogado {
   oab: string
   oabVerificado: boolean
   aprovado: boolean
+  onboardingCompleted: boolean
   cidade: string
   estado: string
   createdAt: string
@@ -29,6 +30,7 @@ interface Advogado {
     id: string
     name: string
     email: string
+    status: string
   }
   especialidades: Array<{
     especialidade: {
@@ -128,6 +130,44 @@ export default function AdminAdvogadosPage() {
     }
   }
 
+  const handleCompleteOnboarding = async (advogadoId: string) => {
+    try {
+      const res = await fetch(
+        `/api/admin/advogados/${advogadoId}/complete-onboarding`,
+        {
+          method: 'POST',
+        }
+      )
+
+      const result = await res.json()
+
+      if (result.success) {
+        toast({
+          title: 'Sucesso',
+          description: result.message || 'Onboarding completado com sucesso',
+        })
+        fetchAdvogados()
+      } else {
+        if (result.missingFields && result.missingFields.length > 0) {
+          toast({
+            title: 'Não é possível completar',
+            description: `Campos faltando: ${result.missingFields.join(', ')}`,
+            variant: 'destructive',
+          })
+        } else {
+          throw new Error(result.error || 'Erro ao completar onboarding')
+        }
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description:
+          error instanceof Error ? error.message : 'Erro ao completar onboarding',
+        variant: 'destructive',
+      })
+    }
+  }
+
   return (
     <div className="container max-w-7xl py-8">
       <div className="mb-8">
@@ -176,6 +216,7 @@ export default function AdminAdvogadosPage() {
                 advogado={advogado}
                 onApprove={() => handleApprove(advogado.id)}
                 onReject={() => handleReject(advogado.id)}
+                onCompleteOnboarding={() => handleCompleteOnboarding(advogado.id)}
               />
             ))}
           </div>

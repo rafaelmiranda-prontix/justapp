@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { CheckCircle2, XCircle, MapPin, Scale, Star } from 'lucide-react'
+import { CheckCircle2, XCircle, MapPin, Scale, Star, UserCheck } from 'lucide-react'
 import { formatOAB } from '@/lib/utils'
 
 interface AdvogadoModerationCardProps {
@@ -13,6 +13,7 @@ interface AdvogadoModerationCardProps {
     oab: string
     oabVerificado: boolean
     aprovado: boolean
+    onboardingCompleted?: boolean
     cidade: string
     estado: string
     createdAt: string
@@ -20,6 +21,7 @@ interface AdvogadoModerationCardProps {
       id: string
       name: string
       email: string
+      status?: string
     }
     especialidades?: Array<{
       especialidade: {
@@ -31,12 +33,14 @@ interface AdvogadoModerationCardProps {
   }
   onApprove: () => void
   onReject: () => void
+  onCompleteOnboarding?: () => void
 }
 
 export function AdvogadoModerationCard({
   advogado,
   onApprove,
   onReject,
+  onCompleteOnboarding,
 }: AdvogadoModerationCardProps) {
   const getInitials = (name: string) => {
     return name
@@ -65,6 +69,16 @@ export function AdvogadoModerationCard({
               ) : (
                 <Badge variant="secondary" className="bg-yellow-500 text-white">
                   Pendente
+                </Badge>
+              )}
+              {advogado.onboardingCompleted ? (
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+                  <UserCheck className="h-3 w-3 mr-1" />
+                  Onboarding Completo
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300">
+                  Onboarding Incompleto
                 </Badge>
               )}
             </div>
@@ -113,6 +127,19 @@ export function AdvogadoModerationCard({
           </div>
         )}
 
+        {!advogado.onboardingCompleted && onCompleteOnboarding && (
+          <div className="pt-2 border-t">
+            <Button
+              onClick={onCompleteOnboarding}
+              variant="default"
+              className="w-full"
+              size="sm"
+            >
+              <UserCheck className="h-4 w-4 mr-2" />
+              Completar Onboarding
+            </Button>
+          </div>
+        )}
         {!advogado.aprovado && (
           <div className="flex gap-2 pt-2">
             <Button
