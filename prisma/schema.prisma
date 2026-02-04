@@ -112,22 +112,22 @@ model avaliacoes {
 }
 
 model casos {
-  id                 String          @id
-  cidadaoId          String
-  descricao          String          // Resumo do problema (não concatenado)
-  descricaoIA        String?         // Análise da IA sobre o caso
-  conversaHistorico  Json?           // Histórico completo do chat anônimo
-  especialidadeId    String?
-  urgencia           Urgencia        @default(NORMAL)
-  complexidade       Int             @default(1)
-  status             CasoStatus      @default(PENDENTE_ATIVACAO)
-  sessionId          String?         @unique
-  redistribuicoes    Int             @default(0) // Contador de redistribuições após recusas
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime
-  cidadaos           cidadaos        @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)
-  especialidades     especialidades? @relation(fields: [especialidadeId], references: [id])
-  matches            matches[]
+  id                String          @id
+  cidadaoId         String
+  descricao         String // Resumo do problema (não concatenado)
+  descricaoIA       String? // Análise da IA sobre o caso
+  conversaHistorico Json? // Histórico completo do chat anônimo
+  especialidadeId   String?
+  urgencia          Urgencia        @default(NORMAL)
+  complexidade      Int             @default(1)
+  status            CasoStatus      @default(PENDENTE_ATIVACAO)
+  sessionId         String?         @unique
+  redistribuicoes   Int             @default(0) // Contador de redistribuições após recusas
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime
+  cidadaos          cidadaos        @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)
+  especialidades    especialidades? @relation(fields: [especialidadeId], references: [id])
+  matches           matches[]
 
   @@index([cidadaoId])
   @@index([especialidadeId])
@@ -185,7 +185,7 @@ model matches {
   visualizadoEm DateTime?
   respondidoEm  DateTime?
   expiresAt     DateTime?
-  notificadoEm DateTime?
+  notificadoEm  DateTime?
   advogados     advogados   @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
   casos         casos       @relation(fields: [casoId], references: [id], onDelete: Cascade)
   mensagens     mensagens[]
@@ -212,22 +212,22 @@ model mensagens {
 }
 
 model planos {
-  id                      String                    @id
-  codigo                  Plano                     @unique
-  nome                    String
-  descricao               String?
-  preco                   Int                       @default(0) // em centavos (R$)
-  precoDisplay            Int                       @default(0) // para exibição (R$)
-  leadsPerMonth           Int                       @default(0) // -1 = ilimitado
-  leadsPerHour            Int                       @default(5) // -1 = ilimitado (apenas para planos ilimitados)
-  features                String[]                  // array de features
-  stripePriceId           String?                   @unique
-  ativo                   Boolean                   @default(true)
-  status                  String                    @default("ACTIVE") // ACTIVE, COMING_SOON, HIDDEN
-  ordem                   Int                       @default(0) // ordem de exibição
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime
-  historicoAssinaturas    historicoAssinaturas[]
+  id                   String                 @id
+  codigo               Plano                  @unique
+  nome                 String
+  descricao            String?
+  preco                Int                    @default(0) // em centavos (R$)
+  precoDisplay         Int                    @default(0) // para exibição (R$)
+  leadsPerMonth        Int                    @default(0) // -1 = ilimitado
+  leadsPerHour         Int                    @default(5) // -1 = ilimitado (apenas para planos ilimitados)
+  features             String[] // array de features
+  stripePriceId        String?                @unique
+  ativo                Boolean                @default(true)
+  status               String                 @default("ACTIVE") // ACTIVE, COMING_SOON, HIDDEN
+  ordem                Int                    @default(0) // ordem de exibição
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime
+  historicoAssinaturas historicoAssinaturas[]
 
   @@index([ativo])
   @@index([ordem])
@@ -235,23 +235,23 @@ model planos {
 }
 
 model historicoAssinaturas {
-  id                  String                     @id
-  advogadoId          String
-  planoId             String
-  planoAnteriorId     String?                    // plano que estava antes (para tracking de upgrade/downgrade)
-  status              StatusAssinatura           @default(ATIVA)
-  precoPago           Int?                       // preço que foi cobrado (em centavos)
-  leadsLimite         Int                        // limite de leads que foi configurado
-  inicioEm            DateTime                   @default(now())
-  fimEm               DateTime?                  // quando cancelou ou mudou de plano
+  id                   String           @id
+  advogadoId           String
+  planoId              String
+  planoAnteriorId      String? // plano que estava antes (para tracking de upgrade/downgrade)
+  status               StatusAssinatura @default(ATIVA)
+  precoPago            Int? // preço que foi cobrado (em centavos)
+  leadsLimite          Int // limite de leads que foi configurado
+  inicioEm             DateTime         @default(now())
+  fimEm                DateTime? // quando cancelou ou mudou de plano
   stripeSubscriptionId String?
-  stripePriceId       String?
-  motivo              String?                    // motivo de cancelamento/mudança
-  canceladoPor        CanceladoPor?              // quem cancelou
-  createdAt           DateTime                   @default(now())
-  updatedAt           DateTime
-  advogados           advogados                  @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
-  planos              planos                     @relation(fields: [planoId], references: [id])
+  stripePriceId        String?
+  motivo               String? // motivo de cancelamento/mudança
+  canceladoPor         CanceladoPor? // quem cancelou
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime
+  advogados            advogados        @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+  planos               planos           @relation(fields: [planoId], references: [id])
 
   @@index([advogadoId])
   @@index([planoId])
@@ -283,24 +283,24 @@ model sessions {
 }
 
 model users {
-  id                String       @id
-  email             String       @unique
+  id                String      @id
+  email             String      @unique
   emailVerified     DateTime?
   name              String
   image             String?
   phone             String?
   password          String?
   role              UserRole
-  status            UserStatus   @default(ACTIVE)
-  activationToken   String?      @unique
+  status            UserStatus  @default(ACTIVE)
+  activationToken   String?     @unique
   activationExpires DateTime?
-  createdAt         DateTime     @default(now())
+  createdAt         DateTime    @default(now())
   updatedAt         DateTime
   accounts          accounts[]
   advogados         advogados?
   cidadaos          cidadaos?
   sessions          sessions[]
-  mensagens         mensagens[]  @relation("MensagensRemetente")
+  mensagens         mensagens[] @relation("MensagensRemetente")
 }
 
 model verification_tokens {
@@ -320,8 +320,8 @@ enum CasoStatus {
 }
 
 enum ChatMode {
-  MVP       // Polling otimizado (sem dependências externas)
-  PUSHER    // WebSocket em tempo real via Pusher
+  MVP // Polling otimizado (sem dependências externas)
+  PUSHER // WebSocket em tempo real via Pusher
 }
 
 enum ConfiguracaoTipo {
@@ -372,4 +372,27 @@ enum UserStatus {
   ACTIVE
   SUSPENDED
   DELETED
+}
+
+model security_logs {
+  id               String   @id @default(uuid())
+  action           String // Tipo de ação (ex: PLANO_ADVOGADO_ALTERADO)
+  actorId          String // ID do usuário que executou a ação
+  actorEmail       String
+  actorName        String
+  actorRole        String
+  targetType       String // Tipo do alvo (ex: ADVOGADO, CASO, etc)
+  targetId         String // ID do alvo
+  targetIdentifier String? // Identificador do alvo (OAB, email, etc)
+  changes          Json? // Array de mudanças [{field, from, to}]
+  metadata         Json? // Metadados adicionais (IP, User-Agent, motivo, etc)
+  severity         String   @default("INFO") // INFO, WARNING, CRITICAL
+  createdAt        DateTime @default(now())
+
+  @@index([action])
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@index([severity])
+  @@map("security_logs")
 }

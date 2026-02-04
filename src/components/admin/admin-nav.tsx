@@ -56,6 +56,11 @@ const navItems = [
     href: '/admin/planos',
     icon: CreditCard,
   },
+  {
+    title: 'Auditoria',
+    href: '/admin/auditoria',
+    icon: Shield,
+  },
 ]
 
 export function AdminNav() {

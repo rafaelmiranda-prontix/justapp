@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/middleware/admin'
 import { logger } from '@/lib/logger'
 import { updateAdvogadoPlan } from '@/lib/subscription-service'
+import { securityLog, getClientIp, getUserAgent } from '@/lib/security-logger'
 import { z } from 'zod'
 
 const updatePlanSchema = z.object({
@@ -16,10 +17,13 @@ export async function POST(
   { params }: { params: Promise<{ advogadoId: string }> }
 ) {
   try {
-    const { error } = await requireAdmin()
+    const { error, session } = await requireAdmin()
 
-    if (error) {
-      return error
+    if (error || !session?.user) {
+      return error || NextResponse.json(
+        { success: false, error: 'Não autorizado' },
+        { status: 401 }
+      )
     }
 
     const { advogadoId } = await params
@@ -32,6 +36,7 @@ export async function POST(
       include: {
         users: {
           select: {
+            id: true,
             name: true,
             email: true,
           },
@@ -46,6 +51,9 @@ export async function POST(
       )
     }
 
+    // Guardar plano anterior para log
+    const planoAnterior = advogado.plano
+
     // Converter string de data para Date se fornecida
     const planoExpira = data.planoExpira
       ? new Date(data.planoExpira)
@@ -56,8 +64,48 @@ export async function POST(
       precoPago: 0, // Admin pode definir preço manualmente se necessário
     })
 
+    // Log de segurança - sempre registra, mesmo em produção
+    await securityLog({
+      action: 'PLANO_ADVOGADO_ALTERADO',
+      actor: {
+        id: session.user.id,
+        email: session.user.email || '[REDACTED]',
+        name: session.user.name || '[REDACTED]',
+        role: session.user.role || 'ADMIN',
+      },
+      target: {
+        type: 'ADVOGADO',
+        id: advogadoId,
+        identifier: advogado.oab,
+      },
+      changes: [
+        {
+          field: 'plano',
+          from: planoAnterior,
+          to: data.plano,
+        },
+        ...(planoExpira
+          ? [
+              {
+                field: 'planoExpira',
+                from: advogado.planoExpira?.toISOString() || null,
+                to: planoExpira.toISOString(),
+              },
+            ]
+          : []),
+      ],
+      metadata: {
+        ipAddress: getClientIp(req),
+        userAgent: getUserAgent(req),
+        motivo: data.motivo || 'Alteração administrativa',
+        advogadoEmail: advogado.users.email,
+        advogadoName: advogado.users.name,
+      },
+      timestamp: new Date(),
+    })
+
     logger.info(
-      `[Admin] Plano atualizado para advogado ${advogadoId}: ${advogado.plano} → ${data.plano}`
+      `[Admin] Plano atualizado para advogado ${advogadoId}: ${planoAnterior} → ${data.plano}`
     )
 
     return NextResponse.json({
