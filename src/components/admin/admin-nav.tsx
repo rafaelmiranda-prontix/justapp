@@ -11,6 +11,7 @@ import {
   Shield,
   Settings,
   Cog,
+  FileText,
 } from 'lucide-react'
 
 const navItems = [
@@ -18,6 +19,11 @@ const navItems = [
     title: 'Dashboard',
     href: '/admin/dashboard',
     icon: LayoutDashboard,
+  },
+  {
+    title: 'Casos',
+    href: '/admin/casos',
+    icon: FileText,
   },
   {
     title: 'Advogados',

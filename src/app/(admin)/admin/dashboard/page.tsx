@@ -13,6 +13,7 @@ import {
   AlertCircle,
   TrendingUp,
   Settings,
+  Briefcase,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -82,6 +83,23 @@ export default function AdminDashboardPage() {
             </p>
             <Button asChild variant="outline" className="w-full">
               <Link href="/admin/usuarios">Gerenciar Usuários</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Gestão de Casos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Visualizar e gerenciar todos os casos da plataforma
+            </p>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/admin/casos">Gerenciar Casos</Link>
             </Button>
           </CardContent>
         </Card>
