@@ -1,7 +1,7 @@
 # 🎉 LegalConnect - STATUS FINAL: 100% COMPLETO
 
-**Data:** 2026-02-01
-**Versão:** 1.3.0
+**Data:** 2026-02-03
+**Versão:** 1.4.0
 **Status:** ✅ PRONTO PARA PRODUÇÃO
 
 ---
@@ -144,6 +144,22 @@ O **LegalConnect** está **100% completo** e pronto para deploy em produção. T
 - [x] Docker configurado
 - [x] CI/CD pipeline
 - [x] Documentação de deployment
+- [x] **Sistema de Gravação de Áudio** ⭐ NOVO (2026-02-03)
+  - Gravação de áudio no navegador
+  - Suporte para múltiplos codecs (WebM, OGG, MP4)
+  - Detecção automática do melhor codec suportado
+  - Transcrição em tempo real com Web Speech API
+  - Preview de áudio antes de enviar
+  - Upload para Supabase Storage
+  - Reprodução de áudios recebidos
+  - Tratamento de erros e permissões
+  - Configurações otimizadas (echo cancellation, noise suppression)
+- [x] **Remoção de Logs em Produção** ⭐ NOVO (2026-02-03)
+  - Configuração Next.js para remover `console.log` em produção
+  - Logger client-side (`clientLogger`) que não loga em produção
+  - Mantém apenas `console.error` e `console.warn` em produção
+  - Substituição de logs críticos por `clientLogger`
+  - Performance otimizada (menos código em produção)
 
 ### Fase 8: Validação ✓
 - [x] Landing page de marketing
@@ -206,14 +222,23 @@ O **LegalConnect** está **100% completo** e pronto para deploy em produção. T
 ### Fase 9: Finalização ✓
 - [x] **Sistema de Email Completo**
   - Integração com Resend
-  - 5 templates de email prontos:
+  - 6 templates de email prontos:
     - Novo match para advogado
     - Match aceito para cidadão
     - Nova mensagem no chat
     - Aprovação de advogado
     - Convite beta
+    - Notificação de novo caso alocado ⭐ NOVO
   - Fallback graceful (logs quando não configurado)
   - Suporte para HTML e texto simples
+- [x] **Sistema de Notificações Automáticas** ⭐ NOVO (2026-02-03)
+  - Cron job para notificar advogados sobre novos casos
+  - Execução a cada 30 minutos
+  - Notifica apenas matches PENDENTES não notificados
+  - Campo `notificadoEm` no modelo `matches` para rastreamento
+  - Template de email dedicado para notificação de casos
+  - Endpoint `/api/cron/notify-lawyers` configurado no Vercel Cron
+  - Proteção com `CRON_SECRET` para segurança
 
 ### Fase 10: Perfis e Navegação Completa ✓ ⭐ NOVO (2026-01-30)
 - [x] **Perfil do Advogado** (`/advogado/perfil`)
@@ -344,6 +369,18 @@ src/
 - ✅ Webhook signature verification (Stripe)
 - ✅ Rate limiting preparado
 - ✅ Validação de uploads (tipo e tamanho)
+- ✅ **Content Security Policy (CSP) Completo** ⭐ NOVO (2026-02-03)
+  - Permissões configuradas para Supabase (scripts, mídia, conexões)
+  - Permissões para Google Tag Manager e Google Analytics
+  - Permissões para PostHog (analytics)
+  - Suporte para URLs blob (áudio gravado)
+  - Suporte para WebSocket (wss: ws:)
+  - Proteção contra XSS e injection attacks
+- ✅ **Permissões de Mídia** ⭐ NOVO (2026-02-03)
+  - Permissões de microfone configuradas (`microphone=(self)`)
+  - Permissões de câmera configuradas (`camera=(self)`)
+  - Tratamento de erros de permissão
+  - Mensagens de erro claras para o usuário
 
 ---
 
@@ -357,6 +394,11 @@ src/
 - ✅ Caching estratégico
 - ✅ SWC Minify ativado
 - ✅ Compression ativada
+- ✅ **Remoção de Console.log em Produção** ⭐ NOVO (2026-02-03)
+  - Next.js remove automaticamente `console.log` em produção
+  - Mantém apenas `console.error` e `console.warn`
+  - Logger client-side que não executa em produção
+  - Reduz tamanho do bundle e melhora performance
 
 ---
 
@@ -447,6 +489,12 @@ NEXT_PUBLIC_GTM_ID=GTM-XXXXXXX
 3. Nova Mensagem
 4. Aprovação de Cadastro
 5. Convite Beta
+6. **Notificação de Novo Caso Alocado** ⭐ NOVO (2026-02-03)
+   - Enviado automaticamente via cron job
+   - Detalhes do caso (área, localização, urgência)
+   - Score de compatibilidade
+   - Data de expiração
+   - Botão CTA para acessar dashboard
 
 **Configuração:**
 ```env
@@ -459,6 +507,12 @@ EMAIL_FROM=LegalConnect <noreply@legalconnect.com>
 - Responsive design
 - Fallback graceful (logs se não configurado)
 - Easy to extend
+- **Notificações Automáticas** ⭐ NOVO (2026-02-03)
+  - Cron job executa a cada 30 minutos
+  - Notifica advogados sobre matches PENDENTES não notificados
+  - Rastreamento via campo `notificadoEm` no banco
+  - Endpoint: `/api/cron/notify-lawyers`
+  - Protegido com `CRON_SECRET`
 
 ---
 
@@ -585,6 +639,16 @@ public/uploads/attachments/
 
 **Variáveis de Ambiente:** `.env.example`
 
+**Cron Jobs Configurados:** ⭐ NOVO (2026-02-03)
+- `*/30 * * * *` - `/api/cron/notify-lawyers` - Notificar advogados sobre novos casos
+- `0 5 * * *` - `/api/cron/expire-matches` - Expirar matches antigos
+- `0 0 1 * *` - `/api/cron/reset-lead-counters` - Resetar contadores mensais
+
+**Configuração:**
+```env
+CRON_SECRET=seu-token-secreto-aqui
+```
+
 ---
 
 ## 📝 Documentação
@@ -623,6 +687,74 @@ public/uploads/attachments/
 - [x] Analytics dashboard ✅ (implementado)
 
 ---
+
+## 🆕 Atualizações Recentes (2026-02-03) ⭐
+
+### Novas Funcionalidades Implementadas
+
+1. **Sistema de Notificações Automáticas para Advogados**
+   - Cron job configurado para executar a cada 30 minutos
+   - Notifica advogados sobre matches PENDENTES não notificados
+   - Campo `notificadoEm` adicionado ao modelo `matches` para rastreamento
+   - Template de email dedicado com detalhes do caso
+   - Endpoint: `/api/cron/notify-lawyers`
+   - Configurado no `vercel.json` com schedule `*/30 * * * *`
+   - Proteção com `CRON_SECRET` para segurança
+
+2. **Sistema de Gravação de Áudio Completo**
+   - Gravação de áudio no navegador com MediaRecorder API
+   - Detecção automática do melhor codec suportado (WebM, OGG, MP4)
+   - Transcrição em tempo real com Web Speech API
+   - Preview de áudio antes de enviar com controles de reprodução
+   - Upload para Supabase Storage
+   - Reprodução de áudios recebidos nas mensagens
+   - Tratamento completo de erros e permissões
+   - Configurações otimizadas (echo cancellation, noise suppression, auto gain control)
+
+3. **Remoção de Logs em Produção**
+   - Configuração Next.js para remover `console.log` automaticamente em produção
+   - Logger client-side (`clientLogger`) que não executa em produção
+   - Mantém apenas `console.error` e `console.warn` em produção
+   - Substituição de logs críticos por `clientLogger` nos componentes principais
+   - Melhoria de performance (menos código no bundle de produção)
+
+4. **Content Security Policy (CSP) Completo**
+   - Políticas configuradas para permitir Supabase (scripts, mídia, conexões)
+   - Permissões para Google Tag Manager e Google Analytics
+   - Permissões para PostHog (analytics)
+   - Suporte para URLs blob (áudio gravado localmente)
+   - Suporte para WebSocket (wss: ws:)
+   - Proteção contra XSS e injection attacks
+
+5. **Permissões de Mídia Configuradas**
+   - Permissões de microfone configuradas (`microphone=(self)`)
+   - Permissões de câmera configuradas (`camera=(self)`)
+   - Tratamento de erros de permissão com mensagens claras
+   - Suporte para diferentes tipos de erro (NotAllowedError, NotFoundError, etc.)
+
+6. **Correções de UX**
+   - Correção de quebra de mensagens do cliente no chat
+   - Melhoria no tratamento de duração de áudio (Infinity)
+   - Correção de acessibilidade (DialogDescription)
+   - Melhorias no preview de áudio
+
+### Arquivos Criados/Modificados
+
+**Novos Arquivos:**
+- `src/lib/client-logger.ts` - Logger client-side para produção
+- `src/app/api/cron/notify-lawyers/route.ts` - Endpoint de cron job
+- `prisma/migrations/20260203182859_add_notificado_em_to_matches/migration.sql` - Migration para campo `notificadoEm`
+
+**Arquivos Modificados:**
+- `next.config.js` - Configuração de remoção de console.log e CSP
+- `vercel.json` - Adicionado cron job de notificações
+- `prisma/schema.prisma` - Adicionado campo `notificadoEm` ao modelo `matches`
+- `src/lib/notification.service.ts` - Atualizado para marcar matches como notificados
+- `src/components/chat/audio-preview.tsx` - Substituição de console.log por clientLogger
+- `src/components/anonymous-chat/chat-input.tsx` - Substituição de console.log por clientLogger
+- `src/hooks/use-audio-recorder.ts` - Melhorias e substituição de logs
+- `src/hooks/use-anonymous-chat.ts` - Substituição de console.log por clientLogger
+- `src/components/chat/chat-message.tsx` - Correção de quebra de mensagens
 
 ## 🎯 Próximos Passos (Pós-MVP)
 
@@ -685,8 +817,50 @@ O **LegalConnect** está pronto para:
 ---
 
 **Desenvolvido com ❤️ e Claude Code**
-**Versão:** 1.3.0
-**Data:** 2026-02-01
+**Versão:** 1.4.0
+**Data:** 2026-02-03
+
+---
+
+## 🆕 Atualizações Recentes (2026-02-03)
+
+### ⭐ Novas Funcionalidades
+
+1. **Sistema de Notificações Automáticas**
+   - Cron job para notificar advogados sobre novos casos
+   - Execução a cada 30 minutos
+   - Template de email dedicado
+   - Rastreamento de notificações enviadas
+
+2. **Sistema de Gravação de Áudio**
+   - Gravação de áudio no navegador
+   - Transcrição em tempo real
+   - Preview antes de enviar
+   - Upload para Supabase Storage
+   - Suporte para múltiplos codecs
+
+3. **Remoção de Logs em Produção**
+   - Configuração Next.js para remover console.log
+   - Logger client-side que não loga em produção
+   - Performance otimizada
+
+4. **Content Security Policy (CSP)**
+   - Políticas configuradas para Supabase, Google Analytics, PostHog
+   - Suporte para URLs blob e WebSocket
+   - Proteção contra XSS
+
+5. **Permissões de Mídia**
+   - Permissões de microfone e câmera configuradas
+   - Tratamento de erros de permissão
+   - Mensagens de erro claras
+
+### 🔧 Correções e Melhorias
+
+- Correção de quebra de mensagens do cliente no chat
+- Correção de permissões de microfone
+- Correção de CSP bloqueando recursos externos
+- Melhoria no tratamento de erros de áudio
+- Otimização de performance com remoção de logs
 
 ---
 
@@ -719,6 +893,17 @@ Este arquivo (`STATUS_FINAL_100_COMPLETO.md`) é o **documento principal consoli
 - Upload de anexos (imagens, PDFs)
 - Mensagens em tempo real (polling)
 - Recuperação automática de sessões
+- **Gravação de Áudio** ⭐ NOVO (2026-02-03)
+  - Gravação de áudio no navegador
+  - Transcrição em tempo real
+  - Preview antes de enviar
+  - Upload para Supabase Storage
+  - Reprodução de áudios recebidos
+  - Suporte para múltiplos codecs
+- **Notificações Automáticas** ⭐ NOVO (2026-02-03)
+  - Cron job notifica advogados sobre novos casos
+  - Execução a cada 30 minutos
+  - Email com detalhes do caso e CTA
 
 #### 🎯 **Matching e Busca**
 - Algoritmo de score (especialidade, distância, avaliação)
@@ -756,6 +941,11 @@ Este arquivo (`STATUS_FINAL_100_COMPLETO.md`) é o **documento principal consoli
 - Notificações de matches
 - Notificações de mensagens
 - Emails de ativação
+- **Notificações Automáticas via Cron** ⭐ NOVO (2026-02-03)
+  - Notificação automática de novos casos para advogados
+  - Execução a cada 30 minutos
+  - Rastreamento de notificações enviadas
+  - Template de email dedicado
 
 #### 🔐 **Segurança**
 - Autenticação obrigatória
@@ -764,6 +954,13 @@ Este arquivo (`STATUS_FINAL_100_COMPLETO.md`) é o **documento principal consoli
 - Validação de dados (Zod)
 - Security headers
 - Validação de uploads
+- **Content Security Policy (CSP)** ⭐ NOVO (2026-02-03)
+  - Políticas configuradas para Supabase, Google Analytics, PostHog
+  - Suporte para URLs blob e WebSocket
+  - Proteção contra XSS
+- **Permissões de Mídia** ⭐ NOVO (2026-02-03)
+  - Permissões de microfone e câmera configuradas
+  - Tratamento de erros de permissão
 
 #### 📱 **UX/UI**
 - Design System completo (shadcn/ui)
@@ -775,6 +972,16 @@ Este arquivo (`STATUS_FINAL_100_COMPLETO.md`) é o **documento principal consoli
 - Smooth scrolling
 - Cookie consent banner (LGPD)
 - Páginas de compliance (Termos, Privacidade)
+- **Gravação de Áudio** ⭐ NOVO (2026-02-03)
+  - Interface de gravação intuitiva
+  - Preview de áudio com controles
+  - Transcrição em tempo real
+  - Indicadores visuais de gravação
+  - Tratamento de erros amigável
+- **Otimização de Performance** ⭐ NOVO (2026-02-03)
+  - Remoção de logs em produção
+  - Bundle otimizado
+  - Melhor performance no frontend
 
 #### 📊 **Analytics e Tracking**
 - PostHog integrado
