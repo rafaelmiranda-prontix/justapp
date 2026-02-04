@@ -56,8 +56,8 @@ services:
         condition: service_healthy
     restart: unless-stopped
     volumes:
-      # Montar .env se existir (read-only)
-      - ./.env:/app/.env:ro
+      # Montar .env.prd se existir (read-only)
+      - ./.env.prd:/app/.env:ro
       # Volume para uploads locais (se não usar Supabase)
       - uploads_data:/app/public/uploads
     networks:
