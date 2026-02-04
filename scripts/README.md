@@ -146,6 +146,72 @@ npx tsx scripts/check-distribution.ts
 ✓ Nenhum problema encontrado
 ```
 
+### Verificar Onboarding de Advogados
+```bash
+npm run check:onboarding
+# ou
+npx tsx scripts/check-onboarding.ts
+```
+
+**Mostra**:
+- ✅ Advogados com onboarding completo
+- ❌ Advogados com onboarding incompleto
+- 🔧 Advogados que podem completar agora
+- 📊 Estatísticas de campos faltando
+- ⚠️ Problemas identificados (OAB não verificada, não aprovado, etc.)
+
+**Exemplo de Saída**:
+```
+=== Análise de Onboarding de Advogados ===
+
+📊 Total de advogados: 10
+
+✅ Onboarding Completo: 5
+❌ Onboarding Incompleto: 5
+🔧 Pode Completar Agora: 2
+
+📋 ADVOGADOS COM ONBOARDING INCOMPLETO
+
+👤 Dr. João Silva (joao@example.com)
+   ID: abc123
+   Status da Conta: ACTIVE
+   Onboarding Completo: ❌ Não
+   ⚠️  Campos Faltando:
+      - Biografia não preenchida
+   ✅ PODE COMPLETAR ONBOARDING AGORA!
+
+📊 ESTATÍSTICAS
+Campos Faltando:
+   - OAB: 1
+   - Localização (Cidade/Estado): 2
+   - Biografia: 3
+   - Especialidades: 1
+```
+
+### Completar Onboarding Manualmente
+```bash
+npx tsx scripts/complete-onboarding.ts <advogadoId>
+```
+
+**Quando usar**:
+- Após identificar que um advogado pode completar o onboarding
+- Para forçar a conclusão do onboarding quando todos os campos estão preenchidos
+- Em casos onde o flag não foi atualizado automaticamente
+
+**Exemplo**:
+```bash
+# 1. Verificar quais advogados podem completar
+npm run check:onboarding
+
+# 2. Completar onboarding de um advogado específico
+npx tsx scripts/complete-onboarding.ts abc123
+```
+
+**O que faz**:
+- ✅ Valida se todos os campos obrigatórios estão preenchidos
+- ✅ Atualiza `onboardingCompleted = true`
+- ✅ Mostra resumo do que foi verificado
+
 ---
 
 ## 🚀 Manutenção
@@ -186,7 +252,9 @@ scripts/
 ├── seed-configs.ts                # Cria 21 configurações
 ├── seed-especialidades.ts         # Cria 15 especialidades jurídicas
 ├── seed-lawyers.ts                # Cria 4 advogados de teste
-├── check-distribution.ts          # Diagnóstico completo
+├── check-distribution.ts          # Diagnóstico de distribuição
+├── check-onboarding.ts            # Análise de onboarding
+├── complete-onboarding.ts         # Completar onboarding manualmente
 ├── distribute-open-cases.ts       # Distribuição manual
 ├── update-case-location.ts        # Atualizar localização
 └── clean-database.ts              # Limpar banco (interativo)

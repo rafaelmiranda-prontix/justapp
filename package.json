@@ -22,6 +22,7 @@
     "seed:examples": "tsx scripts/seed-example-cases.ts",
     "seed:remove-examples": "tsx scripts/remove-example-cases.ts",
     "check:distribution": "tsx scripts/check-distribution.ts",
+    "check:onboarding": "tsx scripts/check-onboarding.ts",
     "fix:leads": "tsx scripts/fix-leads-limits.ts",
     "migrate:history": "tsx scripts/migrate-subscription-history.ts",
     "test:redistribution": "tsx scripts/test-redistribution.ts",

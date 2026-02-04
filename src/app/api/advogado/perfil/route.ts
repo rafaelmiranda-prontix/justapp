@@ -53,9 +53,10 @@ export async function GET(req: NextRequest) {
       missingFields.push('Cidade e Estado')
     }
     
-    if (!advogado.bio) {
-      missingFields.push('Biografia')
-    }
+    // Biografia não é mais obrigatória para completar onboarding
+    // if (!advogado.bio) {
+    //   missingFields.push('Biografia')
+    // }
     
     if (advogado.advogado_especialidades.length === 0) {
       missingFields.push('Pelo menos uma especialidade')
@@ -64,19 +65,20 @@ export async function GET(req: NextRequest) {
     // Nota: onboardingCompleted é marcado automaticamente quando todos os campos acima estão preenchidos
     // Não precisa aparecer como campo faltando separado
     
-    if (advogado.users.status !== 'ACTIVE') {
+    if (advogado.users.status !== 'ACTIVE' && advogado.users.status !== 'PRE_ACTIVE') {
       missingFields.push('Conta ativada')
     }
 
     // Verificar se pode receber casos
-    const canReceiveCases = 
-      advogado.users.status === 'ACTIVE' &&
+    // Biografia não é mais obrigatória
+    const canReceiveCases = Boolean(
+      (advogado.users.status === 'ACTIVE' || advogado.users.status === 'PRE_ACTIVE') &&
       advogado.onboardingCompleted &&
       advogado.oab &&
       advogado.cidade &&
       advogado.estado &&
-      advogado.bio &&
       advogado.advogado_especialidades.length > 0
+    )
 
     return NextResponse.json({
       success: true,
