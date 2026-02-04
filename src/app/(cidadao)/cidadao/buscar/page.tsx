@@ -121,7 +121,7 @@ export default function BuscarAdvogadosPage() {
           </p>
           {advogados.length === 0 && (
             <Button asChild>
-              <Link href="/novo-caso">Criar Primeiro Caso</Link>
+              <Link href="/novo-caso">Criar Caso</Link>
             </Button>
           )}
         </div>

@@ -180,7 +180,7 @@ export default function MeusCasosPage() {
                 <Button asChild>
                   <Link href="/novo-caso">
                     <Plus className="h-4 w-4 mr-2" />
-                    Criar Primeiro Caso
+                    Criar Caso
                   </Link>
                 </Button>
               </CardContent>
