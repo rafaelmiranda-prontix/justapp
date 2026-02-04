@@ -4,7 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { CheckCircle2, XCircle, MapPin, Scale, Star, UserCheck } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { CheckCircle2, XCircle, MapPin, Scale, Star, UserCheck, CreditCard } from 'lucide-react'
 import { formatOAB } from '@/lib/utils'
 
 interface AdvogadoModerationCardProps {
@@ -14,6 +21,8 @@ interface AdvogadoModerationCardProps {
     oabVerificado: boolean
     aprovado: boolean
     onboardingCompleted?: boolean
+    plano?: string
+    planoExpira?: string | null
     cidade: string
     estado: string
     createdAt: string
@@ -34,6 +43,7 @@ interface AdvogadoModerationCardProps {
   onApprove: () => void
   onReject: () => void
   onCompleteOnboarding?: () => void
+  onUpdatePlan?: (plano: string) => void
 }
 
 export function AdvogadoModerationCard({
@@ -41,6 +51,7 @@ export function AdvogadoModerationCard({
   onApprove,
   onReject,
   onCompleteOnboarding,
+  onUpdatePlan,
 }: AdvogadoModerationCardProps) {
   const getInitials = (name: string) => {
     return name
@@ -124,6 +135,45 @@ export function AdvogadoModerationCard({
               ({advogado.totalAvaliacoes}{' '}
               {advogado.totalAvaliacoes === 1 ? 'avaliação' : 'avaliações'})
             </span>
+          </div>
+        )}
+
+        {onUpdatePlan && (
+          <div className="pt-2 border-t">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-medium">Plano Atual:</p>
+                <Badge variant="outline" className="ml-auto">
+                  {advogado.plano || 'FREE'}
+                </Badge>
+              </div>
+              {advogado.planoExpira && (
+                <p className="text-xs text-muted-foreground">
+                  Expira em: {new Date(advogado.planoExpira).toLocaleDateString('pt-BR')}
+                </p>
+              )}
+              <Select
+                value={advogado.plano || 'FREE'}
+                onValueChange={(value) => {
+                  if (value !== advogado.plano) {
+                    if (confirm(`Alterar plano de ${advogado.plano || 'FREE'} para ${value}?`)) {
+                      onUpdatePlan(value)
+                    }
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione um plano" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FREE">FREE - Gratuito</SelectItem>
+                  <SelectItem value="BASIC">BASIC - Básico</SelectItem>
+                  <SelectItem value="PREMIUM">PREMIUM - Premium</SelectItem>
+                  <SelectItem value="UNLIMITED">UNLIMITED - Ilimitado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         )}
 

@@ -12,6 +12,7 @@ import {
   Settings,
   Cog,
   FileText,
+  CreditCard,
 } from 'lucide-react'
 
 const navItems = [
@@ -49,6 +50,11 @@ const navItems = [
     title: 'Config. Chat',
     href: '/admin/chat-config',
     icon: Settings,
+  },
+  {
+    title: 'Planos',
+    href: '/admin/planos',
+    icon: CreditCard,
   },
 ]
 

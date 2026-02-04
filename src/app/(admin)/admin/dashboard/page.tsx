@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Settings,
   Briefcase,
+  CreditCard,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -122,6 +123,23 @@ export default function AdminDashboardPage() {
               </p>
               <Button asChild variant="default" className="w-full">
                 <Link href="/admin/chat-config">Configurar Chat</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Gestão de Planos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Criar, editar e gerenciar planos de assinatura
+              </p>
+              <Button asChild variant="default" className="w-full">
+                <Link href="/admin/planos">Gerenciar Planos</Link>
               </Button>
             </CardContent>
           </Card>

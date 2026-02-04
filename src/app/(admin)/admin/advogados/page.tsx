@@ -23,6 +23,8 @@ interface Advogado {
   oabVerificado: boolean
   aprovado: boolean
   onboardingCompleted: boolean
+  plano: string
+  planoExpira: string | null
   cidade: string
   estado: string
   createdAt: string
@@ -168,6 +170,38 @@ export default function AdminAdvogadosPage() {
     }
   }
 
+  const handleUpdatePlan = async (advogadoId: string, plano: string) => {
+    try {
+      const res = await fetch(
+        `/api/admin/advogados/${advogadoId}/update-plan`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plano }),
+        }
+      )
+
+      const result = await res.json()
+
+      if (result.success) {
+        toast({
+          title: 'Sucesso',
+          description: result.message || 'Plano atualizado com sucesso',
+        })
+        fetchAdvogados()
+      } else {
+        throw new Error(result.error || 'Erro ao atualizar plano')
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description:
+          error instanceof Error ? error.message : 'Erro ao atualizar plano',
+        variant: 'destructive',
+      })
+    }
+  }
+
   return (
     <div className="container max-w-7xl py-8">
       <div className="mb-8">
@@ -217,6 +251,7 @@ export default function AdminAdvogadosPage() {
                 onApprove={() => handleApprove(advogado.id)}
                 onReject={() => handleReject(advogado.id)}
                 onCompleteOnboarding={() => handleCompleteOnboarding(advogado.id)}
+                onUpdatePlan={(plano) => handleUpdatePlan(advogado.id, plano)}
               />
             ))}
           </div>

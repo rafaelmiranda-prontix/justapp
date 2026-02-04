@@ -81,6 +81,8 @@ export async function GET(req: Request) {
         especialidades, // Adiciona especialidades no formato esperado
         avaliacaoMedia: Math.round(media * 10) / 10,
         totalAvaliacoes,
+        plano: advogado.plano,
+        planoExpira: advogado.planoExpira,
       }
     })
 
