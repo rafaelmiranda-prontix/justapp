@@ -118,13 +118,19 @@ export async function POST(req: NextRequest) {
       ],
     })
 
+    // Só usa especialidadeId se for string não vazia (evita FK violation)
+    const especialidadeId =
+      data.especialidadeId && String(data.especialidadeId).trim()
+        ? data.especialidadeId.trim()
+        : null
+
     // Criar caso
     const caso = await prisma.casos.create({
       data: {
         id: nanoid(),
         cidadaoId: cidadao.id,
         descricao: data.description,
-        especialidadeId: data.especialidadeId,
+        especialidadeId,
         urgencia: data.urgencia || 'NORMAL',
         status: 'ABERTO',
         conversaHistorico: historicoCompleto,

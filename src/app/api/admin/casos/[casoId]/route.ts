@@ -4,9 +4,17 @@ import { requireAdmin } from '@/lib/middleware/admin'
 import { z } from 'zod'
 
 const updateCasoSchema = z.object({
-  status: z.enum(['ABERTO', 'EM_ANDAMENTO', 'FECHADO', 'CANCELADO']).optional(),
+  status: z.enum(['ABERTO', 'EM_MEDIACAO', 'EM_ANDAMENTO', 'FECHADO', 'CANCELADO']).optional(),
   descricao: z.string().min(10).optional(),
   urgencia: z.enum(['BAIXA', 'NORMAL', 'ALTA', 'URGENTE']).optional(),
+  checklist: z
+    .object({
+      documentosRecebidos: z.boolean().optional(),
+      informacoesMinimas: z.boolean().optional(),
+      orientacaoEnviada: z.boolean().optional(),
+      encaminhadoAdvogado: z.boolean().optional(),
+    })
+    .optional(),
 })
 
 // GET - Buscar um caso específico
@@ -69,6 +77,14 @@ export async function GET(
             enviadoEm: 'desc',
           },
         },
+        case_messages: {
+          include: {
+            sender: { select: { id: true, name: true, email: true } },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+        mediatedByAdmin: { select: { id: true, name: true, email: true } },
+        closedByAdmin: { select: { id: true, name: true, email: true } },
       },
     })
 

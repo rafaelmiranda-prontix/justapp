@@ -112,27 +112,59 @@ model avaliacoes {
 }
 
 model casos {
-  id                String          @id
-  cidadaoId         String
-  descricao         String // Resumo do problema (não concatenado)
-  descricaoIA       String? // Análise da IA sobre o caso
-  conversaHistorico Json? // Histórico completo do chat anônimo
-  especialidadeId   String?
-  urgencia          Urgencia        @default(NORMAL)
-  complexidade      Int             @default(1)
-  status            CasoStatus      @default(PENDENTE_ATIVACAO)
-  sessionId         String?         @unique
-  redistribuicoes   Int             @default(0) // Contador de redistribuições após recusas
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime
-  cidadaos          cidadaos        @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)
-  especialidades    especialidades? @relation(fields: [especialidadeId], references: [id])
-  matches           matches[]
+  id                  String          @id
+  cidadaoId           String
+  descricao           String // Resumo do problema (não concatenado)
+  descricaoIA         String? // Análise da IA sobre o caso
+  conversaHistorico   Json? // Histórico completo do chat anônimo
+  especialidadeId     String?
+  urgencia            Urgencia        @default(NORMAL)
+  complexidade        Int             @default(1)
+  status              CasoStatus      @default(PENDENTE_ATIVACAO)
+  sessionId           String?         @unique
+  redistribuicoes     Int             @default(0) // Contador de redistribuições após recusas
+  // Mediação pelo admin
+  mediatedByAdminId   String?
+  mediatedAt          DateTime?
+  // Fechamento pelo admin
+  closedByAdminId     String?
+  closedAt            DateTime?
+  closeReason         CloseReason?
+  closeSummary        String?
+  // Checklist para fechamento (documentos, infos, orientação, encaminhado)
+  checklist           Json?           // { documentosRecebidos, informacoesMinimas, orientacaoEnviada, encaminhadoAdvogado }
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime
+  cidadaos            cidadaos        @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)
+  especialidades      especialidades? @relation(fields: [especialidadeId], references: [id])
+  matches             matches[]
+  case_messages       case_messages[]
+  mediatedByAdmin     users?            @relation("CasosMediatedBy", fields: [mediatedByAdminId], references: [id])
+  closedByAdmin       users?            @relation("CasosClosedBy", fields: [closedByAdminId], references: [id])
 
   @@index([cidadaoId])
   @@index([especialidadeId])
   @@index([sessionId])
   @@index([status])
+  @@index([mediatedByAdminId])
+}
+
+model case_messages {
+  id            String                 @id
+  casoId        String
+  senderRole    CaseMessageSenderRole   // ADMIN | CIDADAO
+  senderId      String                  // userId
+  message       String
+  attachmentUrls String[]               @default([]) // URLs de anexos (reaproveita upload existente)
+  visibility     CaseMessageVisibility   @default(PUBLIC) // PUBLIC = admin↔cidadão; INTERNAL = só admin
+  createdAt     DateTime                @default(now())
+  casos         casos                   @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  sender        users                   @relation("CaseMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([casoId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("case_messages")
 }
 
 model cidadaos {
@@ -301,6 +333,9 @@ model users {
   cidadaos          cidadaos?
   sessions          sessions[]
   mensagens         mensagens[] @relation("MensagensRemetente")
+  case_messages     case_messages[] @relation("CaseMessageSender")
+  casosMediated    casos[]         @relation("CasosMediatedBy")
+  casosClosed      casos[]         @relation("CasosClosedBy")
 }
 
 model verification_tokens {
@@ -314,9 +349,29 @@ model verification_tokens {
 enum CasoStatus {
   PENDENTE_ATIVACAO
   ABERTO
+  EM_MEDIACAO
   EM_ANDAMENTO
   FECHADO
   CANCELADO
+}
+
+enum CloseReason {
+  RESOLVIDO
+  SEM_RETORNO_DO_CLIENTE
+  INCOMPLETO_SEM_DOCUMENTOS
+  DUPLICADO
+  FORA_DO_ESCOPO
+  ENCERRADO_COM_ENCAMINHAMENTO
+}
+
+enum CaseMessageSenderRole {
+  ADMIN
+  CIDADAO
+}
+
+enum CaseMessageVisibility {
+  PUBLIC   // Visível para admin e cidadão
+  INTERNAL // Apenas admin (nota interna)
 }
 
 enum ChatMode {

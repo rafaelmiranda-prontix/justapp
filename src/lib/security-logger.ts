@@ -46,6 +46,8 @@ function getSeverity(action: string): 'INFO' | 'WARNING' | 'CRITICAL' {
     'ADVOGADO_REJEITADO',
     'CASO_DELETADO',
     'USUARIO_SUSPENSO',
+    'CASO_MEDIACAO_ASSUMIDA',
+    'CASO_FECHADO',
   ]
 
   const warningActions = [

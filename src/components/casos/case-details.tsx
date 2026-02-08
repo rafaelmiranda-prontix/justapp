@@ -50,6 +50,8 @@ const urgenciaColors = {
 const statusLabels: Record<string, string> = {
   PENDENTE_ATIVACAO: 'Pendente de Ativação',
   ABERTO: 'Aberto',
+  EM_MEDIACAO: 'Em mediação',
+  EM_ANDAMENTO: 'Em Andamento',
   EM_NEGOCIACAO: 'Em Negociação',
   FECHADO: 'Fechado',
   CANCELADO: 'Cancelado',
@@ -163,8 +165,31 @@ function MessageWithAudio({ message, isUser }: { message: Message; isUser: boole
   return <p className="text-sm whitespace-pre-wrap">{message.content}</p>
 }
 
+function normalizeConversaHistorico(
+  value: Message[] | { messages?: Message[] } | string | null | undefined
+): Message[] {
+  if (value == null) return []
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value) as { messages?: Message[] } | Message[]
+      if (Array.isArray(parsed)) return parsed
+      if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { messages?: Message[] }).messages)) {
+        return (parsed as { messages: Message[] }).messages
+      }
+    } catch {
+      return []
+    }
+    return []
+  }
+  if (typeof value === 'object' && Array.isArray((value as { messages?: Message[] }).messages)) {
+    return (value as { messages: Message[] }).messages
+  }
+  return []
+}
+
 export function CaseDetails({ caso, showCidadaoInfo = false }: CaseDetailsProps) {
-  const conversaHistorico = caso.conversaHistorico as Message[] | null
+  const conversaHistorico = normalizeConversaHistorico(caso.conversaHistorico)
 
   return (
     <div className="space-y-6">
@@ -254,7 +279,7 @@ export function CaseDetails({ caso, showCidadaoInfo = false }: CaseDetailsProps)
       )}
 
       {/* Histórico da conversa */}
-      {conversaHistorico && conversaHistorico.length > 0 && (
+      {conversaHistorico.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
