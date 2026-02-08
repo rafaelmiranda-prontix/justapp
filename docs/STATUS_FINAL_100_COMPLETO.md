@@ -1,7 +1,7 @@
 # 🎉 LegalConnect - STATUS FINAL: 100% COMPLETO
 
-**Data:** 2026-02-03
-**Versão:** 1.4.0
+**Data:** 2026-02-08
+**Versão:** 1.5.0
 **Status:** ✅ PRONTO PARA PRODUÇÃO
 
 ---
@@ -39,6 +39,12 @@ O **LegalConnect** está **100% completo** e pronto para deploy em produção. T
 - [x] Login/Logout
 - [x] Social Login (Google)
 - [x] Proteção de rotas
+- [x] **Conclusão de Perfil para Login Social** ⭐ NOVO (2026-02)
+  - Tela obrigatória para usuários que entram via Google/OAuth
+  - Telefone opcional; cidade e estado obrigatórios
+  - Aceite explícito de Termos de Uso e Política de Privacidade (com links)
+  - Redirecionamento client-side via hook `useCheckProfileComplete`
+  - Rota `/auth/complete-profile`; API `PATCH /api/cidadao/perfil`
 
 ### Fase 2: Chat e IA ✓
 - [x] Chat de entrada para casos
@@ -46,6 +52,10 @@ O **LegalConnect** está **100% completo** e pronto para deploy em produção. T
 - [x] Fallback rule-based
 - [x] Classificação automática
 - [x] Armazenamento de casos
+- [x] **Envio de Caso ao Final do Chat (Cidadão Logado)** ⭐ NOVO (2026-02)
+  - Form no chat para cidade/estado; envio para `/api/casos/create-and-distribute`
+  - Criação do caso + distribuição automática + notificações aos advogados
+  - Componente `CaseSubmitForm`; sem coleta de nome/contato (usuário já logado)
 
 ### Fase 3: Matching ✓
 - [x] Algoritmo de score (especialidade + distância + avaliação + disponibilidade)
@@ -89,6 +99,21 @@ O **LegalConnect** está **100% completo** e pronto para deploy em produção. T
   - Moderação de advogados
   - Moderação de avaliações
   - Gestão de usuários
+  - **Gestão de Casos** ⭐ NOVO (2026-02)
+    - Listagem com filtros (status, especialidade, busca)
+    - Visualização e edição de caso (status, descrição, urgência)
+    - Indicador de caso alocado ou não
+    - Ações manuais: Alocar e Dealocar caso
+  - **Gestão de Planos** ⭐ NOVO (2026-02)
+    - CRUD de planos (criar, editar, ativar/desativar, soft delete)
+    - Aceita -1 para leads ilimitados (mensal e por hora)
+    - stripePriceId opcional
+  - **Associação Advogado ↔ Plano** ⭐ NOVO (2026-02)
+    - Alteração de plano do advogado pelo admin
+  - **Auditoria de Segurança** ⭐ NOVO (2026-02)
+    - Logs de ações críticas (alterações de plano)
+    - Dashboard de auditoria com filtros e export (CSV/JSON)
+    - Estatísticas e alertas de atividade suspeita
 
 ### Fase 6: Monetização ✓
 - [x] 4 Planos (FREE, BASIC, PREMIUM, UNLIMITED)
@@ -298,6 +323,7 @@ src/
 │   ├── (admin)/              # Painel administrativo
 │   ├── (advogado)/           # Área do advogado
 │   ├── (auth)/               # Autenticação
+│   │   └── auth/complete-profile/ # ⭐ NOVO - Conclusão de perfil (login social)
 │   ├── (cidadao)/            # Área do cidadão
 │   ├── (marketing)/          # Landing page + Campanha
 │   │   ├── page.tsx          # Landing principal
@@ -308,8 +334,11 @@ src/
 │   │   └── privacidade/      # ⭐ NOVO - Política de Privacidade
 │   └── api/                  # 30+ APIs REST
 │       ├── admin/
-│       │   └── analytics/    # ⭐ NOVO - Analytics endpoints
-│       ├── admin/
+│       │   ├── analytics/    # Analytics endpoints
+│       │   ├── casos/        # ⭐ NOVO - Gestão de casos (list, get, patch, allocate, deallocate)
+│       │   ├── planos/       # ⭐ NOVO - CRUD de planos
+│       │   ├── advogados/    # update-plan (com security log)
+│       │   └── security-logs/ # ⭐ NOVO - Logs, stats, export, alerts
 │       ├── advogado/
 │       ├── advogados/
 │       ├── ai/
@@ -317,6 +346,8 @@ src/
 │       ├── avaliacoes/
 │       ├── beta/
 │       ├── casos/
+│       │   ├── create-and-distribute/ # ⭐ NOVO - Criar caso e distribuir (cidadão logado)
+│       │   └── audio/
 │       ├── feedback/
 │       ├── matches/
 │       ├── stripe/
@@ -337,7 +368,9 @@ src/
 │       ├── cookie-banner.tsx # ⭐ NOVO - Banner de cookies
 │       └── ...
 │
-├── hooks/                    # Custom hooks (8+)
+├── hooks/                    # Custom hooks (10+)
+│   ├── use-check-profile-complete.ts # ⭐ NOVO - Redireciona cidadão para complete-profile
+│   └── ...
 ├── lib/                      # Serviços e utilitários
 │   ├── ai-service.ts
 │   ├── analytics.ts          # ⭐ NOVO - Analytics service (PostHog + GA + GTM)
@@ -352,6 +385,8 @@ src/
 │   ├── subscription-history.service.ts # ⭐ NOVO - Histórico
 │   ├── stripe.ts             # Cliente Stripe
 │   ├── upload-service.ts     # Upload de arquivos
+│   ├── security-logger.ts    # ⭐ NOVO - Log estruturado para auditoria
+│   ├── security-alerts.ts    # ⭐ NOVO - Detecção de atividade suspeita
 │   └── utils.ts
 │
 └── types/                    # TypeScript types
@@ -376,6 +411,10 @@ src/
   - Suporte para URLs blob (áudio gravado)
   - Suporte para WebSocket (wss: ws:)
   - Proteção contra XSS e injection attacks
+- ✅ **Log de Segurança e Auditoria** ⭐ NOVO (2026-02)
+  - Tabela `security_logs` para ações críticas (ex.: alteração de plano do advogado)
+  - API de consulta, estatísticas e export (CSV/JSON)
+  - Dashboard em `/admin/auditoria` com filtros e alertas de atividade suspeita
 - ✅ **Permissões de Mídia** ⭐ NOVO (2026-02-03)
   - Permissões de microfone configuradas (`microphone=(self)`)
   - Permissões de câmera configuradas (`camera=(self)`)
@@ -621,6 +660,7 @@ public/uploads/attachments/
 - Plano (com `leadsPerHour` - novo campo)
 - Assinatura (Stripe)
 - HistoricoAssinaturas
+- **security_logs** ⭐ NOVO (2026-02) - Auditoria de ações críticas (action, actor, target, changes, severity)
 - BetaInvite, Feedback
 
 **Migrations:** Prontas
@@ -637,7 +677,15 @@ public/uploads/attachments/
 
 **Documentação:** `docs/DEPLOYMENT.md`
 
-**Variáveis de Ambiente:** `.env.example`
+**Scripts úteis:**
+- `npm run check:onboarding` - Analisa por que um advogado não completou o onboarding
+- `npm run db:apply-security-logs` - Aplica migration da tabela `security_logs` (ou use SQL manual; ver `docs/APLICAR_MIGRATION_SECURITY_LOGS.md`)
+- Desenvolvimento: `node scripts/load-env.js` carrega `.env.dev`; build/start podem usar `.env.prd` ou variáveis do Vercel
+
+**Variáveis de Ambiente:**
+- `.env.dev` (desenvolvimento) e `.env.prd` (produção); exemplos em `.env.dev.example` e `.env.prd.example`
+- Script `scripts/load-env.js` carrega o env correto; em Vercel/CI não exige `.env.prd` (variáveis no dashboard)
+- Documentação: `README.ENV.md`
 
 **Cron Jobs Configurados:** ⭐ NOVO (2026-02-03)
 - `*/30 * * * *` - `/api/cron/notify-lawyers` - Notificar advogados sobre novos casos
@@ -662,14 +710,17 @@ CRON_SECRET=seu-token-secreto-aqui
 - STRIPE_SETUP.md
 - RESUMO_GERAL_FASES_5_8.md
 - STATUS_FINAL_100_COMPLETO.md ⭐ ESTE
+- README.ENV.md ⭐ NOVO - Variáveis de ambiente (.env.dev / .env.prd)
+- APLICAR_MIGRATION_SECURITY_LOGS.md ⭐ NOVO - Aplicação manual da migration security_logs
+- scripts/README.md - Documentação dos scripts (check-onboarding, complete-onboarding, load-env)
 
 ---
 
 ## ✅ Checklist de Produção
 
 ### Antes do Deploy
-- [ ] Configurar variáveis de ambiente em produção
-- [ ] Aplicar migrations do banco (`npm run db:push`)
+- [ ] Configurar variáveis de ambiente em produção (ver `README.ENV.md` e `.env.prd.example`)
+- [ ] Aplicar migrations do banco (`npm run db:push` ou `npm run db:migrate:deploy`); se necessário, aplicar `security_logs` manualmente (ver `docs/APLICAR_MIGRATION_SECURITY_LOGS.md`)
 - [ ] Seed de especialidades (`npm run db:seed`)
 - [ ] Configurar Google OAuth (produção)
 - [ ] Configurar Stripe (produção)
@@ -688,73 +739,51 @@ CRON_SECRET=seu-token-secreto-aqui
 
 ---
 
-## 🆕 Atualizações Recentes (2026-02-03) ⭐
+## 🆕 Atualizações Recentes (2026-02-08) ⭐
 
 ### Novas Funcionalidades Implementadas
 
-1. **Sistema de Notificações Automáticas para Advogados**
-   - Cron job configurado para executar a cada 30 minutos
-   - Notifica advogados sobre matches PENDENTES não notificados
-   - Campo `notificadoEm` adicionado ao modelo `matches` para rastreamento
-   - Template de email dedicado com detalhes do caso
-   - Endpoint: `/api/cron/notify-lawyers`
-   - Configurado no `vercel.json` com schedule `*/30 * * * *`
-   - Proteção com `CRON_SECRET` para segurança
+1. **Painel Admin – Gestão de Casos**
+   - Listagem de casos com filtros (status, especialidade, busca) e estatísticas
+   - Visualização e edição de caso (status, descrição, urgência)
+   - Indicador de caso alocado ou não; ações manuais Alocar e Dealocar
+   - APIs: `GET/PATCH /api/admin/casos`, `GET /api/admin/casos/[id]`, `POST allocate/deallocate`
 
-2. **Sistema de Gravação de Áudio Completo**
-   - Gravação de áudio no navegador com MediaRecorder API
-   - Detecção automática do melhor codec suportado (WebM, OGG, MP4)
-   - Transcrição em tempo real com Web Speech API
-   - Preview de áudio antes de enviar com controles de reprodução
-   - Upload para Supabase Storage
-   - Reprodução de áudios recebidos nas mensagens
-   - Tratamento completo de erros e permissões
-   - Configurações otimizadas (echo cancellation, noise suppression, auto gain control)
+2. **Painel Admin – Gestão de Planos**
+   - CRUD completo de planos (criar, editar, ativar/desativar, soft delete)
+   - Aceita -1 para leads ilimitados (mensal e por hora); `stripePriceId` opcional
+   - Páginas: `/admin/planos`; APIs: `GET/POST /api/admin/planos`, `GET/PATCH/DELETE /api/admin/planos/[id]`
 
-3. **Remoção de Logs em Produção**
-   - Configuração Next.js para remover `console.log` automaticamente em produção
-   - Logger client-side (`clientLogger`) que não executa em produção
-   - Mantém apenas `console.error` e `console.warn` em produção
-   - Substituição de logs críticos por `clientLogger` nos componentes principais
-   - Melhoria de performance (menos código no bundle de produção)
+3. **Associação Advogado ↔ Plano e Auditoria de Segurança**
+   - Admin pode alterar plano do advogado (`POST /api/admin/advogados/[id]/update-plan`)
+   - Log de segurança para alterações de plano (tabela `security_logs`)
+   - Dashboard de auditoria em `/admin/auditoria`: filtros, estatísticas, export CSV/JSON, alertas de atividade suspeita
+   - APIs: `/api/admin/security-logs`, `/api/admin/security-logs/stats`, `/api/admin/security-logs/export`, `/api/admin/security-logs/alerts`
 
-4. **Content Security Policy (CSP) Completo**
-   - Políticas configuradas para permitir Supabase (scripts, mídia, conexões)
-   - Permissões para Google Tag Manager e Google Analytics
-   - Permissões para PostHog (analytics)
-   - Suporte para URLs blob (áudio gravado localmente)
-   - Suporte para WebSocket (wss: ws:)
-   - Proteção contra XSS e injection attacks
+4. **Conclusão de Perfil para Login Social**
+   - Tela obrigatória em `/auth/complete-profile` para usuários que entram via Google/OAuth
+   - Coleta: telefone (opcional), cidade e estado (obrigatórios), aceite de Termos e Privacidade (com links)
+   - Redirecionamento client-side via hook `useCheckProfileComplete` no layout do cidadão
+   - API: `PATCH /api/cidadao/perfil`; middleware permite rota sem Prisma (Edge)
 
-5. **Permissões de Mídia Configuradas**
-   - Permissões de microfone configuradas (`microphone=(self)`)
-   - Permissões de câmera configuradas (`camera=(self)`)
-   - Tratamento de erros de permissão com mensagens claras
-   - Suporte para diferentes tipos de erro (NotAllowedError, NotFoundError, etc.)
+5. **Novo Caso (Cidadão Logado) – Envio ao Final do Chat**
+   - Form no chat para cidade/estado; envio para `POST /api/casos/create-and-distribute`
+   - Criação do caso + distribuição automática + notificações aos advogados
+   - Componente `CaseSubmitForm`; sem coleta de nome/contato (usuário já logado)
 
-6. **Correções de UX**
-   - Correção de quebra de mensagens do cliente no chat
-   - Melhoria no tratamento de duração de áudio (Infinity)
-   - Correção de acessibilidade (DialogDescription)
-   - Melhorias no preview de áudio
+6. **Variáveis de Ambiente e Scripts**
+   - Separação `.env.dev` e `.env.prd`; `scripts/load-env.js`; build no Vercel sem exigir `.env.prd` (variáveis no dashboard)
+   - Scripts: `check-onboarding` (diagnóstico de onboarding do advogado), `complete-onboarding` (conclusão manual; biografia não obrigatória; PRE_ACTIVE aceito; ativa conta se PRE_ACTIVE)
+   - Docs: `README.ENV.md`, `APLICAR_MIGRATION_SECURITY_LOGS.md`, `scripts/README.md`
 
-### Arquivos Criados/Modificados
+7. **Sistema de Notificações Automáticas, Áudio, CSP e Logs (2026-02-03)**
+   - Cron notifica advogados sobre matches PENDENTES; gravação de áudio no chat; CSP completo; remoção de logs em produção; permissões de mídia
 
-**Novos Arquivos:**
-- `src/lib/client-logger.ts` - Logger client-side para produção
-- `src/app/api/cron/notify-lawyers/route.ts` - Endpoint de cron job
-- `prisma/migrations/20260203182859_add_notificado_em_to_matches/migration.sql` - Migration para campo `notificadoEm`
+### Arquivos Criados/Modificados (Resumo)
 
-**Arquivos Modificados:**
-- `next.config.js` - Configuração de remoção de console.log e CSP
-- `vercel.json` - Adicionado cron job de notificações
-- `prisma/schema.prisma` - Adicionado campo `notificadoEm` ao modelo `matches`
-- `src/lib/notification.service.ts` - Atualizado para marcar matches como notificados
-- `src/components/chat/audio-preview.tsx` - Substituição de console.log por clientLogger
-- `src/components/anonymous-chat/chat-input.tsx` - Substituição de console.log por clientLogger
-- `src/hooks/use-audio-recorder.ts` - Melhorias e substituição de logs
-- `src/hooks/use-anonymous-chat.ts` - Substituição de console.log por clientLogger
-- `src/components/chat/chat-message.tsx` - Correção de quebra de mensagens
+**Novos:** `src/app/(admin)/admin/casos/page.tsx`, `src/app/(admin)/admin/planos/page.tsx`, `src/app/(admin)/admin/auditoria/page.tsx`, `src/app/api/admin/casos/*`, `src/app/api/admin/planos/*`, `src/app/api/admin/security-logs/*`, `src/app/api/admin/advogados/[id]/update-plan/route.ts`, `src/app/(auth)/auth/complete-profile/page.tsx`, `src/hooks/use-check-profile-complete.ts`, `src/app/api/casos/create-and-distribute/route.ts`, `src/components/chat/case-submit-form.tsx`, `src/lib/security-logger.ts`, `src/lib/security-alerts.ts`, `scripts/load-env.js`, `scripts/check-onboarding.ts`, `scripts/complete-onboarding.ts`, `scripts/create-security-logs-table.sql`, `README.ENV.md`, `docs/APLICAR_MIGRATION_SECURITY_LOGS.md`
+
+**Modificados:** `prisma/schema.prisma` (security_logs), `src/middleware.ts` (sem Prisma; rota complete-profile), `src/app/(cidadao)/layout.tsx` (useCheckProfileComplete), `src/components/admin/admin-nav.tsx` (Casos, Planos, Auditoria), `package.json` (scripts load-env, check:onboarding, db:apply-security-logs)
 
 ## 🎯 Próximos Passos (Pós-MVP)
 
@@ -817,50 +846,8 @@ O **LegalConnect** está pronto para:
 ---
 
 **Desenvolvido com ❤️ e Claude Code**
-**Versão:** 1.4.0
-**Data:** 2026-02-03
-
----
-
-## 🆕 Atualizações Recentes (2026-02-03)
-
-### ⭐ Novas Funcionalidades
-
-1. **Sistema de Notificações Automáticas**
-   - Cron job para notificar advogados sobre novos casos
-   - Execução a cada 30 minutos
-   - Template de email dedicado
-   - Rastreamento de notificações enviadas
-
-2. **Sistema de Gravação de Áudio**
-   - Gravação de áudio no navegador
-   - Transcrição em tempo real
-   - Preview antes de enviar
-   - Upload para Supabase Storage
-   - Suporte para múltiplos codecs
-
-3. **Remoção de Logs em Produção**
-   - Configuração Next.js para remover console.log
-   - Logger client-side que não loga em produção
-   - Performance otimizada
-
-4. **Content Security Policy (CSP)**
-   - Políticas configuradas para Supabase, Google Analytics, PostHog
-   - Suporte para URLs blob e WebSocket
-   - Proteção contra XSS
-
-5. **Permissões de Mídia**
-   - Permissões de microfone e câmera configuradas
-   - Tratamento de erros de permissão
-   - Mensagens de erro claras
-
-### 🔧 Correções e Melhorias
-
-- Correção de quebra de mensagens do cliente no chat
-- Correção de permissões de microfone
-- Correção de CSP bloqueando recursos externos
-- Melhoria no tratamento de erros de áudio
-- Otimização de performance com remoção de logs
+**Versão:** 1.5.0
+**Data:** 2026-02-08
 
 ---
 
@@ -886,6 +873,7 @@ Este arquivo (`STATUS_FINAL_100_COMPLETO.md`) é o **documento principal consoli
 - Google OAuth
 - Ativação de conta por email
 - Status de conta (PRE_ACTIVE, ACTIVE)
+- **Conclusão de perfil para login social** ⭐ NOVO (2026-02) - Tela obrigatória com cidade/estado e aceite de Termos/Privacidade
 
 #### 💬 **Chat e Comunicação**
 - Chat anônimo com pré-qualificação
@@ -917,6 +905,7 @@ Este arquivo (`STATUS_FINAL_100_COMPLETO.md`) é o **documento principal consoli
 - Dashboard do advogado (leads, conversas, métricas)
 - Páginas dedicadas (Casos Recebidos, Conversas, Avaliações, Estatísticas)
 - Filtros e busca em todas as listagens
+- **Admin:** Gestão de casos (listar, editar, alocar/dealocar), gestão de planos (CRUD), auditoria de segurança ⭐ NOVO (2026-02)
 
 #### ⭐ **Avaliações**
 - Sistema de rating (1-5 estrelas)
@@ -961,6 +950,9 @@ Este arquivo (`STATUS_FINAL_100_COMPLETO.md`) é o **documento principal consoli
 - **Permissões de Mídia** ⭐ NOVO (2026-02-03)
   - Permissões de microfone e câmera configuradas
   - Tratamento de erros de permissão
+- **Log de segurança e auditoria** ⭐ NOVO (2026-02)
+  - Registro de ações críticas (ex.: alteração de plano do advogado)
+  - Dashboard em `/admin/auditoria`, export e alertas de atividade suspeita
 
 #### 📱 **UX/UI**
 - Design System completo (shadcn/ui)
