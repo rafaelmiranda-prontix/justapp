@@ -96,6 +96,7 @@ export const authOptions: NextAuthOptions = {
                 cidadaos: {
                   create: {
                     id: cidadaoId,
+                    // cidade e estado vazios - usuário precisará completar
                     updatedAt: now,
                   },
                 },

@@ -2,9 +2,17 @@ import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
 
 export default withAuth(
-  function middleware(req) {
+  async function middleware(req) {
     const token = req.nextauth.token
     const pathname = req.nextUrl.pathname
+
+    // Permitir acesso à página de completar perfil
+    if (pathname === '/auth/complete-profile') {
+      return NextResponse.next()
+    }
+
+    // Nota: Verificação de perfil completo é feita no lado do cliente
+    // porque o middleware roda no Edge Runtime que não suporta Prisma
 
     // Redirecionar raiz baseado no role
     if (pathname === '/' && token) {
@@ -59,7 +67,8 @@ export default withAuth(
           pathname.startsWith('/advogado/') || // Perfil público de advogado
           pathname === '/termos' || // Termos de Uso
           pathname === '/privacidade' || // Política de Privacidade
-          pathname.startsWith('/campanha') // Landing page de campanha
+          pathname.startsWith('/campanha') || // Landing page de campanha
+          pathname === '/auth/complete-profile' // Página de completar perfil
         ) {
           return true
         }
