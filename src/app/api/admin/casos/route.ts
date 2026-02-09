@@ -88,12 +88,16 @@ export async function GET(req: NextRequest) {
               mensagens: {
                 select: {
                   id: true,
-                  createdAt: true,
                 },
               },
             },
             orderBy: {
               enviadoEm: 'desc',
+            },
+          },
+          _count: {
+            select: {
+              case_messages: true,
             },
           },
         },

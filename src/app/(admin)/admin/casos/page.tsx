@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -110,6 +111,9 @@ interface Caso {
     }>
   }>
   case_messages?: CaseMessage[]
+  _count?: {
+    case_messages: number
+  }
 }
 
 // Função auxiliar para verificar se caso está alocado
@@ -187,6 +191,7 @@ export default function AdminCasosPage() {
   const [auditLogs, setAuditLogs] = useState<Array<{ id: string; action: string; actorName: string; createdAt: string; severity: string }>>([])
   const [activeTab, setActiveTab] = useState('resumo')
   const { toast } = useToast()
+  const searchParams = useSearchParams()
 
   const fetchCasos = useCallback(async () => {
     setIsLoading(true)
@@ -218,6 +223,25 @@ export default function AdminCasosPage() {
   useEffect(() => {
     fetchCasos()
   }, [fetchCasos])
+
+  // Abrir caso quando vier da notificação (open=casoId)
+  const openCasoId = searchParams.get('open')
+  useEffect(() => {
+    if (!openCasoId || isLoading || casos.length === 0) return
+    const open = async () => {
+      try {
+        const res = await fetch(`/api/admin/casos/${openCasoId}`)
+        const result = await res.json()
+        if (result.success) {
+          setSelectedCaso(result.data)
+          setIsDialogOpen(true)
+        }
+      } catch {
+        // ignore
+      }
+    }
+    open()
+  }, [openCasoId, isLoading, casos.length])
 
   const handleViewDetails = async (casoId: string) => {
     try {
@@ -679,7 +703,7 @@ export default function AdminCasosPage() {
                       <div className="flex items-center gap-1">
                         <MessageSquare className="h-4 w-4" />
                         <span>
-                          {(caso.matches ?? []).reduce((acc, match) => acc + (match.mensagens?.length || 0), 0)} mensagem(s)
+                          {(caso._count?.case_messages ?? (caso.matches ?? []).reduce((acc, match) => acc + (match.mensagens?.length || 0), 0))} mensagem(s)
                         </span>
                       </div>
                       <div className="flex items-center gap-1">

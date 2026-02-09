@@ -90,7 +90,13 @@ export async function POST(
 
     const caso = await prisma.casos.findUnique({
       where: { id: casoId },
-      select: { id: true, cidadaoId: true },
+      include: {
+        cidadaos: {
+          include: {
+            users: { select: { name: true } },
+          },
+        },
+      },
     })
     if (!caso || caso.cidadaoId !== cidadao.id) {
       return NextResponse.json({ error: 'Caso não encontrado' }, { status: 404 })
@@ -112,6 +118,43 @@ export async function POST(
         },
       },
     })
+
+    // Notificação in-app para o(s) admin(s) quando o cidadão envia mensagem na mediação
+    const { inAppNotificationService } = await import('@/lib/in-app-notification.service')
+    const citizenName = caso.cidadaos?.users?.name ?? 'Cidadão'
+    const msgPreview = message.slice(0, 80) + (message.length > 80 ? '…' : '')
+    const href = `/admin/casos?open=${casoId}`
+
+    if (caso.mediatedByAdminId) {
+      // Notifica o admin que está com a mediação
+      await inAppNotificationService.notifyUser(caso.mediatedByAdminId, {
+        type: 'CHAT_NEW_MESSAGE',
+        title: 'Nova mensagem do cidadão',
+        message: `${citizenName}: ${msgPreview}`,
+        href,
+        metadata: { caseId: casoId },
+        role: 'ADMIN',
+      })
+    } else {
+      // Caso ainda sem mediação assumida: notifica todos os admins
+      const admins = await prisma.users.findMany({
+        where: { role: 'ADMIN' },
+        select: { id: true },
+      })
+      if (admins.length > 0) {
+        await inAppNotificationService.notifyMany(
+          admins.map((a) => a.id),
+          {
+            type: 'ADMIN_ACTION_REQUIRED',
+            title: 'Mensagem do cidadão no caso',
+            message: `${citizenName}: ${msgPreview}`,
+            href,
+            metadata: { caseId: casoId },
+            role: 'ADMIN',
+          }
+        )
+      }
+    }
 
     return NextResponse.json({ success: true, data: created })
   } catch (e) {
