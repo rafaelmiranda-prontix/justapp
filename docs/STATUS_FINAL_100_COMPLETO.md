@@ -104,6 +104,16 @@ O **LegalConnect** está **100% completo** e pronto para deploy em produção. T
     - Visualização e edição de caso (status, descrição, urgência)
     - Indicador de caso alocado ou não
     - Ações manuais: Alocar e Dealocar caso
+  - **Intermediação de Casos (Mediação)** ⭐ NOVO (2026-02)
+    - Admin pode **assumir a mediação** do caso (lock por um admin; status EM_MEDIACAO)
+    - **Chat Admin ↔ Cidadão** no detalhe do caso (aba Conversas), com templates rápidos
+    - **Checklist** de fechamento (documentos, informações, orientação, encaminhado)
+    - **Notas internas** (visibilidade só admin)
+    - **Fechamento pelo admin** com motivo (RESOLVIDO, SEM_RETORNO_DO_CLIENTE, etc.), resumo e opção de notificar cidadão por e-mail
+    - **Auditoria do caso**: logs de segurança ligados ao caso
+    - E-mail ao cidadão quando o admin assume a mediação; e-mail ao fechar (se optado)
+    - Cidadão vê **"Atendimento JustApp"** (sem nome do atendente) e responde em `/cidadao/casos/[id]`
+    - Tabela `case_messages`; colunas em `casos`: `mediatedByAdminId`, `mediatedAt`, `closedByAdminId`, `closedAt`, `closeReason`, `closeSummary`, `checklist`
   - **Gestão de Planos** ⭐ NOVO (2026-02)
     - CRUD de planos (criar, editar, ativar/desativar, soft delete)
     - Aceita -1 para leads ilimitados (mensal e por hora)
@@ -534,6 +544,8 @@ NEXT_PUBLIC_GTM_ID=GTM-XXXXXXX
    - Score de compatibilidade
    - Data de expiração
    - Botão CTA para acessar dashboard
+7. **Caso em atendimento pela equipe** ⭐ NOVO (2026-02) – quando admin assume mediação
+8. **Caso encerrado** – quando admin fecha o caso (resumo + motivo)
 
 **Configuração:**
 ```env
@@ -661,6 +673,7 @@ public/uploads/attachments/
 - Assinatura (Stripe)
 - HistoricoAssinaturas
 - **security_logs** ⭐ NOVO (2026-02) - Auditoria de ações críticas (action, actor, target, changes, severity)
+- **case_messages** ⭐ NOVO (2026-02) - Mensagens do canal admin↔cidadão (senderRole, visibility PUBLIC/INTERNAL)
 - BetaInvite, Feedback
 
 **Migrations:** Prontas
@@ -675,7 +688,10 @@ public/uploads/attachments/
 2. **VPS** (Docker + Nginx)
 3. **Kubernetes** (escalável)
 
-**Documentação:** `docs/DEPLOYMENT.md`
+**Documentação:** `docs/DEPLOYMENT.md`, `docs/DEPLOY_ATUALIZAR_BANCO.md`
+
+**Migrations no deploy (Vercel):**
+- No build da Vercel, **`scripts/vercel-migrate-deploy.js`** executa `prisma migrate deploy` automaticamente (apenas quando `VERCEL=1` e `DATABASE_URL` definida), garantindo banco atualizado antes do `next build`. Para Supabase com pooler, configurar **DIRECT_URL** no projeto.
 
 **Scripts úteis:**
 - `npm run check:onboarding` - Analisa por que um advogado não completou o onboarding
@@ -771,19 +787,25 @@ CRON_SECRET=seu-token-secreto-aqui
    - Criação do caso + distribuição automática + notificações aos advogados
    - Componente `CaseSubmitForm`; sem coleta de nome/contato (usuário já logado)
 
-6. **Variáveis de Ambiente e Scripts**
+6. **Variáveis de Ambiente, Scripts e Deploy**
    - Separação `.env.dev` e `.env.prd`; `scripts/load-env.js`; build no Vercel sem exigir `.env.prd` (variáveis no dashboard)
-   - Scripts: `check-onboarding` (diagnóstico de onboarding do advogado), `complete-onboarding` (conclusão manual; biografia não obrigatória; PRE_ACTIVE aceito; ativa conta se PRE_ACTIVE)
-   - Docs: `README.ENV.md`, `APLICAR_MIGRATION_SECURITY_LOGS.md`, `scripts/README.md`
+   - Scripts: `check-onboarding`, `complete-onboarding`; Docs: `README.ENV.md`, `APLICAR_MIGRATION_SECURITY_LOGS.md`, `DEPLOY_ATUALIZAR_BANCO.md`
+   - **Migrations automáticas no build Vercel:** `scripts/vercel-migrate-deploy.js` executa `prisma migrate deploy` durante o build (quando `VERCEL=1` e `DATABASE_URL` definida)
 
-7. **Sistema de Notificações Automáticas, Áudio, CSP e Logs (2026-02-03)**
+7. **Intermediação de Casos (Mediação Admin)**
+   - Admin assume mediação (status EM_MEDIACAO); chat admin↔cidadão; checklist; notas internas; fechamento com motivo e e-mail ao cidadão
+   - E-mail ao cidadão quando admin assume; opção de notificar ao fechar
+   - Cidadão vê "Atendimento JustApp" (sem nome do atendente); card "Em atendimento" no dashboard
+   - APIs: `POST assume-mediation`, `GET/POST messages`, `POST close`; tabela `case_messages`; `scripts/apply-mediation-migration.sql`
+
+8. **Sistema de Notificações Automáticas, Áudio, CSP e Logs (2026-02-03)**
    - Cron notifica advogados sobre matches PENDENTES; gravação de áudio no chat; CSP completo; remoção de logs em produção; permissões de mídia
 
 ### Arquivos Criados/Modificados (Resumo)
 
-**Novos:** `src/app/(admin)/admin/casos/page.tsx`, `src/app/(admin)/admin/planos/page.tsx`, `src/app/(admin)/admin/auditoria/page.tsx`, `src/app/api/admin/casos/*`, `src/app/api/admin/planos/*`, `src/app/api/admin/security-logs/*`, `src/app/api/admin/advogados/[id]/update-plan/route.ts`, `src/app/(auth)/auth/complete-profile/page.tsx`, `src/hooks/use-check-profile-complete.ts`, `src/app/api/casos/create-and-distribute/route.ts`, `src/components/chat/case-submit-form.tsx`, `src/lib/security-logger.ts`, `src/lib/security-alerts.ts`, `scripts/load-env.js`, `scripts/check-onboarding.ts`, `scripts/complete-onboarding.ts`, `scripts/create-security-logs-table.sql`, `README.ENV.md`, `docs/APLICAR_MIGRATION_SECURITY_LOGS.md`
+**Novos:** `src/app/(admin)/admin/casos/page.tsx`, `src/app/(admin)/admin/planos/page.tsx`, `src/app/(admin)/admin/auditoria/page.tsx`, `src/app/api/admin/casos/*` (incl. assume-mediation, messages, close), `src/app/api/admin/planos/*`, `src/app/api/admin/security-logs/*`, `src/app/api/cidadao/casos/[casoId]/admin-messages/route.ts`, `src/app/(auth)/auth/complete-profile/page.tsx`, `src/hooks/use-check-profile-complete.ts`, `src/app/api/casos/create-and-distribute/route.ts`, `src/components/chat/case-submit-form.tsx`, `src/lib/security-logger.ts`, `src/lib/security-alerts.ts`, `scripts/load-env.js`, `scripts/check-onboarding.ts`, `scripts/complete-onboarding.ts`, `scripts/create-security-logs-table.sql`, `scripts/apply-mediation-migration.sql`, `scripts/vercel-migrate-deploy.js`, `README.ENV.md`, `docs/APLICAR_MIGRATION_SECURITY_LOGS.md`, `docs/DEPLOY_ATUALIZAR_BANCO.md`
 
-**Modificados:** `prisma/schema.prisma` (security_logs), `src/middleware.ts` (sem Prisma; rota complete-profile), `src/app/(cidadao)/layout.tsx` (useCheckProfileComplete), `src/components/admin/admin-nav.tsx` (Casos, Planos, Auditoria), `package.json` (scripts load-env, check:onboarding, db:apply-security-logs)
+**Modificados:** `prisma/schema.prisma` (security_logs, case_messages, campos de mediação em casos), `src/middleware.ts`, `src/app/(cidadao)/layout.tsx`, `src/components/admin/admin-nav.tsx`, `src/app/(cidadao)/cidadao/dashboard/page.tsx` (card "Em atendimento", link /cidadao/casos), `src/app/(cidadao)/cidadao/casos/[casoId]/page.tsx` (Atendimento JustApp), `src/components/casos/case-details.tsx` (normalizeConversaHistorico), `package.json` (build com vercel-migrate-deploy)
 
 ## 🎯 Próximos Passos (Pós-MVP)
 
@@ -860,6 +882,7 @@ Este arquivo (`STATUS_FINAL_100_COMPLETO.md`) é o **documento principal consoli
 - **`docs/ARCHITECTURE.md`** - Arquitetura técnica detalhada
 - **`docs/BUSINESS_RULES.md`** - Regras de negócio
 - **`docs/DEPLOYMENT.md`** - Guia de deploy
+- **`docs/DEPLOY_ATUALIZAR_BANCO.md`** - Atualizar banco no deploy (migrate automático + manual)
 - **`docs/ANONYMOUS_CHAT_FLOW.md`** - Fluxo do chat anônimo
 - **`CONTEXT.md`** - Contexto geral do projeto
 - **`PRD.md`** - Product Requirements Document
