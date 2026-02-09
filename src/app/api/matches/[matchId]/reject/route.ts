@@ -94,6 +94,26 @@ export async function POST(
       logger.info(`[Match] Rejection reason: ${motivo}`)
     }
 
+    // Notificação in-app para o cidadão
+    const matchWithCidadao = await prisma.matches.findUnique({
+      where: { id: matchId },
+      include: { casos: { include: { cidadaos: { select: { userId: true } } } } },
+    })
+    const citizenUserId = matchWithCidadao?.casos?.cidadaos?.userId
+    if (citizenUserId) {
+      const { inAppNotificationService } = await import('@/lib/in-app-notification.service')
+      inAppNotificationService
+        .notifyUser(citizenUserId, {
+          type: 'MATCH_REJECTED',
+          title: 'Advogado não pôde atender',
+          message: 'Um advogado recusou o caso. Seu caso pode ser redistribuído a outros.',
+          href: `/cidadao/casos/${matchWithCidadao!.casos.id}`,
+          metadata: { matchId, caseId: matchWithCidadao!.casos.id },
+          role: 'CIDADAO',
+        })
+        .catch(() => {})
+    }
+
     // Tentar redistribuir o caso se ainda estiver aberto
     let redistributionResult = null
     if (match.casos && match.casos.status === 'ABERTO') {

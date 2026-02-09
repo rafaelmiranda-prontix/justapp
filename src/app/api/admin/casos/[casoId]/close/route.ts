@@ -121,6 +121,22 @@ export async function POST(
       }
     }
 
+    // Notificação in-app para o cidadão (status alterado)
+    const citizenUserId = caso.cidadaos?.users?.id
+    if (citizenUserId) {
+      const { inAppNotificationService } = await import('@/lib/in-app-notification.service')
+      inAppNotificationService
+        .notifyUser(citizenUserId, {
+          type: 'CASE_STATUS_CHANGED',
+          title: 'Caso encerrado',
+          message: `Seu caso foi encerrado. Motivo: ${closeReason.replace(/_/g, ' ')}`,
+          href: `/cidadao/casos/${casoId}`,
+          metadata: { caseId: casoId },
+          role: 'CIDADAO',
+        })
+        .catch(() => {})
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Caso fechado com sucesso',

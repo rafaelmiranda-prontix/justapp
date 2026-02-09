@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { ConfigService } from '@/lib/config-service'
 import { nanoid } from 'nanoid'
 import { logger } from '@/lib/logger'
+import { inAppNotificationService } from '@/lib/in-app-notification.service'
 
 /**
  * Serviço de Chat
@@ -141,8 +142,24 @@ export class ChatService {
       `[Chat] Message sent in match ${matchId} by ${isCidadao ? 'citizen' : 'lawyer'} ${remetenteId}`
     )
 
-    // TODO: Enviar notificação em tempo real via WebSocket/Pusher
-    // TODO: Enviar notificação por email se destinatário offline
+    // Notificação in-app para o destinatário
+    const recipientUserId = isCidadao ? match.advogados.userId : match.casos.cidadaos.userId
+    const senderName = isCidadao
+      ? match.casos.cidadaos.users?.name ?? 'Cidadão'
+      : match.advogados.users?.name ?? 'Advogado'
+    const href =
+      recipientUserId === match.advogados.userId
+        ? `/advogado/chat/${matchId}`
+        : `/chat/${matchId}`
+    inAppNotificationService
+      .notifyUser(recipientUserId, {
+        type: 'CHAT_NEW_MESSAGE',
+        title: 'Nova mensagem',
+        message: `${senderName}: ${conteudo.trim().slice(0, 80)}${conteudo.length > 80 ? '…' : ''}`,
+        href,
+        metadata: { chatId: matchId, caseId: match.casos.id },
+      })
+      .catch((err) => logger.error('[Chat] in-app notification failed', err))
 
     return { success: true, mensagem }
   }

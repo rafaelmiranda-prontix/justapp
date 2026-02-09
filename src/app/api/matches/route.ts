@@ -117,7 +117,18 @@ export async function POST(req: Request) {
     // Incrementa contador de leads recebidos
     await incrementLeadsReceived(data.advogadoId)
 
-    // TODO: Enviar notificação para o advogado
+    // Notificação in-app para o advogado
+    const { inAppNotificationService } = await import('@/lib/in-app-notification.service')
+    inAppNotificationService
+      .notifyUser(match.advogados.userId, {
+        type: 'MATCH_CREATED',
+        title: 'Novo caso disponível',
+        message: `Novo caso em ${match.casos.descricao?.slice(0, 60) ?? 'consulta'}…`,
+        href: `/advogado/casos`,
+        metadata: { matchId: match.id, casoId: match.casos.id },
+        role: 'ADVOGADO',
+      })
+      .catch(() => {})
 
     return NextResponse.json({
       success: true,

@@ -336,6 +336,26 @@ model users {
   case_messages     case_messages[] @relation("CaseMessageSender")
   casosMediated    casos[]         @relation("CasosMediatedBy")
   casosClosed      casos[]         @relation("CasosClosedBy")
+  notifications    Notification[]
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  role        UserRole?
+  type        NotificationType
+  title       String
+  message     String           // curto, ~160 chars
+  href        String
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+  readAt      DateTime?
+  archivedAt  DateTime?
+  user        users            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@map("notifications")
 }
 
 model verification_tokens {
@@ -420,6 +440,17 @@ enum UserRole {
   CIDADAO
   ADVOGADO
   ADMIN
+}
+
+enum NotificationType {
+  CHAT_NEW_MESSAGE
+  MATCH_CREATED
+  MATCH_ACCEPTED
+  MATCH_REJECTED
+  CASE_STATUS_CHANGED
+  ADMIN_MEDIATION_ASSIGNED
+  ADMIN_ACTION_REQUIRED
+  SYSTEM
 }
 
 enum UserStatus {

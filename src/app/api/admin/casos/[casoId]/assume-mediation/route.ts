@@ -97,6 +97,22 @@ export async function POST(
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://justapp.com.br'
     const casoUrl = `${appUrl.replace(/\/$/, '')}/cidadao/casos/${casoId}`
 
+    // Notificação in-app para o cidadão
+    const citizenUserId = updated.cidadaos?.users?.id
+    if (citizenUserId) {
+      const { inAppNotificationService } = await import('@/lib/in-app-notification.service')
+      inAppNotificationService
+        .notifyUser(citizenUserId, {
+          type: 'ADMIN_MEDIATION_ASSIGNED',
+          title: 'Seu caso está sendo atendido',
+          message: 'Nossa equipe assumiu a mediação do seu caso. Acompanhe as mensagens.',
+          href: `/cidadao/casos/${casoId}`,
+          metadata: { caseId: casoId },
+          role: 'CIDADAO',
+        })
+        .catch(() => {})
+    }
+
     if (citizenEmail) {
       try {
         await sendEmail({

@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Scale, LogOut, User, Menu } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { NotificationBell } from '@/components/notifications/notification-bell'
 
 interface DashboardHeaderProps {
   mobileNav?: React.ReactNode
@@ -72,10 +73,12 @@ export function DashboardHeader({ mobileNav }: DashboardHeaderProps) {
           </Link>
         </div>
 
-        {/* User Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+        {/* Notificações e User Menu */}
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={session?.user?.image || undefined} alt={session?.user?.name || ''} />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-500 text-white">
@@ -108,6 +111,7 @@ export function DashboardHeader({ mobileNav }: DashboardHeaderProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       </div>
     </header>
   )

@@ -34,7 +34,11 @@ export async function POST(
             users: true,
           },
         },
-        casos: true,
+        casos: {
+          include: {
+            cidadaos: { select: { userId: true } },
+          },
+        },
       },
     })
 
@@ -108,10 +112,26 @@ export async function POST(
 
     console.log(`[Match] Match ${matchId} accepted by lawyer ${match.advogados.id}`)
 
-    // Notificar cidadão (em background)
+    // Notificar cidadão (email)
     NotificationService.notifyCitizenMatchAccepted(matchId).catch((err) =>
       console.error('[Match] Notification failed:', err)
     )
+
+    // Notificação in-app para o cidadão
+    const { inAppNotificationService } = await import('@/lib/in-app-notification.service')
+    const citizenUserId = match.casos.cidadaos?.userId
+    if (citizenUserId) {
+      inAppNotificationService
+        .notifyUser(citizenUserId, {
+          type: 'MATCH_ACCEPTED',
+          title: 'Advogado aceitou seu caso',
+          message: `${match.advogados.users?.name ?? 'O advogado'} aceitou atender seu caso.`,
+          href: `/cidadao/casos/${match.casos.id}`,
+          metadata: { matchId, caseId: match.casos.id },
+          role: 'CIDADAO',
+        })
+        .catch(() => {})
+    }
 
     return NextResponse.json({
       success: true,

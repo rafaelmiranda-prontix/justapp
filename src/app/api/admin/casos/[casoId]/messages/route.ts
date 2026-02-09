@@ -72,7 +72,9 @@ export async function POST(
 
     const caso = await prisma.casos.findUnique({
       where: { id: casoId },
-      select: { id: true },
+      include: {
+        cidadaos: { select: { userId: true } },
+      },
     })
     if (!caso) {
       return NextResponse.json({ success: false, error: 'Caso não encontrado' }, { status: 404 })
@@ -94,6 +96,22 @@ export async function POST(
         },
       },
     })
+
+    // Notificação in-app para o cidadão quando mensagem é pública
+    if (created.visibility === 'PUBLIC' && caso.cidadaos?.userId) {
+      const { inAppNotificationService } = await import('@/lib/in-app-notification.service')
+      const msgPreview = message.slice(0, 80) + (message.length > 80 ? '…' : '')
+      inAppNotificationService
+        .notifyUser(caso.cidadaos.userId, {
+          type: 'CHAT_NEW_MESSAGE',
+          title: 'Nova mensagem da equipe',
+          message: msgPreview,
+          href: `/cidadao/casos/${casoId}`,
+          metadata: { caseId: casoId },
+          role: 'CIDADAO',
+        })
+        .catch(() => {})
+    }
 
     return NextResponse.json({ success: true, data: created })
   } catch (e) {
