@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import type { NotificationType, UserRole } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 
 export type InAppNotificationPayload = {
   type: NotificationType
@@ -30,7 +31,7 @@ export const inAppNotificationService = {
           title: title.slice(0, 100),
           message: messageTrimmed,
           href,
-          metadata: metadata ?? undefined,
+          metadata: (metadata ?? undefined) as Prisma.InputJsonValue | undefined,
         },
       })
       return notification.id
@@ -57,7 +58,7 @@ export const inAppNotificationService = {
           title: titleTrimmed,
           message: messageTrimmed,
           href,
-          metadata: metadata ?? undefined,
+          metadata: (metadata ?? undefined) as Prisma.InputJsonValue | undefined,
         })),
       })
       return userIds.length
