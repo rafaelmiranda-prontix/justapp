@@ -2,9 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { NotificationType } from '@prisma/client'
 
 const TAKE_DEFAULT = 20
 const TAKE_MAX = 50
+
+const VALID_NOTIFICATION_TYPES: NotificationType[] = [
+  'CHAT_NEW_MESSAGE',
+  'MATCH_CREATED',
+  'MATCH_ACCEPTED',
+  'MATCH_REJECTED',
+  'CASE_STATUS_CHANGED',
+  'ADMIN_MEDIATION_ASSIGNED',
+  'ADMIN_ACTION_REQUIRED',
+  'SYSTEM',
+]
 
 /**
  * GET /api/notifications?status=all|unread&type=...&take=20&cursor=<id>
@@ -19,21 +31,22 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = req.nextUrl
     const status = searchParams.get('status') || 'all'
-    const type = searchParams.get('type') || undefined
+    const typeParam = searchParams.get('type') || undefined
     const take = Math.min(
       parseInt(searchParams.get('take') || String(TAKE_DEFAULT), 10) || TAKE_DEFAULT,
       TAKE_MAX
     )
     const cursor = searchParams.get('cursor') || undefined
 
-    const where: { userId: string; readAt?: null; type?: string } = {
+    const type: NotificationType | undefined =
+      typeParam && VALID_NOTIFICATION_TYPES.includes(typeParam as NotificationType)
+        ? (typeParam as NotificationType)
+        : undefined
+
+    const where = {
       userId: session.user.id,
-    }
-    if (status === 'unread') {
-      where.readAt = null
-    }
-    if (type) {
-      where.type = type
+      ...(status === 'unread' ? { readAt: null } : {}),
+      ...(type ? { type } : {}),
     }
 
     const items = await prisma.notification.findMany({
