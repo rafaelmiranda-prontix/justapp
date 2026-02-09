@@ -63,7 +63,10 @@ export async function GET(req: NextRequest) {
             },
           },
           cidadaos: {
-            include: {
+            select: {
+              id: true,
+              cidade: true,
+              estado: true,
               users: {
                 select: {
                   id: true,

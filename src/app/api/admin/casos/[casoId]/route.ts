@@ -36,7 +36,10 @@ export async function GET(
       include: {
         especialidades: true,
         cidadaos: {
-          include: {
+          select: {
+            id: true,
+            cidade: true,
+            estado: true,
             users: {
               select: {
                 id: true,

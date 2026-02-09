@@ -22,12 +22,12 @@ interface User {
   email: string
   role: 'CIDADAO' | 'ADVOGADO' | 'ADMIN'
   createdAt: string
-  cidadao: {
+  cidadaos: {
     id: string
     cidade: string | null
     estado: string | null
   } | null
-  advogado: {
+  advogados: {
     id: string
     oab: string
     oabVerificado: boolean
@@ -147,18 +147,19 @@ export default function AdminUsuariosPage() {
                         {getRoleBadge(user.role)}
                       </div>
                       <p className="text-sm text-muted-foreground">{user.email}</p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                         <span>Cadastrado em: {formatDate(user.createdAt)}</span>
-                        {user.cidadao && (
+                        {user.cidadaos && (user.cidadaos.cidade || user.cidadaos.estado) && (
                           <span>
-                            {user.cidadao.cidade || 'N/A'}, {user.cidadao.estado || 'N/A'}
+                            <span className="font-medium text-foreground">Cidade:</span>{' '}
+                            {[user.cidadaos.cidade, user.cidadaos.estado].filter(Boolean).join(' - ') || '—'}
                           </span>
                         )}
-                        {user.advogado && (
+                        {user.advogados && (
                           <span>
-                            OAB: {user.advogado.oab} - {user.advogado.cidade},{' '}
-                            {user.advogado.estado}
-                            {user.advogado.oabVerificado && (
+                            OAB: {user.advogados.oab} - {user.advogados.cidade},{' '}
+                            {user.advogados.estado}
+                            {user.advogados.oabVerificado && (
                               <Badge variant="outline" className="ml-2 text-xs">
                                 Verificado
                               </Badge>

@@ -89,6 +89,8 @@ interface Caso {
   } | null
   cidadaos: {
     id: string
+    cidade: string | null
+    estado: string | null
     users: {
       id: string
       name: string
@@ -700,6 +702,14 @@ export default function AdminCasosPage() {
                         <User className="h-4 w-4" />
                         <span>{caso.cidadaos.users.name}</span>
                       </div>
+                      {(caso.cidadaos.cidade || caso.cidadaos.estado) && (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" />
+                          <span>
+                            {[caso.cidadaos.cidade, caso.cidadaos.estado].filter(Boolean).join(' - ')}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-1">
                         <MessageSquare className="h-4 w-4" />
                         <span>
@@ -861,6 +871,9 @@ export default function AdminCasosPage() {
                       <p className="mt-1 text-muted-foreground">{selectedCaso.descricao}</p>
                     </div>
                     <div><span className="font-medium">Cliente:</span> {selectedCaso.cidadaos.users.name} ({selectedCaso.cidadaos.users.email})</div>
+                    {(selectedCaso.cidadaos.cidade || selectedCaso.cidadaos.estado) && (
+                      <div><span className="font-medium">Cidade:</span> {[selectedCaso.cidadaos.cidade, selectedCaso.cidadaos.estado].filter(Boolean).join(' - ')}</div>
+                    )}
                     <div><span className="font-medium">Criado em:</span> {format(new Date(selectedCaso.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</div>
                     {selectedCaso.closeReason && (
                       <div>
