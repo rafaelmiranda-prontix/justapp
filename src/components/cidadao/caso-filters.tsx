@@ -57,7 +57,8 @@ export function CasoFilters({
         <SelectContent>
           <SelectItem value="all">Todos os status</SelectItem>
           <SelectItem value="ABERTO">Aberto</SelectItem>
-          <SelectItem value="EM_ANDAMENTO">Em Andamento</SelectItem>
+          <SelectItem value="EM_MEDIACAO">Em atendimento</SelectItem>
+          <SelectItem value="EM_ANDAMENTO">Em andamento</SelectItem>
           <SelectItem value="FECHADO">Fechado</SelectItem>
           <SelectItem value="CANCELADO">Cancelado</SelectItem>
         </SelectContent>

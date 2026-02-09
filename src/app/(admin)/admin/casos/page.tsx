@@ -114,7 +114,7 @@ interface Caso {
 
 // Função auxiliar para verificar se caso está alocado
 const isCasoAlocated = (caso: Caso): boolean => {
-  return caso.matches.some(
+  return (caso.matches ?? []).some(
     (match) => match.status === 'PENDENTE' || match.status === 'ACEITO'
   )
 }
@@ -679,7 +679,7 @@ export default function AdminCasosPage() {
                       <div className="flex items-center gap-1">
                         <MessageSquare className="h-4 w-4" />
                         <span>
-                          {caso.matches.reduce((acc, match) => acc + (match.mensagens?.length || 0), 0)} mensagem(s)
+                          {(caso.matches ?? []).reduce((acc, match) => acc + (match.mensagens?.length || 0), 0)} mensagem(s)
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
@@ -690,10 +690,10 @@ export default function AdminCasosPage() {
                           })}
                         </span>
                       </div>
-                      {caso.matches.length > 0 && (
+                      {(caso.matches?.length ?? 0) > 0 && (
                         <div className="flex items-center gap-1">
                           <CheckCircle2 className="h-4 w-4" />
-                          <span>{caso.matches.length} match(es)</span>
+                          <span>{(caso.matches ?? []).length} match(es)</span>
                         </div>
                       )}
                     </div>
@@ -819,7 +819,7 @@ export default function AdminCasosPage() {
                       <span className="font-medium">Alocação:</span>{' '}
                       {isCasoAlocated(selectedCaso) ? (
                         <Badge variant="default" className="bg-green-600">
-                          Alocado ({selectedCaso.matches.filter((m) => m.status === 'PENDENTE' || m.status === 'ACEITO').length} match(es))
+                          Alocado ({(selectedCaso.matches ?? []).filter((m) => m.status === 'PENDENTE' || m.status === 'ACEITO').length} match(es))
                         </Badge>
                       ) : (
                         <Badge variant="outline">Não alocado</Badge>
@@ -856,11 +856,11 @@ export default function AdminCasosPage() {
                       </Button>
                     )}
                   </div>
-                  {selectedCaso.matches && selectedCaso.matches.length > 0 && (
+                  {(selectedCaso.matches?.length ?? 0) > 0 && (
                     <div>
-                      <h3 className="font-semibold mb-2">Matches ({selectedCaso.matches.length})</h3>
+                      <h3 className="font-semibold mb-2">Matches ({(selectedCaso.matches ?? []).length})</h3>
                       <div className="space-y-2">
-                        {selectedCaso.matches.map((match) => (
+                        {(selectedCaso.matches ?? []).map((match) => (
                           <Card key={match.id}><CardContent className="pt-3">
                             <div className="flex justify-between">
                               <div><div className="font-medium">{match.advogados.users.name}</div>

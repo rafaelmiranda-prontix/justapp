@@ -130,15 +130,15 @@ export default function CidadaoCasoDetailsPage() {
 
       <CaseDetails caso={caso} showCidadaoInfo={false} />
 
-      {/* Conversa com o suporte (admin) */}
+      {/* Atendimento JustApp (mediação admin) */}
       <Card className="mt-8">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            Conversa com o suporte
+            Atendimento JustApp
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Mensagens trocadas com nossa equipe sobre este caso. Você pode responder aqui.
+            Mensagens com nossa equipe sobre este caso. Você pode responder aqui.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -146,7 +146,7 @@ export default function CidadaoCasoDetailsPage() {
             {loadingMessages ? (
               <p className="text-sm text-muted-foreground">Carregando mensagens...</p>
             ) : adminMessages.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda. O suporte pode entrar em contato por aqui.</p>
+              <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda. Nossa equipe pode entrar em contato por aqui.</p>
             ) : (
               adminMessages.map((m) => (
                 <div
@@ -154,7 +154,7 @@ export default function CidadaoCasoDetailsPage() {
                   className={`text-sm p-2 rounded ${m.senderRole === 'ADMIN' ? 'bg-muted ml-4' : 'bg-primary/10 mr-4'}`}
                 >
                   <div className="font-medium text-xs text-muted-foreground">
-                    {m.sender.name} · {format(new Date(m.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    {m.senderRole === 'ADMIN' ? 'Atendimento JustApp' : m.sender.name} · {format(new Date(m.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </div>
                   <p className="mt-1">{m.message}</p>
                 </div>
@@ -163,7 +163,7 @@ export default function CidadaoCasoDetailsPage() {
           </div>
           <div className="flex gap-2">
             <Textarea
-              placeholder="Digite sua resposta ao suporte..."
+              placeholder="Digite sua resposta..."
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               rows={2}

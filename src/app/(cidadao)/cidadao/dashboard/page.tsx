@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Plus, FileText, MessageSquare, Clock, CheckCircle, XCircle, AlertCircle, Search } from 'lucide-react'
+import { Plus, FileText, MessageSquare, Clock, CheckCircle, XCircle, AlertCircle, Search, Headphones } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
@@ -18,7 +18,7 @@ interface Caso {
   id: string
   descricao: string
   descricaoIA?: string | null
-  status: 'ABERTO' | 'EM_ANDAMENTO' | 'FECHADO' | 'CANCELADO'
+  status: 'ABERTO' | 'EM_MEDIACAO' | 'EM_ANDAMENTO' | 'FECHADO' | 'CANCELADO'
   urgencia: 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE'
   createdAt: string
   redistribuicoes?: number
@@ -44,16 +44,18 @@ interface Match {
   }
 }
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   ABERTO: 'bg-yellow-500',
+  EM_MEDIACAO: 'bg-violet-500',
   EM_ANDAMENTO: 'bg-blue-500',
   FECHADO: 'bg-green-500',
   CANCELADO: 'bg-gray-500',
 }
 
-const statusLabels = {
+const statusLabels: Record<string, string> = {
   ABERTO: 'Aberto',
-  EM_ANDAMENTO: 'Em Andamento',
+  EM_MEDIACAO: 'Em atendimento',
+  EM_ANDAMENTO: 'Em andamento',
   FECHADO: 'Fechado',
   CANCELADO: 'Cancelado',
 }
@@ -223,20 +225,29 @@ export default function CidadaoDashboardPage() {
                 </Card>
               ) : (
                 activeCasos.map((caso) => (
-                <Card key={caso.id}>
+                <Card
+                  key={caso.id}
+                  className={caso.status === 'EM_MEDIACAO' ? 'border-l-4 border-l-violet-500' : ''}
+                >
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <CardTitle className="text-lg line-clamp-1">
                             {caso.descricaoIA || caso.descricao.substring(0, 50) + '...'}
                           </CardTitle>
                           <Badge
                             variant="secondary"
-                            className={`${statusColors[caso.status]} text-white`}
+                            className={`${statusColors[caso.status] ?? 'bg-gray-500'} text-white`}
                           >
-                            {statusLabels[caso.status]}
+                            {statusLabels[caso.status] ?? caso.status}
                           </Badge>
+                          {caso.status === 'EM_MEDIACAO' && (
+                            <Badge variant="outline" className="border-violet-500 text-violet-700 bg-violet-50">
+                              <Headphones className="h-3 w-3 mr-1" />
+                              Atendimento JustApp
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
@@ -268,6 +279,25 @@ export default function CidadaoDashboardPage() {
                         {caso.descricao}
                       </p>
                     </div>
+
+                    {/* Caso em atendimento pela equipe (mediação) */}
+                    {caso.status === 'EM_MEDIACAO' && (
+                      <div className="bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 bg-violet-100 rounded-full">
+                            <Headphones className="h-5 w-5 text-violet-600" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-violet-900 mb-1">
+                              Seu caso está sendo atendido pela nossa equipe
+                            </p>
+                            <p className="text-xs text-violet-700">
+                              Nossa equipe está analisando seu caso e pode entrar em contato pelo chat do caso. Acompanhe as mensagens em &quot;Ver Detalhes&quot;.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Mensagem de busca ativa de advogados */}
                     {caso.podeSerRedistribuido && caso.status === 'ABERTO' && caso.matches.length === 0 && (
@@ -342,7 +372,7 @@ export default function CidadaoDashboardPage() {
                     <div className="flex gap-2 pt-2">
                       {caso.matches.length === 0 && (
                         <Button asChild className="flex-1">
-                          <Link href={`/buscar-advogados?casoId=${caso.id}`}>
+                          <Link href={`/cidadao/buscar?casoId=${caso.id}`}>
                             Buscar Advogados
                           </Link>
                         </Button>
@@ -381,7 +411,7 @@ export default function CidadaoDashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <Button variant="outline" asChild>
-                      <Link href={`/casos/${caso.id}`}>Ver Detalhes</Link>
+                      <Link href={`/cidadao/casos/${caso.id}`}>Ver Detalhes</Link>
                     </Button>
                   </CardContent>
                 </Card>

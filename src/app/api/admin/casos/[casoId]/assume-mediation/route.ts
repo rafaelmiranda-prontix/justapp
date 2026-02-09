@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/middleware/admin'
 import { securityLog, getClientIp, getUserAgent } from '@/lib/security-logger'
-import { randomUUID } from 'crypto'
+import { sendEmail } from '@/lib/email-service'
 
 /**
  * POST /api/admin/casos/[casoId]/assume-mediation
@@ -90,6 +90,39 @@ export async function POST(
       },
       timestamp: new Date(),
     })
+
+    // Notificar o cidadão por e-mail que o caso está sendo atendido pela equipe
+    const citizenEmail = caso.cidadaos?.users?.email
+    const citizenName = caso.cidadaos?.users?.name ?? 'Cidadão'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://justapp.com.br'
+    const casoUrl = `${appUrl.replace(/\/$/, '')}/cidadao/casos/${casoId}`
+
+    if (citizenEmail) {
+      try {
+        await sendEmail({
+          to: citizenEmail,
+          subject: 'Seu caso está sendo atendido pela nossa equipe - JustApp',
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>Olá, ${citizenName}!</h2>
+              <p>Queremos informar que <strong>sua solicitação está sendo atendida pela nossa equipe</strong>.</p>
+              <p>Estamos analisando o seu caso e podemos entrar em contato pelo próprio sistema. Acompanhe as mensagens na página de detalhes do caso.</p>
+              <p>
+                <a href="${casoUrl}" style="background: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                  Ver detalhes do caso
+                </a>
+              </p>
+              <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                Equipe JustApp
+              </p>
+            </div>
+          `,
+          text: `Olá, ${citizenName}! Sua solicitação está sendo atendida pela nossa equipe. Acompanhe em: ${casoUrl}. Equipe JustApp`,
+        })
+      } catch (emailErr) {
+        console.error('[assume-mediation] Erro ao enviar e-mail ao cidadão:', emailErr)
+      }
+    }
 
     return NextResponse.json({
       success: true,
