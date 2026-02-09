@@ -208,13 +208,65 @@ spec:
 
 ---
 
+## Atualizar o banco antes do deploy
+
+Para o deploy funcionar com todas as funcionalidades (mediação, auditoria, etc.), o banco deve estar com as migrations aplicadas.
+
+> **Automático:** no build da Vercel o script **`scripts/vercel-migrate-deploy.js`** roda `prisma migrate deploy` antes do `next build`. Basta ter **DATABASE_URL** (e, no Supabase com pooler, **DIRECT_URL**) configuradas no projeto.  
+> **Guia rápido:** veja **`docs/DEPLOY_ATUALIZAR_BANCO.md`** para detalhes e para o passo a passo manual (se o migrate automático falhar).
+
+### Opção 1: Prisma Migrate Deploy (recomendado quando possível)
+
+Com `DATABASE_URL` (e, no Supabase, `DIRECT_URL`) apontando para o banco de **produção**:
+
+```bash
+# Carregar variáveis de produção (ex.: .env.prd)
+npm run env:prd   # ou exporte DATABASE_URL e DIRECT_URL manualmente
+
+# Aplicar todas as migrations pendentes
+npm run db:migrate:deploy
+```
+
+Se der erro de pool (ex.: Supabase `MaxClientsInSessionMode`), use a **Opção 2**.
+
+### Opção 2: Aplicar SQL manualmente no Supabase
+
+1. **Supabase Dashboard** → **SQL Editor** → New query.
+
+2. **Tabela `security_logs`** (auditoria de ações críticas):
+   - Copie e execute o conteúdo de **`scripts/create-security-logs-table.sql`**.
+   - Documentação: `docs/APLICAR_MIGRATION_SECURITY_LOGS.md`.
+
+3. **Mediação e fechamento de casos** (colunas em `casos` + tabela `case_messages`):
+   - Copie e execute o conteúdo de **`scripts/apply-mediation-migration.sql`**.
+
+4. **Conferir**:
+   ```sql
+   SELECT column_name FROM information_schema.columns WHERE table_name = 'casos' AND column_name = 'mediatedByAdminId';
+   SELECT 1 FROM security_logs LIMIT 1;
+   SELECT 1 FROM case_messages LIMIT 1;
+   ```
+   (Não precisa retornar linhas; o importante é não dar erro de “tabela/coluna não existe”.)
+
+### Resumo do que o banco precisa ter
+
+| Recurso              | Tabela/colunas |
+|----------------------|----------------|
+| Auditoria admin      | Tabela `security_logs` |
+| Mediação de casos    | Colunas em `casos`: `mediatedByAdminId`, `mediatedAt`, `closedByAdminId`, `closedAt`, `closeReason`, `closeSummary`, `checklist`; enum `CloseReason`; valor `EM_MEDIACAO` em `CasoStatus` |
+| Mensagens admin↔cidadão | Tabela `case_messages` e enums `CaseMessageSenderRole`, `CaseMessageVisibility` |
+
+Depois de aplicar as migrations (Opção 1 ou 2), faça o deploy normalmente.
+
+---
+
 ## Pré-Deploy Checklist
 
 ### Banco de Dados
-- [ ] Migration aplicada
-- [ ] Seed executado (se necessário)
+- [ ] Migrations aplicadas (ver seção **Atualizar o banco antes do deploy** acima)
+- [ ] Seed executado (especialidades, planos, etc., se necessário)
 - [ ] Backup configurado
-- [ ] Connection pooling configurado
+- [ ] Connection pooling configurado (Supabase: usar `DATABASE_URL` com pooler)
 
 ### Variáveis de Ambiente
 - [ ] Todas as variáveis configuradas
@@ -262,11 +314,14 @@ npm run build
 
 ### Database Migration
 ```bash
-# Desenvolvimento
+# Desenvolvimento (cria/altera tabelas sem arquivo de migration)
 npm run db:push
 
-# Produção
+# Desenvolvimento (cria migration e aplica)
 npm run db:migrate
+
+# Produção (aplica apenas migrations pendentes)
+npm run db:migrate:deploy
 ```
 
 ---

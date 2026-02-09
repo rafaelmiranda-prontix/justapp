@@ -8,7 +8,7 @@
     "env:prd": "node scripts/load-env.js prd",
     "dev": "npm run env:dev && next dev --turbopack",
     "dev:no-turbo": "npm run env:dev && next dev",
-    "build": "(node scripts/load-env.js prd || true) && prisma generate && next build",
+    "build": "(node scripts/load-env.js prd || true) && prisma generate && node scripts/vercel-migrate-deploy.js && next build",
     "start": "(node scripts/load-env.js prd || true) && next start",
     "lint": "next lint",
     "db:generate": "prisma generate",
