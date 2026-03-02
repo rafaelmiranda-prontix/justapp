@@ -742,8 +742,9 @@ export class CaseDistributionService {
   }
 
   /**
-   * Expira matches pendentes que passaram do prazo
-   * Executado por cron job
+   * Expira matches pendentes que passaram do prazo e retira o match do advogado:
+   * marca como EXPIRADO e decrementa o contador de leads do advogado.
+   * Executado por cron job.
    */
   static async expireOldMatches(): Promise<number> {
     const autoExpire = await ConfigService.get<boolean>('auto_expire_matches', true)
@@ -752,25 +753,43 @@ export class CaseDistributionService {
       return 0
     }
 
-    const result = await prisma.matches.updateMany({
+    const now = new Date()
+    const toExpire = await prisma.matches.findMany({
       where: {
-        status: {
-          in: ['PENDENTE', 'VISUALIZADO'],
-        },
-        expiresAt: {
-          lte: new Date(),
-        },
+        status: { in: ['PENDENTE', 'VISUALIZADO'] },
+        expiresAt: { lte: now },
       },
-      data: {
-        status: 'EXPIRADO',
-      },
+      select: { id: true, advogadoId: true },
     })
 
-    if (result.count > 0) {
-      logger.debug(`[Distribution] Expired ${result.count} old matches`)
+    if (toExpire.length === 0) {
+      return 0
     }
 
-    return result.count
+    // Decrementar leads por advogado (vários matches do mesmo advogado = vários decrementos)
+    const advogadoCounts = new Map<string, number>()
+    for (const m of toExpire) {
+      advogadoCounts.set(m.advogadoId, (advogadoCounts.get(m.advogadoId) ?? 0) + 1)
+    }
+    for (const [advogadoId, count] of advogadoCounts) {
+      await prisma.advogados.update({
+        where: { id: advogadoId },
+        data: {
+          leadsRecebidosMes: { decrement: count },
+          updatedAt: now,
+        },
+      })
+    }
+
+    await prisma.matches.updateMany({
+      where: {
+        id: { in: toExpire.map((m) => m.id) },
+      },
+      data: { status: 'EXPIRADO' },
+    })
+
+    logger.debug(`[Distribution] Expired ${toExpire.length} old matches, decremented leads for ${advogadoCounts.size} lawyers`)
+    return toExpire.length
   }
 
   /**

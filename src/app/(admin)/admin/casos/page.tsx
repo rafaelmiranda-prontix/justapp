@@ -192,6 +192,12 @@ export default function AdminCasosPage() {
   const [noteText, setNoteText] = useState('')
   const [auditLogs, setAuditLogs] = useState<Array<{ id: string; action: string; actorName: string; createdAt: string; severity: string }>>([])
   const [activeTab, setActiveTab] = useState('resumo')
+  const [allocateDialogOpen, setAllocateDialogOpen] = useState(false)
+  const [allocateCasoId, setAllocateCasoId] = useState<string | null>(null)
+  const [allocateMode, setAllocateMode] = useState<'auto' | 'manual'>('auto')
+  const [advogadosOptions, setAdvogadosOptions] = useState<Array<{ id: string; users: { name: string; email: string }; oab: string }>>([])
+  const [selectedAdvogadoIds, setSelectedAdvogadoIds] = useState<string[]>([])
+  const [loadingAdvogados, setLoadingAdvogados] = useState(false)
   const { toast } = useToast()
   const searchParams = useSearchParams()
 
@@ -299,24 +305,38 @@ export default function AdminCasosPage() {
     }
   }
 
-  const handleAllocate = async (casoId: string) => {
-    if (!confirm('Tem certeza que deseja alocar este caso para advogados?')) {
-      return
-    }
+  const openAllocateDialog = (casoId: string) => {
+    setAllocateCasoId(casoId)
+    setAllocateMode('auto')
+    setSelectedAdvogadoIds([])
+    setAdvogadosOptions([])
+    setAllocateDialogOpen(true)
+  }
 
+  const fetchAdvogadosForAllocate = async () => {
+    setLoadingAdvogados(true)
+    try {
+      const res = await fetch('/api/admin/advogados?status=aprovados&limit=100')
+      const result = await res.json()
+      if (result.success && Array.isArray(result.data)) {
+        setAdvogadosOptions(result.data)
+      }
+    } catch {
+      toast({ title: 'Erro', description: 'Não foi possível carregar advogados', variant: 'destructive' })
+    } finally {
+      setLoadingAdvogados(false)
+    }
+  }
+
+  const handleAllocateAuto = async () => {
+    if (!allocateCasoId) return
     setIsAllocating(true)
     try {
-      const res = await fetch(`/api/admin/casos/${casoId}/allocate`, {
-        method: 'POST',
-      })
-
+      const res = await fetch(`/api/admin/casos/${allocateCasoId}/allocate`, { method: 'POST' })
       const result = await res.json()
-
       if (result.success) {
-        toast({
-          title: 'Sucesso',
-          description: result.message || 'Caso alocado com sucesso',
-        })
+        toast({ title: 'Sucesso', description: result.message || 'Caso alocado com sucesso' })
+        setAllocateDialogOpen(false)
         setIsDialogOpen(false)
         fetchCasos()
       } else {
@@ -331,6 +351,44 @@ export default function AdminCasosPage() {
     } finally {
       setIsAllocating(false)
     }
+  }
+
+  const handleAllocateManual = async () => {
+    if (!allocateCasoId || selectedAdvogadoIds.length === 0) {
+      toast({ title: 'Selecione ao menos um advogado', variant: 'destructive' })
+      return
+    }
+    setIsAllocating(true)
+    try {
+      const res = await fetch(`/api/admin/casos/${allocateCasoId}/allocate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ advogadoIds: selectedAdvogadoIds }),
+      })
+      const result = await res.json()
+      if (result.success) {
+        toast({ title: 'Sucesso', description: result.message || 'Caso alocado com sucesso' })
+        setAllocateDialogOpen(false)
+        setIsDialogOpen(false)
+        fetchCasos()
+      } else {
+        throw new Error(result.error || 'Erro ao alocar caso')
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro ao alocar caso',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsAllocating(false)
+    }
+  }
+
+  const toggleAdvogadoSelection = (id: string) => {
+    setSelectedAdvogadoIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
   }
 
   const handleDeallocate = async (casoId: string) => {
@@ -748,7 +806,7 @@ export default function AdminCasosPage() {
                       <Button
                         variant="default"
                         size="sm"
-                        onClick={() => handleAllocate(caso.id)}
+                        onClick={() => openAllocateDialog(caso.id)}
                         disabled={isAllocating || caso.status !== 'ABERTO'}
                       >
                         <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -888,7 +946,7 @@ export default function AdminCasosPage() {
                         <XCircle className="h-4 w-4 mr-2" /> Dealocar
                       </Button>
                     ) : (
-                      <Button variant="default" size="sm" onClick={() => handleAllocate(selectedCaso.id)} disabled={isAllocating || selectedCaso.status !== 'ABERTO'}>
+                      <Button variant="default" size="sm" onClick={() => openAllocateDialog(selectedCaso.id)} disabled={isAllocating || selectedCaso.status !== 'ABERTO'}>
                         <CheckCircle2 className="h-4 w-4 mr-2" /> Alocar
                       </Button>
                     )}
@@ -995,6 +1053,81 @@ export default function AdminCasosPage() {
               </Tabs>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Alocar caso (automático ou manual) */}
+      <Dialog open={allocateDialogOpen} onOpenChange={(open) => { setAllocateDialogOpen(open); if (!open) setAllocateCasoId(null); setSelectedAdvogadoIds([]); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Alocar caso</DialogTitle>
+            <DialogDescription>
+              Escolha alocação automática (sistema escolhe advogados) ou manual (você escolhe os advogados).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <Button
+                variant={allocateMode === 'auto' ? 'default' : 'outline'}
+                onClick={() => setAllocateMode('auto')}
+              >
+                Alocação automática
+              </Button>
+              <Button
+                variant={allocateMode === 'manual' ? 'default' : 'outline'}
+                onClick={() => {
+                  setAllocateMode('manual')
+                  if (advogadosOptions.length === 0) fetchAdvogadosForAllocate()
+                }}
+              >
+                Alocação manual (escolher advogados)
+              </Button>
+            </div>
+
+            {allocateMode === 'manual' && (
+              <div className="border rounded-lg p-3 max-h-60 overflow-y-auto space-y-2">
+                {loadingAdvogados ? (
+                  <p className="text-sm text-muted-foreground">Carregando advogados...</p>
+                ) : advogadosOptions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum advogado aprovado encontrado.</p>
+                ) : (
+                  <>
+                    <p className="text-xs text-muted-foreground">Selecione um ou mais advogados:</p>
+                    {advogadosOptions.map((adv) => (
+                      <label key={adv.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-2 rounded">
+                        <Checkbox
+                          checked={selectedAdvogadoIds.includes(adv.id)}
+                          onCheckedChange={() => toggleAdvogadoSelection(adv.id)}
+                        />
+                        <span className="text-sm font-medium">{adv.users.name}</span>
+                        <span className="text-xs text-muted-foreground">OAB {adv.oab}</span>
+                        <span className="text-xs text-muted-foreground truncate">{adv.users.email}</span>
+                      </label>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-2">
+              {allocateMode === 'auto' && (
+                <Button onClick={handleAllocateAuto} disabled={isAllocating}>
+                  {isAllocating ? 'Alocando...' : 'Alocar automaticamente'}
+                </Button>
+              )}
+              {allocateMode === 'manual' && (
+                <Button
+                  onClick={handleAllocateManual}
+                  disabled={isAllocating || selectedAdvogadoIds.length === 0}
+                >
+                  {isAllocating ? 'Alocando...' : `Alocar para ${selectedAdvogadoIds.length} advogado(s)`}
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => setAllocateDialogOpen(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
