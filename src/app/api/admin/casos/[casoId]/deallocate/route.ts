@@ -49,19 +49,15 @@ export async function POST(
       )
     }
 
-    // Decrementar contadores de leads dos advogados
-    const advogadoIds = caso.matches.map((m) => m.advogadoId)
-    const uniqueAdvogadoIds = [...new Set(advogadoIds)]
-
-    for (const advogadoId of uniqueAdvogadoIds) {
-      const matchesCount = caso.matches.filter((m) => m.advogadoId === advogadoId).length
-      
+    // Decrementar leads apenas para PENDENTE (expirados já foram decrementados ao expirar)
+    const matchesToDecrement = caso.matches.filter((m) => m.status === 'PENDENTE')
+    const advogadoIdsToDecrement = [...new Set(matchesToDecrement.map((m) => m.advogadoId))]
+    for (const advogadoId of advogadoIdsToDecrement) {
+      const count = matchesToDecrement.filter((m) => m.advogadoId === advogadoId).length
       await prisma.advogados.update({
         where: { id: advogadoId },
         data: {
-          leadsRecebidosMes: {
-            decrement: matchesCount,
-          },
+          leadsRecebidosMes: { decrement: count },
           updatedAt: new Date(),
         },
       })

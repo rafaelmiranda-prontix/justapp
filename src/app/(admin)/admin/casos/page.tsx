@@ -41,6 +41,7 @@ import {
   Send,
   StickyNote,
   ListChecks,
+  RefreshCw,
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -198,8 +199,12 @@ export default function AdminCasosPage() {
   const [advogadosOptions, setAdvogadosOptions] = useState<Array<{ id: string; users: { name: string; email: string }; oab: string }>>([])
   const [selectedAdvogadoIds, setSelectedAdvogadoIds] = useState<string[]>([])
   const [loadingAdvogados, setLoadingAdvogados] = useState(false)
+  const [isClearingExpired, setIsClearingExpired] = useState(false)
   const { toast } = useToast()
   const searchParams = useSearchParams()
+
+  const hasExpiredMatches = (caso: Caso) =>
+    (caso.matches ?? []).some((m) => m.status === 'EXPIRADO')
 
   const fetchCasos = useCallback(async () => {
     setIsLoading(true)
@@ -389,6 +394,33 @@ export default function AdminCasosPage() {
     setSelectedAdvogadoIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     )
+  }
+
+  const handleClearExpired = async (casoId: string) => {
+    setIsClearingExpired(true)
+    try {
+      const res = await fetch(`/api/admin/casos/${casoId}/clear-expired`, { method: 'POST' })
+      const result = await res.json()
+      if (result.success) {
+        toast({ title: 'Sucesso', description: result.message })
+        if (selectedCaso?.id === casoId) {
+          const refetch = await fetch(`/api/admin/casos/${casoId}`)
+          const refetchResult = await refetch.json()
+          if (refetchResult.success && refetchResult.data) setSelectedCaso(refetchResult.data)
+        }
+        fetchCasos()
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro ao limpar expirados',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsClearingExpired(false)
+    }
   }
 
   const handleDeallocate = async (casoId: string) => {
@@ -791,7 +823,7 @@ export default function AdminCasosPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {isCasoAlocated(caso) ? (
                       <Button
                         variant="destructive"
@@ -811,6 +843,17 @@ export default function AdminCasosPage() {
                       >
                         <CheckCircle2 className="h-4 w-4 mr-2" />
                         Alocar
+                      </Button>
+                    )}
+                    {!isCasoAlocated(caso) && hasExpiredMatches(caso) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleClearExpired(caso.id)}
+                        disabled={isClearingExpired}
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${isClearingExpired ? 'animate-spin' : ''}`} />
+                        Limpar expirados
                       </Button>
                     )}
                     <Button
@@ -940,7 +983,7 @@ export default function AdminCasosPage() {
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2 pt-2 border-t">
+                  <div className="flex flex-wrap gap-2 pt-2 border-t">
                     {isCasoAlocated(selectedCaso) ? (
                       <Button variant="destructive" size="sm" onClick={() => handleDeallocate(selectedCaso.id)} disabled={isDeallocating || selectedCaso.status !== 'ABERTO'}>
                         <XCircle className="h-4 w-4 mr-2" /> Dealocar
@@ -948,6 +991,12 @@ export default function AdminCasosPage() {
                     ) : (
                       <Button variant="default" size="sm" onClick={() => openAllocateDialog(selectedCaso.id)} disabled={isAllocating || selectedCaso.status !== 'ABERTO'}>
                         <CheckCircle2 className="h-4 w-4 mr-2" /> Alocar
+                      </Button>
+                    )}
+                    {!isCasoAlocated(selectedCaso) && hasExpiredMatches(selectedCaso) && (
+                      <Button variant="outline" size="sm" onClick={() => handleClearExpired(selectedCaso.id)} disabled={isClearingExpired}>
+                        <RefreshCw className={`h-4 w-4 mr-2 ${isClearingExpired ? 'animate-spin' : ''}`} />
+                        Limpar expirados
                       </Button>
                     )}
                   </div>
