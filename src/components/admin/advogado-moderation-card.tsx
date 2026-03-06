@@ -1,9 +1,17 @@
 'use client'
 
+import { useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -11,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { CheckCircle2, XCircle, MapPin, Scale, Star, UserCheck, CreditCard } from 'lucide-react'
+import { CheckCircle2, XCircle, MapPin, Scale, Star, UserCheck, CreditCard, Eye, Loader2 } from 'lucide-react'
 import { formatOAB } from '@/lib/utils'
 
 interface AdvogadoModerationCardProps {
@@ -46,6 +54,60 @@ interface AdvogadoModerationCardProps {
   onUpdatePlan?: (plano: string) => void
 }
 
+type AdvogadoDetail = {
+  id: string
+  oab: string
+  oabVerificado: boolean
+  aprovado: boolean
+  bio: string | null
+  fotoUrl: string | null
+  cidade: string
+  estado: string
+  latitude: number | null
+  longitude: number | null
+  raioAtuacao: number
+  precoConsulta: number | null
+  aceitaOnline: boolean
+  aceitaOutrosEstados: boolean
+  plano: string
+  planoExpira: string | null
+  stripeCustomerId: string | null
+  stripeSubscriptionId: string | null
+  leadsRecebidosMes: number
+  leadsLimiteMes: number
+  ultimoResetLeads: string
+  casosRecebidosHora: number
+  ultimoResetCasosHora: string
+  isBeta: boolean
+  betaInviteCode: string | null
+  onboardingCompleted: boolean
+  createdAt: string
+  updatedAt: string
+  users: {
+    id: string
+    name: string
+    email: string
+    phone: string | null
+    image: string | null
+    status: string
+    emailVerified: string | null
+    createdAt: string
+    updatedAt: string
+  }
+  especialidades: Array<{ id: string; nome: string; slug: string }>
+  avaliacaoMedia: number
+  totalAvaliacoes: number
+}
+
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap gap-x-2 py-1 text-sm">
+      <span className="font-medium text-muted-foreground min-w-[140px]">{label}:</span>
+      <span className="text-foreground">{value ?? '—'}</span>
+    </div>
+  )
+}
+
 export function AdvogadoModerationCard({
   advogado,
   onApprove,
@@ -53,6 +115,10 @@ export function AdvogadoModerationCard({
   onCompleteOnboarding,
   onUpdatePlan,
 }: AdvogadoModerationCardProps) {
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [detailData, setDetailData] = useState<AdvogadoDetail | null>(null)
+  const [loadingDetail, setLoadingDetail] = useState(false)
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -60,6 +126,23 @@ export function AdvogadoModerationCard({
       .join('')
       .substring(0, 2)
       .toUpperCase()
+  }
+
+  const fetchDetail = useCallback(async () => {
+    setLoadingDetail(true)
+    try {
+      const res = await fetch(`/api/admin/advogados/${advogado.id}`)
+      const result = await res.json()
+      if (result.success && result.data) setDetailData(result.data)
+    } finally {
+      setLoadingDetail(false)
+    }
+  }, [advogado.id])
+
+  const openDetail = () => {
+    setDetailOpen(true)
+    setDetailData(null)
+    fetchDetail()
   }
 
   return (
@@ -111,6 +194,17 @@ export function AdvogadoModerationCard({
           <p className="text-sm font-medium mb-1">Email:</p>
           <p className="text-sm text-muted-foreground">{advogado.users.email}</p>
         </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={openDetail}
+          disabled={loadingDetail}
+        >
+          <Eye className="h-4 w-4 mr-2" />
+          {loadingDetail ? 'Carregando...' : 'Ver detalhes'}
+        </Button>
 
         {advogado.especialidades && advogado.especialidades.length > 0 && (
           <div>
@@ -225,6 +319,101 @@ export function AdvogadoModerationCard({
           </div>
         )}
       </CardContent>
+
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Dados cadastrais do advogado</DialogTitle>
+            <DialogDescription>
+              Informações completas do cadastro e do usuário
+            </DialogDescription>
+          </DialogHeader>
+          {loadingDetail && !detailData ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : detailData ? (
+            <div className="space-y-6 text-sm">
+              <section>
+                <h3 className="font-semibold text-base border-b pb-2 mb-2">Dados do usuário</h3>
+                <DetailRow label="Nome" value={detailData.users.name} />
+                <DetailRow label="Email" value={detailData.users.email} />
+                <DetailRow label="Telefone" value={detailData.users.phone} />
+                <DetailRow label="Status da conta" value={detailData.users.status} />
+                <DetailRow
+                  label="Email verificado"
+                  value={detailData.users.emailVerified ? new Date(detailData.users.emailVerified).toLocaleString('pt-BR') : 'Não'}
+                />
+                <DetailRow label="Cadastro em" value={new Date(detailData.users.createdAt).toLocaleString('pt-BR')} />
+                <DetailRow label="Atualizado em" value={new Date(detailData.users.updatedAt).toLocaleString('pt-BR')} />
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-base border-b pb-2 mb-2">Dados profissionais</h3>
+                <DetailRow label="OAB" value={formatOAB(detailData.oab)} />
+                <DetailRow label="OAB verificado" value={detailData.oabVerificado ? 'Sim' : 'Não'} />
+                <DetailRow label="Aprovado" value={detailData.aprovado ? 'Sim' : 'Não'} />
+                <DetailRow label="Onboarding completo" value={detailData.onboardingCompleted ? 'Sim' : 'Não'} />
+                <DetailRow label="Cidade" value={detailData.cidade} />
+                <DetailRow label="Estado" value={detailData.estado} />
+                <DetailRow label="Raio de atuação (km)" value={detailData.raioAtuacao} />
+                <DetailRow
+                  label="Preço consulta (R$)"
+                  value={detailData.precoConsulta != null ? Number(detailData.precoConsulta).toFixed(2) : null}
+                />
+                <DetailRow label="Aceita online" value={detailData.aceitaOnline ? 'Sim' : 'Não'} />
+                <DetailRow label="Aceita outros estados" value={detailData.aceitaOutrosEstados ? 'Sim' : 'Não'} />
+                {detailData.bio && (
+                  <DetailRow label="Bio" value={<span className="whitespace-pre-wrap">{detailData.bio}</span>} />
+                )}
+                <DetailRow label="Foto URL" value={detailData.fotoUrl ? 'Sim' : 'Não'} />
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-base border-b pb-2 mb-2">Plano e limites</h3>
+                <DetailRow label="Plano" value={detailData.plano} />
+                <DetailRow
+                  label="Plano expira"
+                  value={detailData.planoExpira ? new Date(detailData.planoExpira).toLocaleDateString('pt-BR') : null}
+                />
+                <DetailRow label="Leads recebidos (mês)" value={detailData.leadsRecebidosMes} />
+                <DetailRow label="Limite leads (mês)" value={detailData.leadsLimiteMes === -1 ? 'Ilimitado' : detailData.leadsLimiteMes} />
+                <DetailRow label="Último reset leads" value={new Date(detailData.ultimoResetLeads).toLocaleString('pt-BR')} />
+                <DetailRow label="Casos recebidos (hora)" value={detailData.casosRecebidosHora} />
+                <DetailRow label="Beta" value={detailData.isBeta ? 'Sim' : 'Não'} />
+                {detailData.betaInviteCode && (
+                  <DetailRow label="Código convite beta" value={detailData.betaInviteCode} />
+                )}
+              </section>
+
+              {detailData.especialidades && detailData.especialidades.length > 0 && (
+                <section>
+                  <h3 className="font-semibold text-base border-b pb-2 mb-2">Especialidades</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {detailData.especialidades.map((e) => (
+                      <Badge key={e.id} variant="outline">{e.nome}</Badge>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <section>
+                <h3 className="font-semibold text-base border-b pb-2 mb-2">Avaliações</h3>
+                <DetailRow label="Média" value={detailData.avaliacaoMedia.toFixed(1)} />
+                <DetailRow label="Total de avaliações" value={detailData.totalAvaliacoes} />
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-base border-b pb-2 mb-2">Datas do perfil</h3>
+                <DetailRow label="Criado em" value={new Date(detailData.createdAt).toLocaleString('pt-BR')} />
+                <DetailRow label="Atualizado em" value={new Date(detailData.updatedAt).toLocaleString('pt-BR')} />
+              </section>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">Não foi possível carregar os detalhes.</p>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }
