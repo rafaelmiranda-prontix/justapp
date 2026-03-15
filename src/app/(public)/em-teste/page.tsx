@@ -131,11 +131,34 @@ export default function EmTestePage() {
                 <HelpCircle className="h-4 w-4" />
                 Dúvidas e suporte
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mb-2">
                 Em caso de dúvidas sobre seu caso, atrasos ou problemas na plataforma, use o canal de
-                mensagens dentro do próprio caso (quando em mediação) ou entre em contato conosco pelos
-                canais disponíveis no site (ex.: e-mail de contato ou formulário).
+                mensagens dentro do próprio caso (quando em mediação) ou entre em contato conosco:
               </p>
+              <div className="flex flex-wrap gap-2">
+                {process.env.NEXT_PUBLIC_SUPPORT_EMAIL && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}`}>
+                      <Mail className="h-4 w-4 mr-1" />
+                      E-mail
+                    </a>
+                  </Button>
+                )}
+                {process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a
+                      href={`https://wa.me/${String(process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP).replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      WhatsApp
+                    </a>
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/contato">Formulário de contato</Link>
+                </Button>
+              </div>
             </section>
 
             <div className="pt-2">
@@ -209,11 +232,34 @@ export default function EmTestePage() {
                 <Mail className="h-4 w-4" />
                 Contato e suporte
               </h3>
-              <p className="text-sm text-muted-foreground">
-                Dúvidas sobre cadastro, aprovação, planos ou problemas técnicos: utilize o e-mail de
-                suporte ou o canal indicado na área do advogado. Na Beta, valorizamos seu feedback para
-                melhorar a experiência profissional na plataforma.
+              <p className="text-sm text-muted-foreground mb-2">
+                Dúvidas sobre cadastro, aprovação, planos ou problemas técnicos: utilize os canais abaixo.
+                Na Beta, valorizamos seu feedback para melhorar a experiência profissional na plataforma.
               </p>
+              <div className="flex flex-wrap gap-2">
+                {process.env.NEXT_PUBLIC_SUPPORT_EMAIL && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}`}>
+                      <Mail className="h-4 w-4 mr-1" />
+                      E-mail
+                    </a>
+                  </Button>
+                )}
+                {process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a
+                      href={`https://wa.me/${String(process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP).replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      WhatsApp
+                    </a>
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/contato">Formulário de contato</Link>
+                </Button>
+              </div>
             </section>
 
             <div className="pt-2">

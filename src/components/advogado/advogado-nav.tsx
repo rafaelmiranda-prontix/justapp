@@ -14,6 +14,7 @@ import {
   CreditCard,
   User,
   BarChart3,
+  HelpCircle,
 } from 'lucide-react'
 
 export const navItems: NavItem[] = [
@@ -46,6 +47,11 @@ export const navItems: NavItem[] = [
     title: 'Assinatura',
     href: '/advogado/assinatura',
     icon: CreditCard,
+  },
+  {
+    title: 'Suporte',
+    href: '/advogado/suporte',
+    icon: HelpCircle,
   },
   {
     title: 'Meu Perfil',

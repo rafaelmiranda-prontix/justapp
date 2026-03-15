@@ -68,12 +68,33 @@ export function MarketingFooter() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-foreground">
-                    Ajuda
-                  </Link>
+                  {process.env.NEXT_PUBLIC_SUPPORT_EMAIL ? (
+                    <a
+                      href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}`}
+                      className="hover:text-foreground"
+                    >
+                      E-mail
+                    </a>
+                  ) : (
+                    <Link href="/contato" className="hover:text-foreground">
+                      Ajuda
+                    </Link>
+                  )}
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-foreground">
+                  {process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP ? (
+                    <a
+                      href={`https://wa.me/${process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-foreground"
+                    >
+                      WhatsApp
+                    </a>
+                  ) : null}
+                </li>
+                <li>
+                  <Link href="/contato" className="hover:text-foreground">
                     Contato
                   </Link>
                 </li>

@@ -63,11 +63,13 @@ export default withAuth(
           pathname.startsWith('/api/transcribe-audio') || // Transcrição de áudio (chat anônimo)
           pathname.startsWith('/api/health') || // Health check
           pathname.startsWith('/api/test-') || // Rotas de teste
+          pathname === '/api/contato' || // Formulário de contato (público)
           pathname.startsWith('/_next') ||
           pathname.startsWith('/advogado/') || // Perfil público de advogado
           pathname === '/termos' || // Termos de Uso
           pathname === '/privacidade' || // Política de Privacidade
           pathname === '/em-teste' || // Aplicação em teste Beta
+          pathname === '/contato' || // Formulário de contato
           pathname.startsWith('/campanha') || // Landing page de campanha
           pathname === '/auth/complete-profile' // Página de completar perfil
         ) {
