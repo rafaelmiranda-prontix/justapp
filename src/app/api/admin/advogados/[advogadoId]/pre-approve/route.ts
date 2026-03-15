@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/middleware/admin'
-import { EmailService } from '@/lib/email.service'
-import { logger } from '@/lib/logger'
 
+/**
+ * Pré-aprova o advogado após primeira análise.
+ * Ele ainda não recebe leads; aguarda confirmação (ex.: via N8N) para aprovação final.
+ */
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ advogadoId: string }> }
@@ -19,14 +21,6 @@ export async function POST(
 
     const advogado = await prisma.advogados.findUnique({
       where: { id: advogadoId },
-      include: {
-        users: {
-          select: {
-            email: true,
-            name: true,
-          },
-        },
-      },
     })
 
     if (!advogado) {
@@ -36,32 +30,29 @@ export async function POST(
       )
     }
 
+    if (advogado.aprovado) {
+      return NextResponse.json(
+        { error: 'Advogado já está aprovado' },
+        { status: 400 }
+      )
+    }
+
     await prisma.advogados.update({
       where: { id: advogadoId },
       data: {
-        aprovado: true,
-        preAprovado: true, // Consistência: aprovado final implica pré-aprovado
+        preAprovado: true,
         oabVerificado: true,
       },
     })
 
-    // Enviar email de aprovação
-    try {
-      await EmailService.sendApprovalEmail(advogado.users.email, advogado.users.name)
-      logger.info(`[Admin] Approval email sent to ${advogado.users.email}`)
-    } catch (emailError) {
-      logger.error('[Admin] Failed to send approval email:', emailError)
-      // Não falha a aprovação se o email falhar
-    }
-
     return NextResponse.json({
       success: true,
-      message: 'Advogado aprovado com sucesso',
+      message: 'Advogado pré-aprovado. Aguardando confirmação para liberar leads.',
     })
   } catch (error) {
-    logger.error('Error approving advogado:', error)
+    console.error('Error pre-approving advogado:', error)
     return NextResponse.json(
-      { error: 'Erro ao aprovar advogado' },
+      { error: 'Erro ao pré-aprovar advogado' },
       { status: 500 }
     )
   }

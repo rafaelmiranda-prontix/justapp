@@ -64,6 +64,7 @@ export default withAuth(
           pathname.startsWith('/api/health') || // Health check
           pathname.startsWith('/api/test-') || // Rotas de teste
           pathname === '/api/contato' || // Formulário de contato (público)
+          pathname.startsWith('/api/n8n') || // N8N (protegido por API key na rota)
           pathname.startsWith('/_next') ||
           pathname.startsWith('/advogado/') || // Perfil público de advogado
           pathname === '/termos' || // Termos de Uso

@@ -22,6 +22,7 @@ interface Advogado {
   oab: string
   oabVerificado: boolean
   aprovado: boolean
+  preAprovado: boolean
   onboardingCompleted: boolean
   plano: string
   planoExpira: string | null
@@ -32,6 +33,7 @@ interface Advogado {
     id: string
     name: string
     email: string
+    phone?: string | null
     status: string
   }
   especialidades: Array<{
@@ -95,6 +97,30 @@ export default function AdminAdvogadosPage() {
       toast({
         title: 'Erro',
         description: error instanceof Error ? error.message : 'Erro ao aprovar advogado',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handlePreApprove = async (advogadoId: string) => {
+    try {
+      const res = await fetch(`/api/admin/advogados/${advogadoId}/pre-approve`, {
+        method: 'POST',
+      })
+      const result = await res.json()
+      if (result.success) {
+        toast({
+          title: 'Sucesso',
+          description: 'Advogado pré-aprovado. Envie a mensagem e confirme para liberar.',
+        })
+        fetchAdvogados()
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro ao pré-aprovar',
         variant: 'destructive',
       })
     }
@@ -222,6 +248,7 @@ export default function AdminAdvogadosPage() {
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="pendentes">Pendentes</SelectItem>
+              <SelectItem value="pre_aprovados">Pré-aprovados</SelectItem>
               <SelectItem value="aprovados">Aprovados</SelectItem>
             </SelectContent>
           </Select>
@@ -249,6 +276,7 @@ export default function AdminAdvogadosPage() {
                 key={advogado.id}
                 advogado={advogado}
                 onApprove={() => handleApprove(advogado.id)}
+                onPreApprove={() => handlePreApprove(advogado.id)}
                 onReject={() => handleReject(advogado.id)}
                 onCompleteOnboarding={() => handleCompleteOnboarding(advogado.id)}
                 onUpdatePlan={(plano) => handleUpdatePlan(advogado.id, plano)}

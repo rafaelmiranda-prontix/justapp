@@ -19,6 +19,10 @@ export async function GET(req: Request) {
 
     if (status === 'pendentes') {
       where.aprovado = false
+      where.preAprovado = false
+    } else if (status === 'pre_aprovados') {
+      where.preAprovado = true
+      where.aprovado = false
     } else if (status === 'aprovados') {
       where.aprovado = true
     }
@@ -32,6 +36,7 @@ export async function GET(req: Request) {
               id: true,
               name: true,
               email: true,
+              phone: true,
               status: true,
               createdAt: true,
             },

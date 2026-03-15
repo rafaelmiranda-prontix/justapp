@@ -39,7 +39,8 @@ model advogados {
   userId                  String                    @unique
   oab                     String                    @unique
   oabVerificado           Boolean                   @default(false)
-  aprovado                Boolean                   @default(false) // Aprovação manual pelo admin
+  aprovado                Boolean                   @default(false) // Aprovação final (recebe leads)
+  preAprovado             Boolean                   @default(false) // Pré-aprovado após 1ª análise (não recebe leads; aguarda confirmação para aprovar)
   bio                     String?
   fotoUrl                 String?
   cidade                  String

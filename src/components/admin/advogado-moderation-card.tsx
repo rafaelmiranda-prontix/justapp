@@ -28,6 +28,7 @@ interface AdvogadoModerationCardProps {
     oab: string
     oabVerificado: boolean
     aprovado: boolean
+    preAprovado?: boolean
     onboardingCompleted?: boolean
     plano?: string
     planoExpira?: string | null
@@ -49,6 +50,7 @@ interface AdvogadoModerationCardProps {
     totalAvaliacoes: number
   }
   onApprove: () => void
+  onPreApprove?: () => void
   onReject: () => void
   onCompleteOnboarding?: () => void
   onUpdatePlan?: (plano: string) => void
@@ -59,6 +61,7 @@ type AdvogadoDetail = {
   oab: string
   oabVerificado: boolean
   aprovado: boolean
+  preAprovado?: boolean
   bio: string | null
   fotoUrl: string | null
   cidade: string
@@ -111,6 +114,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 export function AdvogadoModerationCard({
   advogado,
   onApprove,
+  onPreApprove,
   onReject,
   onCompleteOnboarding,
   onUpdatePlan,
@@ -153,12 +157,16 @@ export function AdvogadoModerationCard({
             <AvatarFallback>{getInitials(advogado.users.name)}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <CardTitle className="text-lg">{advogado.users.name}</CardTitle>
               {advogado.aprovado ? (
                 <Badge variant="default" className="bg-green-500">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
                   Aprovado
+                </Badge>
+              ) : advogado.preAprovado ? (
+                <Badge variant="secondary" className="bg-blue-500 text-white">
+                  Pré-aprovado
                 </Badge>
               ) : (
                 <Badge variant="secondary" className="bg-yellow-500 text-white">
@@ -285,24 +293,35 @@ export function AdvogadoModerationCard({
           </div>
         )}
         {!advogado.aprovado && (
-          <div className="flex gap-2 pt-2">
-            <Button
-              onClick={onApprove}
-              className="flex-1"
-              size="sm"
-            >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Aprovar e Liberar
-            </Button>
-            <Button
-              onClick={onReject}
-              variant="destructive"
-              className="flex-1"
-              size="sm"
-            >
-              <XCircle className="h-4 w-4 mr-2" />
-              Rejeitar
-            </Button>
+          <div className="flex flex-wrap gap-2 pt-2">
+            {advogado.preAprovado ? (
+              <>
+                <Button onClick={onApprove} className="flex-1" size="sm">
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Aprovar e Liberar
+                </Button>
+                <Button onClick={onReject} variant="destructive" size="sm">
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Rejeitar
+                </Button>
+              </>
+            ) : (
+              <>
+                {onPreApprove && (
+                  <Button onClick={onPreApprove} variant="secondary" className="flex-1" size="sm">
+                    Pré-aprovar
+                  </Button>
+                )}
+                <Button onClick={onApprove} className="flex-1" size="sm">
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Aprovar e Liberar
+                </Button>
+                <Button onClick={onReject} variant="destructive" size="sm">
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Rejeitar
+                </Button>
+              </>
+            )}
           </div>
         )}
         {advogado.aprovado && (
@@ -353,6 +372,7 @@ export function AdvogadoModerationCard({
                 <DetailRow label="OAB" value={formatOAB(detailData.oab)} />
                 <DetailRow label="OAB verificado" value={detailData.oabVerificado ? 'Sim' : 'Não'} />
                 <DetailRow label="Aprovado" value={detailData.aprovado ? 'Sim' : 'Não'} />
+                <DetailRow label="Pré-aprovado" value={detailData.preAprovado ? 'Sim' : 'Não'} />
                 <DetailRow label="Onboarding completo" value={detailData.onboardingCompleted ? 'Sim' : 'Não'} />
                 <DetailRow label="Cidade" value={detailData.cidade} />
                 <DetailRow label="Estado" value={detailData.estado} />

@@ -31,12 +31,12 @@ export async function POST(
       )
     }
 
-    // Marca como não aprovado e não verificado
-    // Futuramente pode adicionar campo de motivo de rejeição
+    // Marca como não aprovado, não pré-aprovado e não verificado
     await prisma.advogados.update({
       where: { id: advogadoId },
       data: {
         aprovado: false,
+        preAprovado: false,
         oabVerificado: false,
       },
     })
