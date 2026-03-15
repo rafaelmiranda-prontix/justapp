@@ -10,12 +10,11 @@ Este documento contém o texto sugerido para enviar aos advogados **após** a ap
 ## Conteúdo da mensagem
 
 1. Saudação com o nome do advogado.
-2. **"Você foi selecionado para o teste beta."**
-3. **"Desculpe a demora – estamos com alta demanda de pedidos e cadastros."**
-4. **"Mas você foi selecionado para participar do teste beta."**
-5. Incluir o **link da regulamentação do teste beta:**  
+2. **Pedimos desculpas pela demora no retorno.** Estamos com um alto volume de solicitações e cadastros no momento, o que tem impactado nossos prazos de análise. Agradecemos a compreensão.
+3. **Você foi selecionado para participar do teste beta** e gostaríamos de tê-lo(a) conosco nesta fase.
+4. Incluir o **link da regulamentação do teste beta:**  
    `https://[SEU-DOMINIO]/em-teste`
-6. (Opcional) Pedir confirmação: *"Deseja realmente participar do programa Beta?"* com instrução para responder Sim/Não no WhatsApp.
+5. (Opcional) Pedir confirmação: *"Deseja realmente participar do programa Beta?"* com instrução para responder Sim/Não no WhatsApp.
 
 ## Assunto (se e-mail)
 
@@ -26,9 +25,9 @@ Este documento contém o texto sugerido para enviar aos advogados **após** a ap
 ```
 Olá, [Nome do Advogado]!
 
-Você foi selecionado para o teste beta.
+Pedimos desculpas pela demora no retorno. Estamos com um alto volume de solicitações e cadastros no momento, o que tem impactado nossos prazos de análise. Agradecemos a compreensão.
 
-Desculpe a demora – estamos com alta demanda de pedidos e cadastros. Mas você foi selecionado para participar do teste beta.
+Você foi selecionado para participar do teste beta e gostaríamos de tê-lo(a) conosco nesta fase.
 
 Regulamentação do teste beta: https://[SEU-DOMINIO]/em-teste
 

@@ -365,6 +365,9 @@ export default function AdvogadoDashboardPage() {
               <p className="mb-2">
                 Sua conta está sendo analisada pela nossa equipe. Você receberá uma notificação assim que sua conta for aprovada.
               </p>
+              <p className="mb-2 text-sm">
+                Pedimos desculpas pela demora no retorno. Estamos com um alto volume de solicitações e cadastros no momento, o que tem impactado nossos prazos de análise. Agradecemos a compreensão.
+              </p>
               <p className="text-sm">
                 Enquanto isso, complete seu perfil para agilizar o processo de aprovação.
               </p>
