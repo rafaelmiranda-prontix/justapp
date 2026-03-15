@@ -63,6 +63,11 @@ export function MarketingFooter() {
               <h3 className="font-semibold mb-4">Suporte</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
+                  <Link href="/em-teste" className="hover:text-foreground">
+                    Aplicação em teste Beta
+                  </Link>
+                </li>
+                <li>
                   <Link href="#" className="hover:text-foreground">
                     Ajuda
                   </Link>

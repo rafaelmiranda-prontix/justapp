@@ -67,6 +67,7 @@ export default withAuth(
           pathname.startsWith('/advogado/') || // Perfil público de advogado
           pathname === '/termos' || // Termos de Uso
           pathname === '/privacidade' || // Política de Privacidade
+          pathname === '/em-teste' || // Aplicação em teste Beta
           pathname.startsWith('/campanha') || // Landing page de campanha
           pathname === '/auth/complete-profile' // Página de completar perfil
         ) {
