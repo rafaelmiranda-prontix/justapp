@@ -162,10 +162,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ matchId
       return NextResponse.json({ error: 'Match não encontrado' }, { status: 404 })
     }
 
-    // Verifica se o match foi aceito
-    if (match.status !== 'ACEITO') {
+    // Chat liberado após aceite (mesma regra que ChatService: ACEITO ou CONTRATADO)
+    const canSendMessage =
+      match.status === 'ACEITO' || match.status === 'CONTRATADO'
+    if (!canSendMessage) {
       return NextResponse.json(
-        { error: 'Só é possível enviar mensagens em matches aceitos' },
+        {
+          error:
+            match.status === 'PENDENTE' || match.status === 'VISUALIZADO'
+              ? 'O chat só fica disponível depois que o advogado aceitar o caso.'
+              : match.status === 'RECUSADO'
+                ? 'Este contato foi recusado; não é possível enviar mensagens.'
+                : match.status === 'EXPIRADO'
+                  ? 'Este convite expirou; não é possível enviar mensagens.'
+                  : 'Não é possível enviar mensagens neste contato no momento.',
+        },
         { status: 403 }
       )
     }

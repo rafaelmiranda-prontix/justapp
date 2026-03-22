@@ -318,7 +318,7 @@ export default function AdvogadoDashboardPage() {
               </Button>
             </>
           )}
-          {match.status === 'ACEITO' && (
+          {(match.status === 'ACEITO' || match.status === 'CONTRATADO') && (
             <>
               <Button
                 size="sm"

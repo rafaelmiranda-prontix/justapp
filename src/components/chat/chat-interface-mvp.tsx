@@ -273,7 +273,7 @@ export function ChatInterfaceMVP({
 
         const result = await res.json()
 
-        if (result.success) {
+        if (res.ok && result.success) {
           // Substituir mensagem temporária pela mensagem real do servidor
           setMessages((prev) =>
             prev.map((msg) => (msg.id === tempId ? result.data : msg))
@@ -305,7 +305,7 @@ export function ChatInterfaceMVP({
 
         toast({
           title: 'Erro ao enviar',
-          description: 'Verifique sua conexão',
+          description: 'Verifique sua conexão e tente novamente.',
           variant: 'destructive',
         })
       } finally {

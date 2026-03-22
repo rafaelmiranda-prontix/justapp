@@ -247,7 +247,7 @@ export default function CasosRecebidosPage() {
               </Button>
             </>
           )}
-          {match.status === 'ACEITO' && (
+          {(match.status === 'ACEITO' || match.status === 'CONTRATADO') && (
             <Button size="sm" asChild className="w-full">
               <Link href={`/advogado/chat/${match.id}`}>Abrir Chat</Link>
             </Button>
