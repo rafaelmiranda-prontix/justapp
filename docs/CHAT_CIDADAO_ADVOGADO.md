@@ -29,3 +29,14 @@
 1. Confirmar **status do match** no banco ou no admin (`ACEITO` ou `CONTRATADO` para chat ativo).
 2. Testar envio e ver resposta da API (403 com mensagem explicativa se o status for inválido).
 3. Conferir variáveis **Pusher** se o problema for “mensagem enviada mas não aparece na hora”.
+
+## Painel admin – auditoria de mensagens
+
+No menu **Admin → Mensagens chat** (`/admin/chat-mensagens`):
+
+- Lista mensagens com **remetente**, **destinatário inferido** (o outro participante do match) e **match/caso**.
+- Indicador **OK** quando o remetente é o cidadão ou o advogado daquele match; **Problema** quando não bate (inconsistência de dados).
+- Resumo: totais, últimos 7 dias e contagem de inconsistências nos últimos 7 dias.
+- Filtro **Só inconsistências** para focar em registros suspeitos.
+
+API: `GET /api/admin/chat-messages` (autenticação admin), query `page`, `limit`, `onlyProblems=true|false`.
