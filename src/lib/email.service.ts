@@ -362,4 +362,158 @@ export class EmailService {
 </html>
     `
   }
+
+  private static escapeHtml(s: string): string {
+    return s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+  }
+
+  /**
+   * Aviso manual (admin): nova mensagem no chat — prévia e remetente.
+   */
+  static async sendChatNewMessageNotification(params: {
+    to: string
+    recipientName: string
+    senderName: string
+    senderEmail: string
+    messagePreview: string
+    chatUrl: string
+    testBanner?: boolean
+  }): Promise<{ success: boolean; message?: string }> {
+    const {
+      to,
+      recipientName,
+      senderName,
+      senderEmail,
+      messagePreview,
+      chatUrl,
+      testBanner,
+    } = params
+
+    if (!resend) {
+      logger.warn('[Email] Resend não configurado. Aviso de chat não enviado.')
+      return { success: false, message: 'Resend não configurado (RESEND_API_KEY)' }
+    }
+
+    const safePreview = this.escapeHtml(messagePreview)
+    const safeSender = this.escapeHtml(senderName)
+    const safeEmail = this.escapeHtml(senderEmail)
+    const safeRecipient = this.escapeHtml(recipientName)
+    const banner = testBanner
+      ? `<tr><td style="padding: 12px 16px; background: #fef3c7; border-left: 4px solid #f59e0b; font-size: 14px; color: #92400e;"><strong>Envio de teste</strong> — disparado pelo painel administrativo. O destinatário real não recebeu este e-mail.</td></tr>`
+      : ''
+
+    const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Nova mensagem no chat</title></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+        <tr><td style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:28px;text-align:center;border-radius:8px 8px 0 0;">
+          <h1 style="color:#fff;margin:0;font-size:22px;">Nova mensagem no chat</h1>
+          <p style="color:#e0e7ff;margin:8px 0 0;font-size:14px;">JustApp</p>
+        </td></tr>
+        ${banner}
+        <tr><td style="padding:28px;">
+          <p style="color:#374151;margin:0 0 16px;font-size:16px;line-height:1.5;">Olá, <strong>${safeRecipient}</strong>,</p>
+          <p style="color:#4b5563;margin:0 0 20px;font-size:15px;line-height:1.6;">Há uma nova mensagem na sua conversa.</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border-radius:6px;border:1px solid #e5e7eb;">
+            <tr><td style="padding:16px;">
+              <p style="margin:0 0 8px;font-size:12px;text-transform:uppercase;color:#6b7280;">Quem enviou</p>
+              <p style="margin:0;font-size:15px;color:#111827;"><strong>${safeSender}</strong></p>
+              <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">${safeEmail}</p>
+            </td></tr>
+            <tr><td style="padding:0 16px 16px;">
+              <p style="margin:0 0 8px;font-size:12px;text-transform:uppercase;color:#6b7280;">Prévia</p>
+              <p style="margin:0;font-size:14px;color:#374151;line-height:1.5;white-space:pre-wrap;">${safePreview}</p>
+            </td></tr>
+          </table>
+          ${
+            chatUrl
+              ? `<p style="margin:24px 0 0;text-align:center;"><a href="${String(chatUrl).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}" style="display:inline-block;background:#6366f1;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:15px;font-weight:600;">Abrir conversa</a></p>`
+              : ''
+          }
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+
+    const subject = testBanner
+      ? '[TESTE] Nova mensagem no chat — JustApp'
+      : 'Nova mensagem no chat — JustApp'
+
+    try {
+      const result = await resend.emails.send({
+        from: process.env.EMAIL_FROM || 'JustApp <noreply@justapp.com.br>',
+        to,
+        subject,
+        html,
+      })
+
+      if (result.error) {
+        logger.error('[Email] Resend error (chat notify):', result.error)
+        return { success: false, message: result.error.message || 'Erro ao enviar' }
+      }
+
+      logger.info(`[Email] Chat notify sent (ID: ${result.data?.id})`)
+      return { success: true }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Erro ao enviar'
+      logger.error('[Email] Failed to send chat notify:', error)
+      return { success: false, message: msg }
+    }
+  }
+
+  /**
+   * E-mail de amostra (sem mensagem real) — validar Resend no admin.
+   */
+  static async sendChatNotifySampleTest(to: string): Promise<{ success: boolean; message?: string }> {
+    if (!resend) {
+      logger.warn('[Email] Resend não configurado.')
+      return { success: false, message: 'Resend não configurado (RESEND_API_KEY)' }
+    }
+
+    const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Teste de e-mail</title></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;padding:28px;">
+        <tr><td>
+          <p style="margin:0 0 12px;font-size:14px;color:#92400e;background:#fef3c7;padding:12px;border-radius:6px;"><strong>Amostra</strong> — Este e-mail foi enviado pelo painel <strong>Mensagens chat</strong> (teste geral, sem vínculo com uma mensagem específica).</p>
+          <h1 style="color:#111827;font-size:20px;margin:0 0 12px;">Envio funcionando</h1>
+          <p style="color:#4b5563;font-size:15px;line-height:1.6;margin:0;">Se você recebeu isto, a integração com o provedor de e-mail está ok.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+
+    try {
+      const result = await resend.emails.send({
+        from: process.env.EMAIL_FROM || 'JustApp <noreply@justapp.com.br>',
+        to,
+        subject: '[TESTE] JustApp — amostra de aviso de chat',
+        html,
+      })
+
+      if (result.error) {
+        return { success: false, message: result.error.message || 'Erro ao enviar' }
+      }
+      return { success: true }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Erro ao enviar'
+      return { success: false, message: msg }
+    }
+  }
 }

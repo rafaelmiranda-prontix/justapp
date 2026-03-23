@@ -21,10 +21,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { MessageSquare, RefreshCw, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  MessageSquare,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Mail,
+  FlaskConical,
+  Loader2,
+} from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 
 interface ChatMessageRow {
   id: string
@@ -54,6 +65,12 @@ export default function AdminChatMensagensPage() {
   const [onlyProblems, setOnlyProblems] = useState(false)
   const [loading, setLoading] = useState(true)
   const [previewText, setPreviewText] = useState<string | null>(null)
+  const [sendingEmailForId, setSendingEmailForId] = useState<string | null>(null)
+  const [testRow, setTestRow] = useState<ChatMessageRow | null>(null)
+  const [testEmailInput, setTestEmailInput] = useState('')
+  const [sendingTest, setSendingTest] = useState(false)
+  const [sampleTestEmail, setSampleTestEmail] = useState('')
+  const [sendingSample, setSendingSample] = useState(false)
   const { toast } = useToast()
 
   const fetchData = useCallback(async () => {
@@ -87,6 +104,100 @@ export default function AdminChatMensagensPage() {
     fetchData()
   }, [fetchData])
 
+  async function notifyRecipient(messageId: string) {
+    setSendingEmailForId(messageId)
+    try {
+      const res = await fetch(`/api/admin/chat-messages/${messageId}/notify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        throw new Error(json.error || 'Falha ao enviar')
+      }
+      toast({
+        title: 'E-mail enviado',
+        description: `Aviso enviado para ${json.sentTo}.`,
+      })
+    } catch (e) {
+      toast({
+        title: 'Erro ao enviar',
+        description: e instanceof Error ? e.message : 'Falha',
+        variant: 'destructive',
+      })
+    } finally {
+      setSendingEmailForId(null)
+    }
+  }
+
+  async function sendTestForMessage() {
+    if (!testRow) return
+    const em = testEmailInput.trim().toLowerCase()
+    if (!em) {
+      toast({ title: 'Informe o e-mail', variant: 'destructive' })
+      return
+    }
+    setSendingTest(true)
+    try {
+      const res = await fetch(`/api/admin/chat-messages/${testRow.id}/notify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testEmail: em }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        throw new Error(json.error || 'Falha ao enviar')
+      }
+      toast({
+        title: 'E-mail de teste enviado',
+        description: `Conteúdo da mensagem (prévia + remetente) enviado para ${json.sentTo}.`,
+      })
+      setTestRow(null)
+      setTestEmailInput('')
+    } catch (e) {
+      toast({
+        title: 'Erro',
+        description: e instanceof Error ? e.message : 'Falha',
+        variant: 'destructive',
+      })
+    } finally {
+      setSendingTest(false)
+    }
+  }
+
+  async function sendSampleTest() {
+    const em = sampleTestEmail.trim().toLowerCase()
+    if (!em) {
+      toast({ title: 'Digite um e-mail', variant: 'destructive' })
+      return
+    }
+    setSendingSample(true)
+    try {
+      const res = await fetch('/api/admin/chat-messages/notify-email-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: em }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        throw new Error(json.error || 'Falha ao enviar')
+      }
+      toast({
+        title: 'Amostra enviada',
+        description: `Verifique a caixa de ${json.sentTo}.`,
+      })
+    } catch (e) {
+      toast({
+        title: 'Erro',
+        description: e instanceof Error ? e.message : 'Falha',
+        variant: 'destructive',
+      })
+    } finally {
+      setSendingSample(false)
+    }
+  }
+
   return (
     <div className="container max-w-7xl py-8">
       <div className="mb-8">
@@ -100,6 +211,34 @@ export default function AdminChatMensagensPage() {
       </div>
 
       <AdminNav />
+
+      <Card className="mt-8 border-dashed">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <FlaskConical className="h-5 w-5" />
+            Teste de envio (amostra)
+          </CardTitle>
+          <CardDescription>
+            Envia um e-mail genérico de teste (sem vínculo com uma mensagem da lista) para validar Resend / caixa de entrada.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row gap-3 sm:items-end">
+          <div className="flex-1 space-y-2">
+            <Label htmlFor="sample-email">E-mail para receber o teste</Label>
+            <Input
+              id="sample-email"
+              type="email"
+              placeholder="seu@email.com"
+              value={sampleTestEmail}
+              onChange={(e) => setSampleTestEmail(e.target.value)}
+            />
+          </div>
+          <Button type="button" onClick={sendSampleTest} disabled={sendingSample}>
+            {sendingSample ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Enviar amostra
+          </Button>
+        </CardContent>
+      </Card>
 
       {summary && (
         <div className="grid gap-4 md:grid-cols-4 mt-8 mb-6">
@@ -145,7 +284,7 @@ export default function AdminChatMensagensPage() {
           <div>
             <CardTitle>Listagem</CardTitle>
             <CardDescription>
-              Destinatário é inferido: se o remetente é o cidadão do caso, o destinatário é o advogado (e vice-versa).
+              Destinatário é inferido: se o remetente é o cidadão do caso, o destinatário é o advogado (e vice-versa). Use os botões de e-mail para avisar manualmente ou testar com outro endereço.
             </CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-4">
@@ -194,6 +333,7 @@ export default function AdminChatMensagensPage() {
                       <TableHead>Match / Caso</TableHead>
                       <TableHead>Prévia</TableHead>
                       <TableHead>Lida</TableHead>
+                      <TableHead className="text-right">E-mail</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -252,6 +392,40 @@ export default function AdminChatMensagensPage() {
                           </button>
                         </TableCell>
                         <TableCell>{r.lida ? 'Sim' : 'Não'}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex flex-col sm:flex-row gap-1 justify-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8"
+                              disabled={!r.destinatarioResolvido || sendingEmailForId === r.id}
+                              onClick={() => notifyRecipient(r.id)}
+                              title="Envia para o e-mail do destinatário inferido"
+                            >
+                              {sendingEmailForId === r.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Mail className="h-3.5 w-3.5 sm:mr-1" />
+                              )}
+                              <span className="hidden sm:inline">Avisar</span>
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              className="h-8"
+                              onClick={() => {
+                                setTestRow(r)
+                                setTestEmailInput('')
+                              }}
+                              title="Enviar a mesma prévia para um e-mail que você digitar"
+                            >
+                              <FlaskConical className="h-3.5 w-3.5 sm:mr-1" />
+                              <span className="hidden sm:inline">Testar</span>
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -292,6 +466,52 @@ export default function AdminChatMensagensPage() {
             <DialogTitle>Prévia da mensagem</DialogTitle>
           </DialogHeader>
           <p className="text-sm whitespace-pre-wrap">{previewText}</p>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!testRow}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTestRow(null)
+            setTestEmailInput('')
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Testar envio com esta mensagem</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            O e-mail incluirá a prévia do texto e os dados de quem enviou (
+            {testRow?.remetente.name}). Será marcado como <strong>envio de teste</strong>.
+          </p>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="test-email-row">Enviar para</Label>
+            <Input
+              id="test-email-row"
+              type="email"
+              placeholder="email@exemplo.com"
+              value={testEmailInput}
+              onChange={(e) => setTestEmailInput(e.target.value)}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setTestRow(null)
+                setTestEmailInput('')
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button type="button" onClick={sendTestForMessage} disabled={sendingTest}>
+              {sendingTest ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Enviar teste
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
