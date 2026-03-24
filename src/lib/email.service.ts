@@ -516,4 +516,255 @@ export class EmailService {
       return { success: false, message: msg }
     }
   }
+
+  /** Primeiro nome (respeita Dr./Dra.) — mesmo padrão dos outros e-mails do advogado. */
+  private static lawyerFirstName(name: string): string {
+    const nameParts = name.split(' ')
+    if (nameParts[0] === 'Dr.' || nameParts[0] === 'Dra.') {
+      return `${nameParts[0]} ${nameParts[1] || ''}`.trim()
+    }
+    return nameParts[0] || name
+  }
+
+  private static safeEmailHref(url: string): string {
+    return String(url).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+  }
+
+  private static adminLawyerEmailShell(params: {
+    title: string
+    subtitle?: string
+    bodyHtml: string
+    testBanner?: boolean
+    testBannerExtraHtml?: string
+  }): string {
+    const sub = params.subtitle
+      ? `<p style="color:#e0e7ff;margin:8px 0 0;font-size:16px;">${this.escapeHtml(params.subtitle)}</p>`
+      : ''
+    const testBannerRow = params.testBanner
+      ? `<tr><td style="padding:12px 16px;background:#fef3c7;border-left:4px solid #f59e0b;font-size:14px;color:#92400e;line-height:1.5;">
+          <strong>Envio de teste</strong> — Mensagem enviada para um e-mail informado no painel; o e-mail oficial do advogado não recebeu esta cópia.
+          ${params.testBannerExtraHtml ?? ''}
+        </td></tr>`
+      : ''
+    return `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);">
+        <tr><td style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#ec4899 100%);padding:40px;text-align:center;border-radius:8px 8px 0 0;">
+          <h1 style="color:#fff;margin:0;font-size:26px;font-weight:bold;">${this.escapeHtml(params.title)}</h1>
+          ${sub}
+        </td></tr>
+        ${testBannerRow}
+        <tr><td style="padding:40px;">${params.bodyHtml}</td></tr>
+        <tr><td style="background:#f9fafb;padding:32px;text-align:center;border-radius:0 0 8px 8px;border-top:1px solid #e5e7eb;">
+          <p style="color:#6b7280;margin:0 0 8px;font-size:14px;">JustApp - Conexão Inteligente entre Pessoas e Advogados</p>
+          <p style="color:#9ca3af;margin:0;font-size:12px;">© ${new Date().getFullYear()} JustApp.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+  }
+
+  /**
+   * E-mail manual (admin): pedir revisão dos dados cadastrais.
+   */
+  static async sendLawyerValidacaoDadosEmail(
+    email: string,
+    name: string,
+    opts?: { isTestSend?: boolean }
+  ): Promise<{ success: boolean; message?: string }> {
+    if (!resend) {
+      logger.warn('[Email] Resend não configurado. E-mail de validação não enviado.')
+      return { success: false, message: 'Resend não configurado (RESEND_API_KEY)' }
+    }
+
+    const first = this.escapeHtml(this.lawyerFirstName(name))
+    const base = process.env.NEXTAUTH_URL || ''
+    const perfilUrl = `${base}/advogado/perfil`
+
+    const bodyHtml = `
+      <p style="color:#4b5563;margin:0 0 16px;font-size:16px;line-height:1.6;">Olá, <strong>${first}</strong>,</p>
+      <p style="color:#4b5563;margin:0 0 16px;font-size:16px;line-height:1.6;">
+        Estamos revisando cadastros na plataforma. Por favor, <strong>confira se os dados informados no seu perfil estão corretos e atualizados</strong>
+        (OAB, localização, especialidades e demais informações profissionais).
+      </p>
+      <p style="color:#4b5563;margin:0 0 24px;font-size:16px;line-height:1.6;">
+        Caso precise ajustar algo, acesse seu perfil e faça as alterações necessárias. Isso nos ajuda a agilizar a análise do seu cadastro.
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:8px 0 24px;">
+        <a href="${this.safeEmailHref(perfilUrl)}" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-weight:600;font-size:16px;">Acessar meu perfil</a>
+      </td></tr></table>
+      <p style="color:#6b7280;margin:0;font-size:14px;line-height:1.6;">Se você não esperava este e-mail, pode ignorá-lo.</p>`
+
+    const isTest = !!opts?.isTestSend
+    const html = this.adminLawyerEmailShell({
+      title: 'Confira os dados do seu cadastro',
+      subtitle: 'JustApp — equipe de cadastro',
+      bodyHtml,
+      testBanner: isTest,
+    })
+
+    try {
+      const result = await resend.emails.send({
+        from: process.env.EMAIL_FROM || 'JustApp <noreply@justapp.com.br>',
+        to: email,
+        subject: isTest
+          ? '[TESTE] JustApp — Confira os dados do seu cadastro'
+          : 'JustApp — Confira os dados do seu cadastro',
+        html,
+      })
+      if (result.error) {
+        logger.error('[Email] Resend error (validação dados):', result.error)
+        return { success: false, message: result.error.message || 'Erro ao enviar' }
+      }
+      logger.info(`[Email] Lawyer validação dados sent (ID: ${result.data?.id})`)
+      return { success: true }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Erro ao enviar'
+      logger.error('[Email] Failed lawyer validação dados:', error)
+      return { success: false, message: msg }
+    }
+  }
+
+  /**
+   * E-mail manual (admin): pedido de desculpas por demora no retorno.
+   */
+  static async sendLawyerDesculpasDemoraEmail(
+    email: string,
+    name: string,
+    opts?: { isTestSend?: boolean }
+  ): Promise<{ success: boolean; message?: string }> {
+    if (!resend) {
+      logger.warn('[Email] Resend não configurado. E-mail de desculpas não enviado.')
+      return { success: false, message: 'Resend não configurado (RESEND_API_KEY)' }
+    }
+
+    const first = this.escapeHtml(this.lawyerFirstName(name))
+    const bodyHtml = `
+      <p style="color:#4b5563;margin:0 0 16px;font-size:16px;line-height:1.6;">Olá, <strong>${first}</strong>,</p>
+      <p style="color:#4b5563;margin:0 0 16px;font-size:16px;line-height:1.6;">
+        Pedimos desculpas pela <strong>demora no retorno</strong>. Estamos recebendo um <strong>volume elevado de cadastros</strong>
+        e nossa equipe está trabalhando para analisar cada solicitação com cuidado.
+      </p>
+      <p style="color:#4b5563;margin:0 0 16px;font-size:16px;line-height:1.6;">
+        Agradecemos sua paciência e compreensão. Em breve retornaremos com mais informações.
+      </p>
+      <p style="color:#6b7280;margin:0;font-size:14px;line-height:1.6;">Equipe JustApp</p>`
+
+    const isTest = !!opts?.isTestSend
+    const html = this.adminLawyerEmailShell({
+      title: 'Pedimos desculpas pela demora',
+      subtitle: 'Atualização sobre seu cadastro',
+      bodyHtml,
+      testBanner: isTest,
+    })
+
+    try {
+      const result = await resend.emails.send({
+        from: process.env.EMAIL_FROM || 'JustApp <noreply@justapp.com.br>',
+        to: email,
+        subject: isTest
+          ? '[TESTE] JustApp — Pedimos desculpas pela demora'
+          : 'JustApp — Pedimos desculpas pela demora',
+        html,
+      })
+      if (result.error) {
+        logger.error('[Email] Resend error (desculpas):', result.error)
+        return { success: false, message: result.error.message || 'Erro ao enviar' }
+      }
+      logger.info(`[Email] Lawyer desculpas demora sent (ID: ${result.data?.id})`)
+      return { success: true }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Erro ao enviar'
+      logger.error('[Email] Failed lawyer desculpas:', error)
+      return { success: false, message: msg }
+    }
+  }
+
+  /**
+   * E-mail manual (admin): convite ao programa Beta (pré-aprovado), com aceitar/recusar.
+   */
+  static async sendLawyerConviteBetaPreAprovadoEmail(params: {
+    to: string
+    name: string
+    acceptUrl: string
+    declineUrl: string
+    isTestSend?: boolean
+  }): Promise<{ success: boolean; message?: string }> {
+    if (!resend) {
+      logger.warn('[Email] Resend não configurado. Convite beta não enviado.')
+      return { success: false, message: 'Resend não configurado (RESEND_API_KEY)' }
+    }
+
+    const { to, name, acceptUrl, declineUrl, isTestSend: isTest } = params
+    const first = this.escapeHtml(this.lawyerFirstName(name))
+    const base = process.env.NEXTAUTH_URL || ''
+    const privUrl = `${base}/privacidade`
+    const termosUrl = `${base}/termos`
+    const emTesteUrl = `${base}/em-teste`
+
+    const bodyHtml = `
+      <p style="color:#4b5563;margin:0 0 16px;font-size:16px;line-height:1.6;">Olá, <strong>${first}</strong>,</p>
+      <p style="color:#4b5563;margin:0 0 16px;font-size:16px;line-height:1.6;">
+        Você foi <strong>selecionado para participar do teste Beta</strong> do JustApp. Durante esta fase, a plataforma segue em evolução;
+        sua participação e feedback são muito importantes.
+      </p>
+      <p style="color:#4b5563;margin:0 0 12px;font-size:16px;line-height:1.6;">
+        Antes de confirmar, recomendamos a leitura dos documentos abaixo:
+      </p>
+      <ul style="color:#4b5563;font-size:15px;line-height:1.7;margin:0 0 20px;padding-left:20px;">
+        <li><a href="${this.safeEmailHref(privUrl)}" style="color:#6366f1;">Política de Privacidade</a></li>
+        <li><a href="${this.safeEmailHref(termosUrl)}" style="color:#6366f1;">Termos de Uso</a></li>
+        <li><a href="${this.safeEmailHref(emTesteUrl)}" style="color:#6366f1;">Página &quot;Em teste&quot; — informações sobre o Beta</a></li>
+      </ul>
+      <p style="color:#4b5563;margin:0 0 24px;font-size:16px;line-height:1.6;">
+        <strong>Deseja participar do programa Beta?</strong> Use um dos botões abaixo. Cada link só pode ser usado uma vez.
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+        <tr><td align="center" style="padding:8px 0;">
+          <a href="${this.safeEmailHref(acceptUrl)}" style="display:inline-block;background:linear-gradient(135deg,#10b981,#059669);color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;font-size:15px;margin:4px;">Sim, quero participar</a>
+        </td></tr>
+        <tr><td align="center" style="padding:8px 0 24px;">
+          <a href="${this.safeEmailHref(declineUrl)}" style="display:inline-block;background:#f3f4f6;color:#374151;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;font-size:15px;border:1px solid #e5e7eb;margin:4px;">Não quero participar</a>
+        </td></tr>
+      </table>
+      <p style="color:#6b7280;margin:0;font-size:13px;line-height:1.6;">Se os botões não funcionarem, copie os links completos enviados pela plataforma ou entre em contato com o suporte.</p>`
+
+    const html = this.adminLawyerEmailShell({
+      title: 'Você foi selecionado para o Beta',
+      subtitle: 'Convite JustApp',
+      bodyHtml,
+      testBanner: !!isTest,
+      testBannerExtraHtml: isTest
+        ? '<br><br><strong>Atenção:</strong> Os botões Sim/Não alteram o cadastro deste advogado no sistema (mesmo que a mensagem tenha ido para outra caixa de e-mail).'
+        : undefined,
+    })
+
+    try {
+      const result = await resend.emails.send({
+        from: process.env.EMAIL_FROM || 'JustApp <noreply@justapp.com.br>',
+        to,
+        subject: isTest
+          ? '[TESTE] JustApp — Você foi selecionado para o Beta'
+          : 'JustApp — Você foi selecionado para o Beta',
+        html,
+      })
+      if (result.error) {
+        logger.error('[Email] Resend error (convite beta):', result.error)
+        return { success: false, message: result.error.message || 'Erro ao enviar' }
+      }
+      logger.info(`[Email] Lawyer convite beta sent (ID: ${result.data?.id})`)
+      return { success: true }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Erro ao enviar'
+      logger.error('[Email] Failed lawyer convite beta:', error)
+      return { success: false, message: msg }
+    }
+  }
 }

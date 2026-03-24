@@ -62,6 +62,7 @@ model advogados {
   ultimoResetCasosHora    DateTime                  @default(now())
   isBeta                  Boolean                   @default(false)
   betaInviteCode          String?                   @unique
+  betaInviteDeclinedAt    DateTime?
   onboardingCompleted     Boolean                   @default(false)
   createdAt               DateTime                  @default(now())
   updatedAt               DateTime
@@ -70,6 +71,28 @@ model advogados {
   avaliacoes              avaliacoes[]
   matches                 matches[]
   historicoAssinaturas    historicoAssinaturas[]
+  emailActionTokens       EmailActionToken[]
+}
+
+/// Tokens únicos para ações a partir de e-mails (ex.: aceitar/recusar convite beta).
+model EmailActionToken {
+  id               String    @id @default(cuid())
+  token            String    @unique
+  batchId          String? // Agrupa pares (aceitar/recusar) do mesmo disparo de e-mail
+  advogadoId       String
+  templateType     String
+  action           String // accept | decline
+  expiresAt        DateTime
+  usedAt           DateTime?
+  createdByAdminId String?
+  createdAt        DateTime  @default(now())
+  advogados        advogados @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+  createdBy        users?    @relation("EmailActionTokenCreatedBy", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([advogadoId])
+  @@index([expiresAt])
+  @@index([batchId])
+  @@map("email_action_tokens")
 }
 
 model AnonymousSession {
@@ -338,6 +361,7 @@ model users {
   casosMediated    casos[]         @relation("CasosMediatedBy")
   casosClosed      casos[]         @relation("CasosClosedBy")
   notifications    Notification[]
+  emailActionTokensCreated EmailActionToken[] @relation("EmailActionTokenCreatedBy")
 }
 
 model Notification {

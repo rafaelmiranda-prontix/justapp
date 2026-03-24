@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select'
 import { CheckCircle2, XCircle, MapPin, Scale, Star, UserCheck, CreditCard, Eye, Loader2 } from 'lucide-react'
 import { formatOAB } from '@/lib/utils'
+import { AdvogadoSendTemplateEmailDialog } from '@/components/admin/advogado-send-template-email-dialog'
 
 interface AdvogadoModerationCardProps {
   advogado: {
@@ -334,6 +335,13 @@ export function AdvogadoModerationCard({
           <Eye className="h-4 w-4 mr-2" />
           {loadingDetail ? 'Carregando...' : 'Ver detalhes'}
         </Button>
+
+        <AdvogadoSendTemplateEmailDialog
+          advogadoId={advogado.id}
+          recipientEmail={advogado.users.email}
+          preAprovado={!!advogado.preAprovado}
+          aprovado={advogado.aprovado}
+        />
 
         {advogado.especialidades && advogado.especialidades.length > 0 && (
           <div>

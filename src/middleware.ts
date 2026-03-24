@@ -70,6 +70,8 @@ export default withAuth(
           pathname === '/termos' || // Termos de Uso
           pathname === '/privacidade' || // Política de Privacidade
           pathname === '/em-teste' || // Aplicação em teste Beta
+          pathname.startsWith('/convite-beta') || // Resultado do convite Beta (link no e-mail)
+          pathname.startsWith('/api/email-actions') || // Consumo de token de e-mail (público)
           pathname === '/contato' || // Formulário de contato
           pathname.startsWith('/campanha') || // Landing page de campanha
           pathname === '/auth/complete-profile' // Página de completar perfil

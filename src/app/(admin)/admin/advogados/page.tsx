@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AdminNav } from '@/components/admin/admin-nav'
 import { AdvogadoModerationCard } from '@/components/admin/advogado-moderation-card'
+import { AdvogadoSendTemplateEmailDialog } from '@/components/admin/advogado-send-template-email-dialog'
 import {
   Table,
   TableBody,
@@ -22,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { AlertCircle, LayoutGrid, List } from 'lucide-react'
+import { AlertCircle, LayoutGrid, List, Mail } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 interface Advogado {
@@ -388,7 +389,23 @@ export default function AdminAdvogadosPage() {
                       </TableCell>
                       <TableCell>{advogado.plano || 'FREE'}</TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-2 flex-wrap">
+                          <AdvogadoSendTemplateEmailDialog
+                            advogadoId={advogado.id}
+                            recipientEmail={advogado.users.email}
+                            preAprovado={advogado.preAprovado}
+                            aprovado={advogado.aprovado}
+                            trigger={
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                title="Enviar e-mail"
+                                aria-label="Enviar e-mail"
+                              >
+                                <Mail className="h-4 w-4" />
+                              </Button>
+                            }
+                          />
                           {!advogado.aprovado && !advogado.preAprovado && (
                             <Button
                               size="sm"
