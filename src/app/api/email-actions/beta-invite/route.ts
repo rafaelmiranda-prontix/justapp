@@ -1,6 +1,35 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { formatOAB } from '@/lib/utils'
+
+async function notifyAdminsBetaInviteAccepted(advogadoId: string) {
+  const advogado = await prisma.advogados.findUnique({
+    where: { id: advogadoId },
+    select: { oab: true, users: { select: { name: true } } },
+  })
+  const lawyerName = advogado?.users?.name?.trim() || 'Advogado'
+  const oab = advogado?.oab ? formatOAB(advogado.oab) : '—'
+  const admins = await prisma.users.findMany({
+    where: { role: 'ADMIN' },
+    select: { id: true },
+  })
+  if (admins.length === 0) return
+
+  const { inAppNotificationService } = await import('@/lib/in-app-notification.service')
+  const message = `${lawyerName} (OAB ${oab}) aceitou o programa Beta (convite por e-mail).`
+  await inAppNotificationService.notifyMany(
+    admins.map((a) => a.id),
+    {
+      type: 'ADMIN_ACTION_REQUIRED',
+      title: 'Beta: convite aceito',
+      message,
+      href: '/admin/advogados?status=pre_aprovados',
+      metadata: { advogadoId, event: 'beta_invite_accepted' },
+      role: 'ADMIN',
+    }
+  )
+}
 
 function redirectResult(
   req: Request,
@@ -94,6 +123,12 @@ export async function GET(req: Request) {
       action: row.action,
       batchId,
     })
+
+    if (outcome === 'aceito') {
+      notifyAdminsBetaInviteAccepted(row.advogadoId).catch((err) =>
+        logger.error('[EmailAction] Falha ao notificar admins (Beta aceito):', err)
+      )
+    }
 
     return redirectResult(req, { resultado: outcome })
   } catch (e) {
