@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -15,6 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Dialog,
   DialogContent,
@@ -42,6 +48,8 @@ import {
   StickyNote,
   ListChecks,
   RefreshCw,
+  Scale,
+  ChevronDown,
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -50,6 +58,10 @@ import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { cn, formatOAB } from '@/lib/utils'
+
+/** Máximo de advogados exibidos de uma vez no filtro (o restante exige busca mais específica). */
+const ADVOGADO_FILTER_DROPDOWN_LIMIT = 40
 
 type CasoStatusType = 'ABERTO' | 'EM_MEDIACAO' | 'EM_ANDAMENTO' | 'FECHADO' | 'CANCELADO'
 
@@ -103,6 +115,8 @@ interface Caso {
     status: string
     score: number
     advogados: {
+      id: string
+      oab: string
       users: {
         name: string
         email: string
@@ -125,6 +139,11 @@ const isCasoAlocated = (caso: Caso): boolean => {
     (match) => match.status === 'PENDENTE' || match.status === 'ACEITO'
   )
 }
+
+const getAllocatedMatches = (caso: Caso) =>
+  (caso.matches ?? []).filter(
+    (m) => m.status === 'PENDENTE' || m.status === 'ACEITO'
+  )
 
 const statusColors: Record<CasoStatusType, string> = {
   ABERTO: 'bg-yellow-500',
@@ -209,11 +228,81 @@ export default function AdminCasosPage() {
     totalPages: number
   } | null>(null)
   const [statusBreakdown, setStatusBreakdown] = useState<Record<string, number>>({})
+  const [advogadoFilter, setAdvogadoFilter] = useState('all')
+  const [advogadoFilterMenuOpen, setAdvogadoFilterMenuOpen] = useState(false)
+  const [advogadoFilterSearch, setAdvogadoFilterSearch] = useState('')
+  const advogadoFilterSearchInputRef = useRef<HTMLInputElement>(null)
+  const [advogadosForFilter, setAdvogadosForFilter] = useState<
+    Array<{ id: string; name: string; oab: string }>
+  >([])
   const { toast } = useToast()
+
+  const filteredAdvogadosForFilter = useMemo(() => {
+    const q = advogadoFilterSearch.trim().toLowerCase()
+    if (!q) return advogadosForFilter
+    const qDigits = q.replace(/[^a-z0-9]/gi, '')
+    return advogadosForFilter.filter((a) => {
+      if (a.name.toLowerCase().includes(q)) return true
+      if (!qDigits) return false
+      const oab = a.oab.replace(/[^A-Z0-9]/gi, '').toLowerCase()
+      return oab.includes(qDigits)
+    })
+  }, [advogadosForFilter, advogadoFilterSearch])
+
+  const displayedAdvogadosForFilter = useMemo(
+    () => filteredAdvogadosForFilter.slice(0, ADVOGADO_FILTER_DROPDOWN_LIMIT),
+    [filteredAdvogadosForFilter]
+  )
+
+  const advogadoFilterLabel = useMemo(() => {
+    if (advogadoFilter === 'all') return 'Todos os advogados'
+    const a = advogadosForFilter.find((x) => x.id === advogadoFilter)
+    return a ? `${a.name} · OAB ${formatOAB(a.oab)}` : 'Advogado selecionado'
+  }, [advogadoFilter, advogadosForFilter])
+
+  useEffect(() => {
+    if (!advogadoFilterMenuOpen) return
+    const t = window.setTimeout(() => advogadoFilterSearchInputRef.current?.focus(), 0)
+    return () => window.clearTimeout(t)
+  }, [advogadoFilterMenuOpen])
   const searchParams = useSearchParams()
 
   const hasExpiredMatches = (caso: Caso) =>
     (caso.matches ?? []).some((m) => m.status === 'EXPIRADO')
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(
+          '/api/admin/advogados?status=aprovados&limit=500&page=1'
+        )
+        const j = await res.json()
+        if (cancelled || !j.success || !Array.isArray(j.data)) return
+        const list = j.data
+          .map(
+            (a: {
+              id: string
+              oab: string
+              users: { name: string }
+            }) => ({
+              id: a.id,
+              name: a.users?.name ?? '—',
+              oab: a.oab ?? '',
+            })
+          )
+          .sort((a: { name: string }, b: { name: string }) =>
+            a.name.localeCompare(b.name, 'pt-BR')
+          )
+        setAdvogadosForFilter(list)
+      } catch {
+        if (!cancelled) setAdvogadosForFilter([])
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const fetchCasos = useCallback(async () => {
     setIsLoading(true)
@@ -223,6 +312,7 @@ export default function AdminCasosPage() {
       params.set('limit', String(pageSize))
       if (searchQuery) params.append('search', searchQuery)
       if (statusFilter !== 'all') params.append('status', statusFilter)
+      if (advogadoFilter !== 'all') params.append('advogadoId', advogadoFilter)
 
       const res = await fetch(`/api/admin/casos?${params.toString()}`)
       const result = await res.json()
@@ -244,7 +334,7 @@ export default function AdminCasosPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [searchQuery, statusFilter, toast, page, pageSize])
+  }, [searchQuery, statusFilter, advogadoFilter, toast, page, pageSize])
 
   useEffect(() => {
     fetchCasos()
@@ -739,6 +829,87 @@ export default function AdminCasosPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="w-full md:min-w-[220px] md:max-w-xs">
+              <DropdownMenu
+                open={advogadoFilterMenuOpen}
+                onOpenChange={(open) => {
+                  setAdvogadoFilterMenuOpen(open)
+                  if (!open) setAdvogadoFilterSearch('')
+                }}
+              >
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-between font-normal',
+                      advogadoFilter === 'all' && 'text-muted-foreground'
+                    )}
+                  >
+                    <span className="truncate text-left">{advogadoFilterLabel}</span>
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-[min(100vw-2rem,22rem)] p-0"
+                  align="start"
+                >
+                  <div
+                    className="flex items-center gap-2 border-b px-2 py-2"
+                    onPointerDown={(e) => e.preventDefault()}
+                  >
+                    <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <Input
+                      ref={advogadoFilterSearchInputRef}
+                      className="h-8 border-0 p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                      placeholder="Buscar por nome ou OAB..."
+                      value={advogadoFilterSearch}
+                      onChange={(e) => setAdvogadoFilterSearch(e.target.value)}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="max-h-[min(50vh,16rem)] overflow-y-auto py-1">
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onSelect={() => {
+                        setPage(1)
+                        setAdvogadoFilter('all')
+                        setAdvogadoFilterMenuOpen(false)
+                      }}
+                    >
+                      Todos os advogados
+                    </DropdownMenuItem>
+                    {displayedAdvogadosForFilter.map((a) => (
+                      <DropdownMenuItem
+                        key={a.id}
+                        className="cursor-pointer"
+                        onSelect={() => {
+                          setPage(1)
+                          setAdvogadoFilter(a.id)
+                          setAdvogadoFilterMenuOpen(false)
+                        }}
+                      >
+                        <span className="truncate">
+                          {a.name} · OAB {formatOAB(a.oab)}
+                        </span>
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                  {filteredAdvogadosForFilter.length > ADVOGADO_FILTER_DROPDOWN_LIMIT && (
+                    <div className="border-t px-2 py-1.5 text-xs text-muted-foreground">
+                      Mostrando {ADVOGADO_FILTER_DROPDOWN_LIMIT} de{' '}
+                      {filteredAdvogadosForFilter.length}. Refine a busca.
+                    </div>
+                  )}
+                  {advogadoFilterSearch.trim() !== '' &&
+                    filteredAdvogadosForFilter.length === 0 && (
+                      <div className="px-2 py-3 text-center text-sm text-muted-foreground">
+                        Nenhum advogado encontrado.
+                      </div>
+                    )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
             <div className="w-full md:w-40">
               <Select
                 value={String(pageSize)}
@@ -816,6 +987,33 @@ export default function AdminCasosPage() {
                         <p className="text-sm text-muted-foreground line-clamp-2">
                           {caso.descricao}
                         </p>
+                        {getAllocatedMatches(caso).length > 0 && (
+                          <div className="mt-3 rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                            <div className="mb-1 flex items-center gap-1.5 font-medium text-foreground">
+                              <Scale className="h-3.5 w-3.5 shrink-0" />
+                              Advogado(s) alocado(s)
+                            </div>
+                            <ul className="space-y-0.5 text-muted-foreground">
+                              {getAllocatedMatches(caso).map((m) => (
+                                <li key={m.id}>
+                                  <span className="font-medium text-foreground">
+                                    {m.advogados.users.name}
+                                  </span>
+                                  {' · OAB '}
+                                  {formatOAB(m.advogados.oab)}
+                                  <span className="text-xs">
+                                    {' '}
+                                    (
+                                    {m.status === 'PENDENTE'
+                                      ? 'pendente'
+                                      : 'aceito'}
+                                    )
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1018,12 +1216,33 @@ export default function AdminCasosPage() {
                       <span className="font-medium">Alocação:</span>{' '}
                       {isCasoAlocated(selectedCaso) ? (
                         <Badge variant="default" className="bg-green-600">
-                          Alocado ({(selectedCaso.matches ?? []).filter((m) => m.status === 'PENDENTE' || m.status === 'ACEITO').length} match(es))
+                          Alocado ({getAllocatedMatches(selectedCaso).length} match(es))
                         </Badge>
                       ) : (
                         <Badge variant="outline">Não alocado</Badge>
                       )}
                     </div>
+                    {getAllocatedMatches(selectedCaso).length > 0 && (
+                      <div>
+                        <span className="font-medium">Advogado(s) alocado(s):</span>
+                        <ul className="mt-1 list-inside list-disc text-muted-foreground">
+                          {getAllocatedMatches(selectedCaso).map((m) => (
+                            <li key={m.id}>
+                              {m.advogados.users.name} · OAB{' '}
+                              {formatOAB(m.advogados.oab)}
+                              <span className="text-xs">
+                                {' '}
+                                (
+                                {m.status === 'PENDENTE'
+                                  ? 'pendente'
+                                  : 'aceito'}
+                                )
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     <div>
                       <span className="font-medium">Urgência:</span>{' '}
                       <Badge variant="outline" className={urgenciaColors[selectedCaso.urgencia]}>{urgenciaLabels[selectedCaso.urgencia]}</Badge>
@@ -1071,8 +1290,17 @@ export default function AdminCasosPage() {
                         {(selectedCaso.matches ?? []).map((match) => (
                           <Card key={match.id}><CardContent className="pt-3">
                             <div className="flex justify-between">
-                              <div><div className="font-medium">{match.advogados.users.name}</div>
-                                <div className="text-sm text-muted-foreground">{match.advogados.users.email}</div></div>
+                              <div>
+                                <div className="font-medium">
+                                  {match.advogados.users.name}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {match.advogados.users.email}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  OAB {formatOAB(match.advogados.oab)}
+                                </div>
+                              </div>
                               <Badge variant={match.status === 'ACEITO' || match.status === 'CONTRATADO' ? 'default' : match.status === 'RECUSADO' ? 'destructive' : 'secondary'}>{match.status}</Badge>
                             </div>
                           </CardContent></Card>

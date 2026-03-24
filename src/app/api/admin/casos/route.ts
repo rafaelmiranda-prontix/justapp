@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status') // 'all', 'ABERTO', 'EM_ANDAMENTO', 'FECHADO', 'CANCELADO'
     const especialidadeId = searchParams.get('especialidadeId')
     const cidadaoId = searchParams.get('cidadaoId')
+    const advogadoId = searchParams.get('advogadoId')
 
     const where: any = {}
 
@@ -33,24 +34,40 @@ export async function GET(req: NextRequest) {
       where.cidadaoId = cidadaoId
     }
 
+    const andParts: any[] = []
+
     if (search) {
-      where.OR = [
-        { descricao: { contains: search, mode: 'insensitive' } },
-        {
-          cidadaos: {
-            users: {
-              name: { contains: search, mode: 'insensitive' },
+      andParts.push({
+        OR: [
+          { descricao: { contains: search, mode: 'insensitive' } },
+          {
+            cidadaos: {
+              users: {
+                name: { contains: search, mode: 'insensitive' },
+              },
             },
           },
-        },
-        {
-          cidadaos: {
-            users: {
-              email: { contains: search, mode: 'insensitive' },
+          {
+            cidadaos: {
+              users: {
+                email: { contains: search, mode: 'insensitive' },
+              },
             },
           },
+        ],
+      })
+    }
+
+    if (advogadoId) {
+      andParts.push({
+        matches: {
+          some: { advogadoId },
         },
-      ]
+      })
+    }
+
+    if (andParts.length > 0) {
+      where.AND = andParts
     }
 
     const [casos, total, statusGroups] = await Promise.all([
@@ -80,7 +97,9 @@ export async function GET(req: NextRequest) {
           matches: {
             include: {
               advogados: {
-                include: {
+                select: {
+                  id: true,
+                  oab: true,
                   users: {
                     select: {
                       name: true,

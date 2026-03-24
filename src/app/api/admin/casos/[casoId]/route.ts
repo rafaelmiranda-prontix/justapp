@@ -53,7 +53,9 @@ export async function GET(
         matches: {
           include: {
             advogados: {
-              include: {
+              select: {
+                id: true,
+                oab: true,
                 users: {
                   select: {
                     name: true,
