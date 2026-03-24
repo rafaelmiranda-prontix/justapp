@@ -3,6 +3,15 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   LayoutDashboard,
   Users,
@@ -14,6 +23,7 @@ import {
   FileText,
   CreditCard,
   ClipboardList,
+  MoreHorizontal,
 } from 'lucide-react'
 
 const navItems = [
@@ -71,10 +81,13 @@ const navItems = [
 
 export function AdminNav() {
   const pathname = usePathname()
+  const primaryItems = navItems.slice(0, 5)
+  const secondaryItems = navItems.slice(5)
+  const activeSecondaryItem = secondaryItems.find((item) => pathname === item.href)
 
   return (
-    <nav className="flex gap-2 border-b pb-4">
-      {navItems.map((item) => {
+    <nav className="flex items-center gap-2 border-b pb-4">
+      {primaryItems.map((item) => {
         const Icon = item.icon
         const isActive = pathname === item.href
 
@@ -94,6 +107,39 @@ export function AdminNav() {
           </Link>
         )
       })}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant={activeSecondaryItem ? 'default' : 'ghost'}
+            className="gap-2"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+            Mais
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuLabel>Outras seções</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {secondaryItems.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href
+
+            return (
+              <DropdownMenuItem
+                key={item.href}
+                asChild
+                className={cn(isActive && 'bg-accent text-accent-foreground')}
+              >
+                <Link href={item.href} className="flex items-center gap-2">
+                  <Icon className="h-4 w-4" />
+                  {item.title}
+                </Link>
+              </DropdownMenuItem>
+            )
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </nav>
   )
 }
