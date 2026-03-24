@@ -1,12 +1,20 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AdminNav } from '@/components/admin/admin-nav'
 import { AdvogadoModerationCard } from '@/components/admin/advogado-moderation-card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import {
   Select,
   SelectContent,
@@ -14,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
+import { AlertCircle, LayoutGrid, List } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 interface Advogado {
@@ -49,7 +57,10 @@ export default function AdminAdvogadosPage() {
   const [advogados, setAdvogados] = useState<Advogado[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('pendentes')
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards')
   const { toast } = useToast()
+
+  const VIEW_MODE_STORAGE_KEY = 'admin-advogados-view-mode'
 
   const fetchAdvogados = useCallback(async () => {
     setIsLoading(true)
@@ -75,6 +86,30 @@ export default function AdminAdvogadosPage() {
   useEffect(() => {
     fetchAdvogados()
   }, [fetchAdvogados])
+
+  useEffect(() => {
+    const savedViewMode = localStorage.getItem(VIEW_MODE_STORAGE_KEY)
+    if (savedViewMode === 'cards' || savedViewMode === 'list') {
+      setViewMode(savedViewMode)
+    }
+  }, [])
+
+  const handleChangeViewMode = (mode: 'cards' | 'list') => {
+    setViewMode(mode)
+    localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode)
+  }
+
+  const renderStatusBadge = (advogado: Advogado) => {
+    if (advogado.aprovado) {
+      return <Badge className="bg-green-500">Aprovado</Badge>
+    }
+
+    if (advogado.preAprovado) {
+      return <Badge className="bg-blue-500 text-white">Pré-aprovado</Badge>
+    }
+
+    return <Badge className="bg-yellow-500 text-white">Pendente</Badge>
+  }
 
   const handleApprove = async (advogadoId: string) => {
     try {
@@ -252,6 +287,25 @@ export default function AdminAdvogadosPage() {
               <SelectItem value="aprovados">Aprovados</SelectItem>
             </SelectContent>
           </Select>
+
+          <div className="ml-auto flex items-center rounded-md border p-1">
+            <Button
+              variant={viewMode === 'cards' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleChangeViewMode('cards')}
+            >
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Cards
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleChangeViewMode('list')}
+            >
+              <List className="h-4 w-4 mr-2" />
+              Lista
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -269,7 +323,7 @@ export default function AdminAdvogadosPage() {
               </p>
             </CardContent>
           </Card>
-        ) : (
+        ) : viewMode === 'cards' ? (
           <div className="grid md:grid-cols-2 gap-4">
             {advogados.map((advogado) => (
               <AdvogadoModerationCard
@@ -283,6 +337,96 @@ export default function AdminAdvogadosPage() {
               />
             ))}
           </div>
+        ) : (
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Localização</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Onboarding</TableHead>
+                    <TableHead>Plano</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {advogados.map((advogado) => (
+                    <TableRow key={advogado.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <div className="font-medium">{advogado.users.name}</div>
+                          <AdvogadoModerationCard
+                            advogado={advogado}
+                            onApprove={() => handleApprove(advogado.id)}
+                            onPreApprove={() => handlePreApprove(advogado.id)}
+                            onReject={() => handleReject(advogado.id)}
+                            onCompleteOnboarding={() => handleCompleteOnboarding(advogado.id)}
+                            onUpdatePlan={(plano) => handleUpdatePlan(advogado.id, plano)}
+                            renderCompactDetailButton
+                          />
+                        </div>
+                        <div className="text-xs text-muted-foreground">OAB {advogado.oab}</div>
+                      </TableCell>
+                      <TableCell>{advogado.users.email}</TableCell>
+                      <TableCell>
+                        {advogado.cidade}, {advogado.estado}
+                      </TableCell>
+                      <TableCell>{renderStatusBadge(advogado)}</TableCell>
+                      <TableCell>
+                        {advogado.onboardingCompleted ? (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+                            Completo
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300">
+                            Incompleto
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{advogado.plano || 'FREE'}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {!advogado.aprovado && !advogado.preAprovado && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => handlePreApprove(advogado.id)}
+                            >
+                              Pré-aprovar
+                            </Button>
+                          )}
+                          {!advogado.aprovado && (
+                            <Button size="sm" onClick={() => handleApprove(advogado.id)}>
+                              Aprovar
+                            </Button>
+                          )}
+                          {!advogado.onboardingCompleted && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleCompleteOnboarding(advogado.id)}
+                            >
+                              Completar onboarding
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant={advogado.aprovado ? 'outline' : 'destructive'}
+                            onClick={() => handleReject(advogado.id)}
+                          >
+                            {advogado.aprovado ? 'Revogar' : 'Rejeitar'}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

@@ -54,6 +54,7 @@ interface AdvogadoModerationCardProps {
   onReject: () => void
   onCompleteOnboarding?: () => void
   onUpdatePlan?: (plano: string) => void
+  renderCompactDetailButton?: boolean
 }
 
 type AdvogadoDetail = {
@@ -118,6 +119,7 @@ export function AdvogadoModerationCard({
   onReject,
   onCompleteOnboarding,
   onUpdatePlan,
+  renderCompactDetailButton = false,
 }: AdvogadoModerationCardProps) {
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailData, setDetailData] = useState<AdvogadoDetail | null>(null)
@@ -149,7 +151,126 @@ export function AdvogadoModerationCard({
     fetchDetail()
   }
 
+  const compactDetailButton = (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+      onClick={openDetail}
+      disabled={loadingDetail}
+      title="Ver detalhes"
+      aria-label="Ver detalhes"
+    >
+      {loadingDetail ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Eye className="h-4 w-4" />
+      )}
+    </Button>
+  )
+
   return (
+    <>
+    {renderCompactDetailButton ? (
+      <>
+        {compactDetailButton}
+        <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Dados cadastrais do advogado</DialogTitle>
+              <DialogDescription>
+                Informações completas do cadastro e do usuário
+              </DialogDescription>
+            </DialogHeader>
+            {loadingDetail && !detailData ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : detailData ? (
+              <div className="space-y-6 text-sm">
+                <section>
+                  <h3 className="font-semibold text-base border-b pb-2 mb-2">Dados do usuário</h3>
+                  <DetailRow label="Nome" value={detailData.users.name} />
+                  <DetailRow label="Email" value={detailData.users.email} />
+                  <DetailRow label="Telefone" value={detailData.users.phone} />
+                  <DetailRow label="Status da conta" value={detailData.users.status} />
+                  <DetailRow
+                    label="Email verificado"
+                    value={detailData.users.emailVerified ? new Date(detailData.users.emailVerified).toLocaleString('pt-BR') : 'Não'}
+                  />
+                  <DetailRow label="Cadastro em" value={new Date(detailData.users.createdAt).toLocaleString('pt-BR')} />
+                  <DetailRow label="Atualizado em" value={new Date(detailData.users.updatedAt).toLocaleString('pt-BR')} />
+                </section>
+
+                <section>
+                  <h3 className="font-semibold text-base border-b pb-2 mb-2">Dados profissionais</h3>
+                  <DetailRow label="OAB" value={formatOAB(detailData.oab)} />
+                  <DetailRow label="OAB verificado" value={detailData.oabVerificado ? 'Sim' : 'Não'} />
+                  <DetailRow label="Aprovado" value={detailData.aprovado ? 'Sim' : 'Não'} />
+                  <DetailRow label="Pré-aprovado" value={detailData.preAprovado ? 'Sim' : 'Não'} />
+                  <DetailRow label="Onboarding completo" value={detailData.onboardingCompleted ? 'Sim' : 'Não'} />
+                  <DetailRow label="Cidade" value={detailData.cidade} />
+                  <DetailRow label="Estado" value={detailData.estado} />
+                  <DetailRow label="Raio de atuação (km)" value={detailData.raioAtuacao} />
+                  <DetailRow
+                    label="Preço consulta (R$)"
+                    value={detailData.precoConsulta != null ? Number(detailData.precoConsulta).toFixed(2) : null}
+                  />
+                  <DetailRow label="Aceita online" value={detailData.aceitaOnline ? 'Sim' : 'Não'} />
+                  <DetailRow label="Aceita outros estados" value={detailData.aceitaOutrosEstados ? 'Sim' : 'Não'} />
+                  {detailData.bio && (
+                    <DetailRow label="Bio" value={<span className="whitespace-pre-wrap">{detailData.bio}</span>} />
+                  )}
+                  <DetailRow label="Foto URL" value={detailData.fotoUrl ? 'Sim' : 'Não'} />
+                </section>
+
+                <section>
+                  <h3 className="font-semibold text-base border-b pb-2 mb-2">Plano e limites</h3>
+                  <DetailRow label="Plano" value={detailData.plano} />
+                  <DetailRow
+                    label="Plano expira"
+                    value={detailData.planoExpira ? new Date(detailData.planoExpira).toLocaleDateString('pt-BR') : null}
+                  />
+                  <DetailRow label="Leads recebidos (mês)" value={detailData.leadsRecebidosMes} />
+                  <DetailRow label="Limite leads (mês)" value={detailData.leadsLimiteMes === -1 ? 'Ilimitado' : detailData.leadsLimiteMes} />
+                  <DetailRow label="Último reset leads" value={new Date(detailData.ultimoResetLeads).toLocaleString('pt-BR')} />
+                  <DetailRow label="Casos recebidos (hora)" value={detailData.casosRecebidosHora} />
+                  <DetailRow label="Beta" value={detailData.isBeta ? 'Sim' : 'Não'} />
+                  {detailData.betaInviteCode && (
+                    <DetailRow label="Código convite beta" value={detailData.betaInviteCode} />
+                  )}
+                </section>
+
+                {detailData.especialidades && detailData.especialidades.length > 0 && (
+                  <section>
+                    <h3 className="font-semibold text-base border-b pb-2 mb-2">Especialidades</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {detailData.especialidades.map((e) => (
+                        <Badge key={e.id} variant="outline">{e.nome}</Badge>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                <section>
+                  <h3 className="font-semibold text-base border-b pb-2 mb-2">Avaliações</h3>
+                  <DetailRow label="Média" value={detailData.avaliacaoMedia.toFixed(1)} />
+                  <DetailRow label="Total de avaliações" value={detailData.totalAvaliacoes} />
+                </section>
+
+                <section>
+                  <h3 className="font-semibold text-base border-b pb-2 mb-2">Datas do perfil</h3>
+                  <DetailRow label="Criado em" value={new Date(detailData.createdAt).toLocaleString('pt-BR')} />
+                  <DetailRow label="Atualizado em" value={new Date(detailData.updatedAt).toLocaleString('pt-BR')} />
+                </section>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">Não foi possível carregar os detalhes.</p>
+            )}
+          </DialogContent>
+        </Dialog>
+      </>
+    ) : (
     <Card>
       <CardHeader>
         <div className="flex items-start gap-4">
@@ -435,5 +556,7 @@ export function AdvogadoModerationCard({
         </DialogContent>
       </Dialog>
     </Card>
+    )}
+    </>
   )
 }
