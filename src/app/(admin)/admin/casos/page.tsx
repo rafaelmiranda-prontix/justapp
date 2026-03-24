@@ -200,6 +200,15 @@ export default function AdminCasosPage() {
   const [selectedAdvogadoIds, setSelectedAdvogadoIds] = useState<string[]>([])
   const [loadingAdvogados, setLoadingAdvogados] = useState(false)
   const [isClearingExpired, setIsClearingExpired] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  const [pagination, setPagination] = useState<{
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  } | null>(null)
+  const [statusBreakdown, setStatusBreakdown] = useState<Record<string, number>>({})
   const { toast } = useToast()
   const searchParams = useSearchParams()
 
@@ -210,6 +219,8 @@ export default function AdminCasosPage() {
     setIsLoading(true)
     try {
       const params = new URLSearchParams()
+      params.set('page', String(page))
+      params.set('limit', String(pageSize))
       if (searchQuery) params.append('search', searchQuery)
       if (statusFilter !== 'all') params.append('status', statusFilter)
 
@@ -218,6 +229,8 @@ export default function AdminCasosPage() {
 
       if (result.success) {
         setCasos(result.data)
+        setPagination(result.pagination ?? null)
+        setStatusBreakdown(result.statusBreakdown ?? {})
       } else {
         throw new Error(result.error || 'Erro ao buscar casos')
       }
@@ -231,7 +244,7 @@ export default function AdminCasosPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [searchQuery, statusFilter, toast])
+  }, [searchQuery, statusFilter, toast, page, pageSize])
 
   useEffect(() => {
     fetchCasos()
@@ -240,7 +253,7 @@ export default function AdminCasosPage() {
   // Abrir caso quando vier da notificação (open=casoId)
   const openCasoId = searchParams.get('open')
   useEffect(() => {
-    if (!openCasoId || isLoading || casos.length === 0) return
+    if (!openCasoId || isLoading) return
     const open = async () => {
       try {
         const res = await fetch(`/api/admin/casos/${openCasoId}`)
@@ -254,7 +267,7 @@ export default function AdminCasosPage() {
       }
     }
     open()
-  }, [openCasoId, isLoading, casos.length])
+  }, [openCasoId, isLoading])
 
   const handleViewDetails = async (casoId: string) => {
     try {
@@ -618,31 +631,18 @@ export default function AdminCasosPage() {
     }
   }, [])
 
-  const filteredCasos = useMemo(() => {
-    return casos.filter((caso) => {
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase()
-        const matchesDescricao = caso.descricao.toLowerCase().includes(query)
-        const matchesCliente = caso.cidadaos.users.name.toLowerCase().includes(query)
-        const matchesEmail = caso.cidadaos.users.email.toLowerCase().includes(query)
-        if (!matchesDescricao && !matchesCliente && !matchesEmail) {
-          return false
-        }
-      }
-      return true
-    })
-  }, [casos, searchQuery])
-
   const stats = useMemo(() => {
+    const total = pagination?.total ?? 0
     return {
-      total: casos.length,
-      abertos: casos.filter((c) => c.status === 'ABERTO').length,
-      emMediacao: casos.filter((c) => c.status === 'EM_MEDIACAO').length,
-      emAndamento: casos.filter((c) => c.status === 'EM_ANDAMENTO').length,
-      fechados: casos.filter((c) => c.status === 'FECHADO').length,
-      cancelados: casos.filter((c) => c.status === 'CANCELADO').length,
+      total,
+      pendenteAtivacao: statusBreakdown['PENDENTE_ATIVACAO'] ?? 0,
+      abertos: statusBreakdown['ABERTO'] ?? 0,
+      emMediacao: statusBreakdown['EM_MEDIACAO'] ?? 0,
+      emAndamento: statusBreakdown['EM_ANDAMENTO'] ?? 0,
+      fechados: statusBreakdown['FECHADO'] ?? 0,
+      cancelados: statusBreakdown['CANCELADO'] ?? 0,
     }
-  }, [casos])
+  }, [pagination?.total, statusBreakdown])
 
   return (
     <div className="container max-w-7xl py-8">
@@ -655,12 +655,17 @@ export default function AdminCasosPage() {
 
       <AdminNav />
 
-      {/* Estatísticas */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mt-8 mb-6">
+      {/* Estatísticas (totais do filtro atual, não só da página) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mt-8 mb-6">
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">Total</p>
+            {stats.pendenteAtivacao > 0 && (
+              <p className="text-xs text-amber-600 mt-1">
+                {stats.pendenteAtivacao} pendente ativação
+              </p>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -705,13 +710,22 @@ export default function AdminCasosPage() {
                 <Input
                   placeholder="Buscar por descrição, cliente ou email..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setPage(1)
+                    setSearchQuery(e.target.value)
+                  }}
                   className="pl-10"
                 />
               </div>
             </div>
             <div className="w-full md:w-64">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => {
+                  setPage(1)
+                  setStatusFilter(v)
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
@@ -722,6 +736,24 @@ export default function AdminCasosPage() {
                   <SelectItem value="EM_ANDAMENTO">Em Andamento</SelectItem>
                   <SelectItem value="FECHADO">Fechado</SelectItem>
                   <SelectItem value="CANCELADO">Cancelado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-full md:w-40">
+              <Select
+                value={String(pageSize)}
+                onValueChange={(v) => {
+                  setPageSize(Number(v))
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Por página" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="20">20 por página</SelectItem>
+                  <SelectItem value="50">50 por página</SelectItem>
+                  <SelectItem value="100">100 por página</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -736,7 +768,7 @@ export default function AdminCasosPage() {
             <Skeleton key={i} className="h-32 w-full" />
           ))}
         </div>
-      ) : filteredCasos.length === 0 ? (
+      ) : casos.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-12">
@@ -747,7 +779,7 @@ export default function AdminCasosPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {filteredCasos.map((caso) => (
+          {casos.map((caso) => (
             <Card key={caso.id}>
               <CardContent className="pt-6">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -869,6 +901,38 @@ export default function AdminCasosPage() {
               </CardContent>
             </Card>
           ))}
+
+          {pagination && pagination.total > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2">
+              <p className="text-sm text-muted-foreground">
+                Mostrando {(page - 1) * pageSize + 1}–
+                {Math.min(page * pageSize, pagination.total)} de {pagination.total}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1 || isLoading}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Anterior
+                </Button>
+                <span className="text-sm text-muted-foreground px-2 tabular-nums">
+                  Página {page} de {pagination.totalPages}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= pagination.totalPages || isLoading}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

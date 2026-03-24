@@ -11,8 +11,9 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
+    const limitRaw = parseInt(searchParams.get('limit') || '20', 10) || 20
+    const limit = Math.min(100, Math.max(1, limitRaw))
     const search = searchParams.get('search')
     const status = searchParams.get('status') // 'all', 'ABERTO', 'EM_ANDAMENTO', 'FECHADO', 'CANCELADO'
     const especialidadeId = searchParams.get('especialidadeId')
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
       ]
     }
 
-    const [casos, total] = await Promise.all([
+    const [casos, total, statusGroups] = await Promise.all([
       prisma.casos.findMany({
         where,
         include: {
@@ -111,7 +112,24 @@ export async function GET(req: NextRequest) {
         take: limit,
       }),
       prisma.casos.count({ where }),
+      prisma.casos.groupBy({
+        by: ['status'],
+        where,
+        _count: { _all: true },
+      }),
     ])
+
+    const statusBreakdown: Record<string, number> = {
+      PENDENTE_ATIVACAO: 0,
+      ABERTO: 0,
+      EM_MEDIACAO: 0,
+      EM_ANDAMENTO: 0,
+      FECHADO: 0,
+      CANCELADO: 0,
+    }
+    for (const row of statusGroups) {
+      statusBreakdown[row.status] = row._count._all
+    }
 
     return NextResponse.json({
       success: true,
@@ -120,8 +138,9 @@ export async function GET(req: NextRequest) {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.max(1, Math.ceil(total / limit)),
       },
+      statusBreakdown,
     })
   } catch (error) {
     console.error('Error fetching casos:', error)
