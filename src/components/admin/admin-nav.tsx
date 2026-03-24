@@ -24,6 +24,7 @@ import {
   CreditCard,
   ClipboardList,
   MoreHorizontal,
+  Gauge,
 } from 'lucide-react'
 
 const navItems = [
@@ -41,6 +42,11 @@ const navItems = [
     title: 'Advogados',
     href: '/admin/advogados',
     icon: Scale,
+  },
+  {
+    title: 'Leads',
+    href: '/admin/leads',
+    icon: Gauge,
   },
   {
     title: 'Avaliações',
@@ -81,8 +87,8 @@ const navItems = [
 
 export function AdminNav() {
   const pathname = usePathname()
-  const primaryItems = navItems.slice(0, 5)
-  const secondaryItems = navItems.slice(5)
+  const primaryItems = navItems.slice(0, 6)
+  const secondaryItems = navItems.slice(6)
   const activeSecondaryItem = secondaryItems.find((item) => pathname === item.href)
 
   return (
