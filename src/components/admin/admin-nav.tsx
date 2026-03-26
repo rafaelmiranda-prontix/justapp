@@ -74,6 +74,11 @@ const navItems = [
     icon: ClipboardList,
   },
   {
+    title: 'Suporte WhatsApp',
+    href: '/admin/suporte',
+    icon: MessageSquare,
+  },
+  {
     title: 'Planos',
     href: '/admin/planos',
     icon: CreditCard,
