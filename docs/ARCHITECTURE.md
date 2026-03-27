@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-O LegalConnect é construído com Next.js 14 usando o App Router, seguindo princípios de Clean Architecture e melhores práticas de desenvolvimento React/TypeScript.
+O LegalConnect / JustApp é construído com **Next.js** (App Router), TypeScript e Prisma, com APIs em `src/app/api/` e painéis por perfil em `src/app/(cidadao)`, `(advogado)` e `(admin)`. O catálogo funcional atual está em [FUNCIONALIDADES.md](FUNCIONALIDADES.md).
 
 ## Princípios Arquiteturais
 
@@ -35,7 +35,7 @@ src/
 │   ├── (cidadao)/           # Área do cidadão
 │   ├── (advogado)/          # Área do advogado
 │   ├── (admin)/             # Painel administrativo
-│   ├── api/                 # API Routes
+│   ├── api/                 # API Routes (auth, casos, chat, n8n, suporte, stripe…)
 │   │   └── auth/            # NextAuth endpoints
 │   ├── layout.tsx           # Layout raiz
 │   ├── page.tsx             # Página inicial
@@ -60,6 +60,9 @@ src/
 ├── lib/                     # Utilitários e configurações
 │   ├── prisma.ts            # Cliente Prisma
 │   ├── auth.ts              # Configuração NextAuth
+│   ├── integration-auth.ts # Chave + JWT para /api/suporte/*
+│   ├── n8n-auth.ts         # Chave para /api/n8n/*
+│   ├── support/             # Normalização e identify-user (suporte)
 │   └── utils.ts             # Funções utilitárias
 │
 └── types/                   # Definições de tipos
@@ -110,6 +113,15 @@ export function useUser(): { user: User | null; loading: boolean } {
 ```
 
 ### API Routes
+
+Rotas REST ficam em `src/app/api/**/route.ts`. Domínios principais:
+
+- **Auth / usuários:** NextAuth, cadastro, ativação.
+- **Casos e mediação:** CRUD e mensagens admin/cidadão.
+- **Chat:** mensagens por `matchId`, anexos quando configurados.
+- **N8N:** listagem de pré-aprovados e confirmação de aprovação (`n8n-auth`).
+- **Suporte WhatsApp:** `POST /api/suporte/identify-user`, `contacts`, `messages` (`integration-auth`); leitura admin em `/api/admin/suporte/*`.
+- **Pagamentos / cron / notificações:** conforme módulos em `api/`.
 
 ```typescript
 // ✅ BOM: Type-safe API route com validação
@@ -268,6 +280,18 @@ export async function requireAuth(req: Request) {
 - Sanitizar inputs do usuário
 - Validar permissões antes de operações sensíveis
 
+## Integrações externas
+
+| Integração | Uso | Autenticação |
+|------------|-----|----------------|
+| **N8N** | Workflow pré-aprovação de advogados; pode estender para outros fluxos | `N8N_API_KEY` em header ([workflow-n8n-pre-aprovacao.md](workflow-n8n-pre-aprovacao.md)) |
+| **Bot / Evolution (WhatsApp)** | Webhook n8n chama APIs de suporte para registrar conversa | `N8N_API_KEY` ou `INTEGRATION_API_KEY`; opcional JWT com `INTEGRATION_JWT_SECRET` ([suporte-whatsapp-api.md](suporte-whatsapp-api.md), [n8n-workflow-suporte-whatsapp-evolution.json](n8n-workflow-suporte-whatsapp-evolution.json)) |
+| **Stripe** | Assinaturas de advogados | Segredo e webhooks no servidor |
+| **Resend (e-mail)** | Transacional, contato, notificações | `RESEND_API_KEY` |
+| **Pusher** | Chat em tempo real (modo opcional) | Chaves `NEXT_PUBLIC_*` e servidor |
+
+O **middleware** (`src/middleware.ts`) marca rotas públicas ou por perfil; `/api/suporte` e `/api/n8n` são públicas no sentido HTTP, porém **protegidas por chave** nas próprias rotas.
+
 ## Testing (Futuro)
 
 - **Unit:** Vitest + Testing Library
@@ -283,8 +307,4 @@ export async function requireAuth(req: Request) {
 
 ## Próximos Passos
 
-1. Implementar autenticação completa
-2. Criar componentes de formulário
-3. Desenvolver área do cidadão
-4. Desenvolver área do advogado
-5. Implementar matching e chat
+Evolução contínua conforme [PRD.md](PRD.md) e [FUNCIONALIDADES.md](FUNCIONALIDADES.md). A arquitetura acima cobre extensão de APIs, novos jobs e integrações sem alterar o núcleo App Router + Prisma.

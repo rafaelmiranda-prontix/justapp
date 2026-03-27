@@ -11,6 +11,8 @@
 **Estágio:** MVP em desenvolvimento  
 **Desenvolvedor:** Solo (Rafa)
 
+**Catálogo do que já existe no código (cidadão, advogado, admin, chat, casos, N8N, suporte WhatsApp, APIs):** [FUNCIONALIDADES.md](./FUNCIONALIDADES.md).
+
 ---
 
 ## 🎯 Objetivo do MVP

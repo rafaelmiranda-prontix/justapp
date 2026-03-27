@@ -1,19 +1,21 @@
 # 🎉 LegalConnect - STATUS FINAL: 100% COMPLETO
 
-**Data:** 2026-02-08
-**Versão:** 1.5.0
-**Status:** ✅ PRONTO PARA PRODUÇÃO
+**Data da última revisão:** 2026-03-26  
+**Versão:** 1.6.0  
+**Status:** ✅ PRONTO PARA PRODUÇÃO (com evoluções contínuas)
+
+> **Catálogo vivo:** a lista consolidada e mantida do que o sistema faz hoje está em **[FUNCIONALIDADES.md](./FUNCIONALIDADES.md)**. Este arquivo é o relatório histórico “100% completo” (fases 0–8 + analytics) **e** registro de atualizações posteriores (ex.: suporte WhatsApp / integrações).
 
 ---
 
 ## 📊 Resumo Executivo
 
-O **LegalConnect** está **100% completo** e pronto para deploy em produção. Todas as funcionalidades planejadas foram implementadas, testadas e documentadas.
+O **LegalConnect / JustApp** atingiu o escopo MVP planejado para as fases documentadas abaixo e segue recebendo melhorias (integrações, inbox de suporte, etc.). Para o inventário atual de telas e APIs, use **[FUNCIONALIDADES.md](./FUNCIONALIDADES.md)**.
 
 ### Indicadores
 
-- ✅ **Funcionalidades:** 100% completas
-- ✅ **APIs:** 25+ endpoints
+- ✅ **Funcionalidades (MVP documentado):** fases abaixo entregues; novidades pós-fevereiro listadas em “Atualizações recentes”
+- ✅ **APIs:** 30+ endpoints (inclui `/api/suporte/*`, `/api/admin/suporte/*`, N8N, etc.)
 - ✅ **Componentes:** 30+ componentes React
 - ✅ **Páginas:** 15+ páginas
 - ✅ **Documentação:** Completa
@@ -201,6 +203,19 @@ O **LegalConnect** está **100% completo** e pronto para deploy em produção. T
 - [x] Sistema de feedback
 - [x] Analytics service (estrutura)
 - [x] Beta program (estrutura)
+
+### Pós-MVP: Suporte WhatsApp e integrações ✓ ⭐ (2026-03)
+
+- [x] **Inbox de suporte (fora do chat cidadão↔advogado)**
+  - Modelos Prisma: `SupportContact`, `SupportConversation`, `SupportMessage` (tabelas `support_*`)
+  - APIs de integração (API Key e/ou JWT): `POST /api/suporte/identify-user`, `POST /api/suporte/contacts`, `POST /api/suporte/messages` (idempotência por `externalMessageId`)
+  - Identificação estrita de usuário existente por e-mail, telefone ou CRM (OAB); fallback para contato sem login no app
+  - Painel admin: `/admin/suporte`; APIs `GET /api/admin/suporte/conversas`, `GET /api/admin/suporte/conversas/[id]/messages`
+  - Middleware permite `/api/suporte` com autenticação na rota (`src/lib/integration-auth.ts`)
+- [x] **Documentação e automação**
+  - [suporte-whatsapp-api.md](./suporte-whatsapp-api.md)
+  - Workflow n8n importável: [n8n-workflow-suporte-whatsapp-evolution.json](./n8n-workflow-suporte-whatsapp-evolution.json) (Evolution API / webhook)
+  - Índice geral: [FUNCIONALIDADES.md](./FUNCIONALIDADES.md)
 
 ### Fase 11: Analytics, Compliance e Marketing ✓ ⭐ NOVO (2026-01-31)
 - [x] **Sistema de Analytics Completo**
@@ -755,9 +770,18 @@ CRON_SECRET=seu-token-secreto-aqui
 
 ---
 
-## 🆕 Atualizações Recentes (2026-02-08) ⭐
+## 🆕 Atualizações Recentes
 
-### Novas Funcionalidades Implementadas
+### 2026-03-26 — Suporte WhatsApp (API + admin + n8n)
+
+1. **APIs `/api/suporte/*`** — identificar usuário, criar contato/conversa, registrar mensagens (bot / Evolution / n8n).
+2. **Admin `/admin/suporte`** — listagem de conversas e histórico de mensagens.
+3. **Documentação** — [FUNCIONALIDADES.md](./FUNCIONALIDADES.md), [suporte-whatsapp-api.md](./suporte-whatsapp-api.md), workflow JSON para n8n.
+4. **Variáveis:** `N8N_API_KEY` / `INTEGRATION_API_KEY`, opcional `INTEGRATION_JWT_SECRET` (ver `.env.example`).
+
+**Arquivos principais:** `prisma/schema.prisma` (modelos `Support*`), `src/app/api/suporte/**`, `src/app/api/admin/suporte/**`, `src/app/(admin)/admin/suporte/page.tsx`, `src/lib/integration-auth.ts`, `src/lib/support/*`, `src/middleware.ts`, migração `prisma/migrations/*support_whatsapp*`.
+
+### 2026-02-08 — Novas funcionalidades ⭐
 
 1. **Painel Admin – Gestão de Casos**
    - Listagem de casos com filtros (status, especialidade, busca) e estatísticas
@@ -868,17 +892,21 @@ O **LegalConnect** está pronto para:
 ---
 
 **Desenvolvido com ❤️ e Claude Code**
-**Versão:** 1.5.0
-**Data:** 2026-02-08
+**Versão:** 1.6.0
+**Data da última revisão:** 2026-03-26
 
 ---
 
 ## 📚 Documentação Consolidada
 
-Este arquivo (`STATUS_FINAL_100_COMPLETO.md`) é o **documento principal consolidado** com todas as funcionalidades implementadas.
+Este arquivo (`STATUS_FINAL_100_COMPLETO.md`) é o **relatório consolidado** das fases MVP e das atualizações registradas aqui. O **inventário atual** de funcionalidades e links está em **[FUNCIONALIDADES.md](./FUNCIONALIDADES.md)**.
 
 ### Outros Documentos Importantes:
 
+- **`docs/FUNCIONALIDADES.md`** - Catálogo atualizado (ponto de partida recomendado)
+- **`docs/suporte-whatsapp-api.md`** - API de suporte / bot WhatsApp
+- **`docs/n8n-workflow-suporte-whatsapp-evolution.json`** - Workflow n8n (Evolution)
+- **`docs/workflow-n8n-pre-aprovacao.md`** - N8N pré-aprovação de advogados
 - **`docs/ARCHITECTURE.md`** - Arquitetura técnica detalhada
 - **`docs/BUSINESS_RULES.md`** - Regras de negócio
 - **`docs/DEPLOYMENT.md`** - Guia de deploy
@@ -929,6 +957,11 @@ Este arquivo (`STATUS_FINAL_100_COMPLETO.md`) é o **documento principal consoli
 - Páginas dedicadas (Casos Recebidos, Conversas, Avaliações, Estatísticas)
 - Filtros e busca em todas as listagens
 - **Admin:** Gestão de casos (listar, editar, alocar/dealocar), gestão de planos (CRUD), auditoria de segurança ⭐ NOVO (2026-02)
+- **Admin:** Suporte WhatsApp — inbox de conversas e mensagens (`/admin/suporte`) ⭐ (2026-03)
+
+#### 🔗 **Integrações e suporte omnicanal**
+- **N8N** — pré-aprovação de advogados (`/api/n8n/*`, API key)
+- **Suporte WhatsApp** — ingestão de mensagens e identificação de usuário (`/api/suporte/*`); acompanhamento no admin ⭐ (2026-03)
 
 #### ⭐ **Avaliações**
 - Sistema de rating (1-5 estrelas)

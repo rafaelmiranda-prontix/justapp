@@ -2,6 +2,8 @@
 
 > Guia rápido para começar a desenvolver após o setup completo.
 
+Para ver **tudo que o projeto já oferece** (fluxos, admin, APIs, integrações), abra o catálogo: **[FUNCIONALIDADES.md](./FUNCIONALIDADES.md)**.
+
 ## ✅ Status Atual
 
 **Fase 0: COMPLETA** 🎉

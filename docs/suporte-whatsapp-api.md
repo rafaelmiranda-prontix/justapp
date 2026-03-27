@@ -1,5 +1,7 @@
 # API de suporte WhatsApp (integração)
 
+Índice geral do projeto: [FUNCIONALIDADES.md](./FUNCIONALIDADES.md).
+
 Endpoints protegidos por **API Key** e/ou **JWT de serviço**. Configure no `.env`:
 
 - `N8N_API_KEY` ou `INTEGRATION_API_KEY` (mínimo **16** caracteres) — header `X-API-Key` ou `Authorization: Bearer <chave>` (quando o valor **não** parece JWT).

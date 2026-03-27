@@ -36,6 +36,10 @@
    - Push para `main` = deploy automático
    - Preview para PRs
 
+#### Ambiente de testes estável (branch `staging`)
+
+Para homologação com **URL fixa**, **branch `staging`** (ou `develop`) e **banco / secrets separados**, use **dois projetos na Vercel** apontando para o mesmo repositório: um com Production Branch `main`, outro com Production Branch `staging`. Passo a passo e checklist: **[DEPLOY_VERCEL_STAGING.md](./DEPLOY_VERCEL_STAGING.md)**.
+
 #### Configurar Webhook do Stripe
 - URL: `https://seu-dominio.vercel.app/api/stripe/webhook`
 - Use o Stripe CLI para testar localmente primeiro

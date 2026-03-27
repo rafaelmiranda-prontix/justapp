@@ -17,10 +17,12 @@ legal-connect/
 │   └── README.md                # Guia inicial
 │
 ├── 📚 Documentação (docs/)
+│   ├── FUNCIONALIDADES.md       # Catálogo atualizado de funcionalidades e links
 │   ├── FASE_0_COMPLETA.md       # Resumo da Fase 0
 │   ├── ARCHITECTURE.md          # Arquitetura e padrões
 │   ├── GOOGLE_OAUTH_SETUP.md    # Setup OAuth
 │   ├── COMANDOS_UTEIS.md        # Comandos úteis
+│   ├── suporte-whatsapp-api.md  # API suporte / bot
 │   └── ESTRUTURA_PROJETO.md     # Este arquivo
 │
 ├── 🗄️ Database (prisma/)

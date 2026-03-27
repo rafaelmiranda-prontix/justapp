@@ -1,17 +1,22 @@
-# LegalConnect - MVP
+# LegalConnect / JustApp - MVP
 
 > Plataforma jurídica inteligente — Conectando pessoas com problemas jurídicos a advogados especializados.
 
+## Documentação do produto e do sistema
+
+O **catálogo atualizado de funcionalidades** (cidadão, advogado, admin, chat, casos, N8N, suporte WhatsApp, APIs e banco) está em **[docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md)**.
+
 ## Stack Técnica
 
-- **Frontend:** Next.js 14 (App Router) + TypeScript + Tailwind CSS
-- **Backend:** Next.js API Routes
+- **Frontend:** Next.js (App Router) + TypeScript + Tailwind CSS
+- **Backend:** Next.js API Routes (`src/app/api/`)
 - **Database:** PostgreSQL + Prisma ORM
-- **Auth:** NextAuth.js (Google OAuth)
+- **Auth:** NextAuth.js (credenciais + Google OAuth)
 - **UI Components:** shadcn/ui + Radix UI
 - **State Management:** Zustand + React Query
 - **Forms:** React Hook Form + Zod
 - **Styling:** Tailwind CSS + CVA
+- **Integrações:** N8N (pré-aprovação de advogados); API de suporte WhatsApp (bot / Evolution); Stripe; e-mail (Resend); opcional Pusher para chat em tempo real
 
 ## Pré-requisitos
 
@@ -69,16 +74,17 @@ Acesse: [http://localhost:3000](http://localhost:3000)
 
 ## ✅ Status do Setup
 
-O projeto está **100% configurado** e pronto para desenvolvimento!
+Base técnica pronta para desenvolvimento contínuo. O escopo funcional evolui conforme o roadmap; veja o que já está disponível em **[docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md)**.
 
-- ✅ Next.js 16.1.6 (sem vulnerabilidades)
-- ✅ Database schema aplicado (9 modelos)
-- ✅ 4 especialidades pré-cadastradas
-- ✅ Design System completo (6 componentes)
-- ✅ Autenticação configurada (NextAuth)
-- ✅ Documentação completa
+- Next.js + Prisma + PostgreSQL
+- Autenticação NextAuth (Google + e-mail/senha)
+- Áreas cidadão, advogado e admin
+- Chat anônimo com IA, casos, matches, notificações, planos (Stripe)
+- Integração N8N (pré-aprovação) e **suporte WhatsApp** (`/api/suporte/*`, admin `/admin/suporte`)
 
-Veja detalhes em [SETUP_COMPLETO.md](SETUP_COMPLETO.md)
+Detalhes de ambiente e primeiros passos: **[docs/SETUP_COMPLETO.md](docs/SETUP_COMPLETO.md)**
+
+Deploy de **homologação na Vercel** (branch `staging`, segundo projeto, banco isolado): **[docs/DEPLOY_VERCEL_STAGING.md](docs/DEPLOY_VERCEL_STAGING.md)**.
 
 ## Scripts Disponíveis
 
@@ -107,7 +113,7 @@ legal-connect/
 │   │   ├── (cidadao)/
 │   │   ├── (advogado)/
 │   │   ├── (admin)/
-│   │   ├── api/
+│   │   ├── api/          # REST: auth, casos, chat, n8n, suporte, stripe, etc.
 │   │   ├── layout.tsx
 │   │   ├── page.tsx
 │   │   └── globals.css
@@ -134,20 +140,19 @@ legal-connect/
 └── package.json
 ```
 
-## Próximos Passos
+## Próximos passos e contexto
 
-Consulte o [PRD.md](./PRD.md) e [CONTEXT.md](./CONTEXT.md) para detalhes sobre o roadmap de desenvolvimento.
+- **[docs/PRD.md](docs/PRD.md)** — visão de produto  
+- **[docs/CONTEXT.md](docs/CONTEXT.md)** — contexto de desenvolvimento  
+- **[docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md)** — lista do que o sistema oferece hoje
 
-## Fase Atual: Setup Inicial ✅
+## Roadmap histórico (setup base)
 
-- [x] Configurar Next.js 14 com TypeScript
-- [x] Configurar Tailwind CSS
-- [x] Configurar Prisma com PostgreSQL
-- [x] Configurar NextAuth
-- [x] Configurar shadcn/ui
-- [x] Criar estrutura de pastas
-- [x] Criar hooks personalizados
-- [x] Criar tipos TypeScript
+- [x] Next.js + TypeScript + Tailwind
+- [x] Prisma + PostgreSQL
+- [x] NextAuth + áreas por perfil
+- [x] Design system (shadcn/ui) e área admin
+- [x] Casos, chat, notificações, planos e integrações (ver catálogo)
 
 ## Licença
 

@@ -1,0 +1,525 @@
+{
+  "name": "Suporte WhatsApp - Evolution + API Interna",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "suporte/evolution/inbound",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "Webhook_Evolution_Inbound",
+      "name": "Webhook Evolution Inbound",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1060,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "event",
+              "value": "={{$json.body?.event || $json.event || ''}}"
+            },
+            {
+              "name": "whatsappWaId",
+              "value": "={{$json.body?.data?.key?.remoteJid || $json.data?.key?.remoteJid || ''}}"
+            },
+            {
+              "name": "phone",
+              "value": "={{(($json.body?.data?.key?.remoteJid || $json.data?.key?.remoteJid || '').split('@')[0] || '').replace(/\\D/g, '')}}"
+            },
+            {
+              "name": "pushName",
+              "value": "={{$json.body?.data?.pushName || $json.data?.pushName || ''}}"
+            },
+            {
+              "name": "text",
+              "value": "={{$json.body?.data?.message?.conversation || $json.data?.message?.conversation || $json.body?.data?.message?.extendedTextMessage?.text || $json.data?.message?.extendedTextMessage?.text || ''}}"
+            },
+            {
+              "name": "externalMessageId",
+              "value": "={{$json.body?.data?.key?.id || $json.data?.key?.id || ''}}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "fromMe",
+              "value": "={{Boolean($json.body?.data?.key?.fromMe || $json.data?.key?.fromMe)}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Set_Normalize_Evolution_Payload",
+      "name": "Normalize Evolution Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -840,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.fromMe}}",
+              "operation": "isFalse"
+            }
+          ],
+          "string": [
+            {
+              "value1": "={{$json.text}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "IF_Valid_Inbound",
+      "name": "IF Valid Inbound",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -620,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.APP_BASE_URL + '/api/suporte/identify-user'}}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{$env.INTEGRATION_API_KEY || $env.N8N_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"phone\":\"{{$json.phone}}\",\"whatsappWaId\":\"{{$json.whatsappWaId}}\"}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "id": "HTTP_Identify_User",
+      "name": "Identify User (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        20
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "Merge_Normalized_With_Identify",
+      "name": "Merge Context + Identify",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -180,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.found === true}}",
+              "operation": "isTrue"
+            }
+          ]
+        }
+      },
+      "id": "IF_User_Found",
+      "name": "IF User Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        40,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "conversationId",
+              "value": "={{$json.conversationId}}"
+            },
+            {
+              "name": "contactId",
+              "value": "={{$json.contactId}}"
+            },
+            {
+              "name": "identificationStatus",
+              "value": "FOUND_USER"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Set_Conversation_From_Identify",
+      "name": "Set Conversation (Found User)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.APP_BASE_URL + '/api/suporte/contacts'}}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{$env.INTEGRATION_API_KEY || $env.N8N_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"name\":\"{{$json.pushName || ''}}\",\"phone\":\"{{$json.phone}}\",\"whatsappWaId\":\"{{$json.whatsappWaId}}\",\"channel\":\"WHATSAPP\",\"source\":\"WHATSAPP\"}",
+        "options": {}
+      },
+      "id": "HTTP_Create_Contact",
+      "name": "Create Contact (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "conversationId",
+              "value": "={{$json.conversationId}}"
+            },
+            {
+              "name": "contactId",
+              "value": "={{$json.contactId}}"
+            },
+            {
+              "name": "identificationStatus",
+              "value": "CONTACT_ONLY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Set_Conversation_From_Contact",
+      "name": "Set Conversation (Contact Only)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.APP_BASE_URL + '/api/suporte/messages'}}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{$env.INTEGRATION_API_KEY || $env.N8N_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"conversationId\":\"{{$json.conversationId}}\",\"senderType\":\"USER\",\"content\":\"{{$json.text}}\",\"externalMessageId\":\"{{$json.externalMessageId}}\",\"metadata\":{\"provider\":\"evolution\",\"event\":\"{{$json.event}}\",\"waId\":\"{{$json.whatsappWaId}}\",\"identificationStatus\":\"{{$json.identificationStatus}}\"}}",
+        "options": {}
+      },
+      "id": "HTTP_Register_Message",
+      "name": "Register Inbound Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.EVOLUTION_API_URL + '/message/sendText/' + $env.EVOLUTION_INSTANCE}}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{$env.EVOLUTION_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"number\":\"{{$json.phone}}\",\"text\":\"Recebemos sua mensagem. Em instantes nosso suporte continua o atendimento.\",\"delay\":800}",
+        "options": {}
+      },
+      "id": "HTTP_Evolution_Auto_Reply",
+      "name": "Evolution Auto Reply (Opcional)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        920,
+        20
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"ok\":true,\"registered\":true,\"conversationId\":\"{{$json.conversationId || ''}}\"}",
+        "options": {}
+      },
+      "id": "Respond_Webhook",
+      "name": "Respond Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1140,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"ok\":true,\"ignored\":true,\"reason\":\"invalid_inbound\"}",
+        "options": {}
+      },
+      "id": "Respond_Ignored",
+      "name": "Respond Ignored",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -380,
+        260
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Evolution Inbound": {
+      "main": [
+        [
+          {
+            "node": "Normalize Evolution Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Evolution Payload": {
+      "main": [
+        [
+          {
+            "node": "IF Valid Inbound",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge Context + Identify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Valid Inbound": {
+      "main": [
+        [
+          {
+            "node": "Identify User (API)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Ignored",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identify User (API)": {
+      "main": [
+        [
+          {
+            "node": "Merge Context + Identify",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Context + Identify": {
+      "main": [
+        [
+          {
+            "node": "IF User Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF User Found": {
+      "main": [
+        [
+          {
+            "node": "Set Conversation (Found User)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Contact (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Contact (API)": {
+      "main": [
+        [
+          {
+            "node": "Set Conversation (Contact Only)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Conversation (Found User)": {
+      "main": [
+        [
+          {
+            "node": "Register Inbound Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Conversation (Contact Only)": {
+      "main": [
+        [
+          {
+            "node": "Register Inbound Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register Inbound Message": {
+      "main": [
+        [
+          {
+            "node": "Evolution Auto Reply (Opcional)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evolution Auto Reply (Opcional)": {
+      "main": [
+        [
+          {
+            "node": "Respond Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "versionId": "1",
+  "tags": [
+    {
+      "name": "whatsapp"
+    },
+    {
+      "name": "suporte"
+    },
+    {
+      "name": "evolution"
+    }
+  ]
+}
