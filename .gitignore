@@ -39,8 +39,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma
-prisma/migrations
+# prisma — migrations devem ser versionadas para `prisma migrate deploy` (ex.: Vercel)
 
 # uploads
 /public/uploads

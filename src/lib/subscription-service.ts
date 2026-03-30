@@ -6,6 +6,33 @@ import {
   type CanceladoPor,
 } from './subscription-history.service'
 
+function currentYearMonth(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+export function getFreeBonusForCurrentMonth(advogado: {
+  plano: PlanType
+  freeLeadsBonusMes: number
+  freeLeadsBonusRef: string | null
+}): number {
+  if (advogado.plano !== 'FREE') return 0
+  if (!advogado.freeLeadsBonusRef || advogado.freeLeadsBonusMes <= 0) return 0
+  return advogado.freeLeadsBonusRef === currentYearMonth() ? advogado.freeLeadsBonusMes : 0
+}
+
+export function getEffectiveMonthlyLeadLimit(advogado: {
+  plano: PlanType
+  leadsLimiteMes: number
+  freeLeadsBonusMes: number
+  freeLeadsBonusRef: string | null
+}): number {
+  if (advogado.leadsLimiteMes === -1 || advogado.leadsLimiteMes >= 999) {
+    return advogado.leadsLimiteMes
+  }
+  const freeBonus = getFreeBonusForCurrentMonth(advogado)
+  return advogado.leadsLimiteMes + freeBonus
+}
+
 /**
  * Reseta o contador de leads mensais se necessário
  */
@@ -34,6 +61,8 @@ export async function resetMonthlyLeadsIfNeeded(advogadoId: string): Promise<voi
       data: {
         leadsRecebidosMes: 0,
         leadsLimiteMes: novoLimite,
+        freeLeadsBonusMes: 0,
+        freeLeadsBonusRef: null,
         ultimoResetLeads: agora,
       },
     })
@@ -122,11 +151,6 @@ export async function canAdvogadoReceiveLead(advogadoId: string): Promise<{
     return { canReceive: false, reason: 'Advogado aguardando aprovação do administrador' }
   }
 
-  // Verifica se o plano está ativo
-  if (advogado.plano === 'FREE') {
-    return { canReceive: false, reason: 'Plano gratuito não permite receber leads' }
-  }
-
   // Verifica se o plano expirou
   if (advogado.planoExpira && advogado.planoExpira < new Date()) {
     return { canReceive: false, reason: 'Plano expirado' }
@@ -146,21 +170,18 @@ export async function canAdvogadoReceiveLead(advogadoId: string): Promise<{
   }
 
   const limits = await getPlanLimits(advogadoAtualizado.plano)
+  const effectiveMonthlyLimit = getEffectiveMonthlyLeadLimit(advogadoAtualizado)
 
   // Se é ilimitado, pode receber (sem verificação de hora)
-  if (limits.isUnlimited) {
+  if (effectiveMonthlyLimit === -1 || effectiveMonthlyLimit >= 999 || limits.isUnlimited) {
     return { canReceive: true }
   }
 
-  // Verifica limite mensal (trata -1 como ilimitado)
-  if (
-    advogadoAtualizado.leadsLimiteMes !== -1 &&
-    advogadoAtualizado.leadsLimiteMes < 999 &&
-    advogadoAtualizado.leadsRecebidosMes >= advogadoAtualizado.leadsLimiteMes
-  ) {
+  // Verifica limite mensal (inclui bônus temporário de FREE no mês corrente)
+  if (advogadoAtualizado.leadsRecebidosMes >= effectiveMonthlyLimit) {
     return {
       canReceive: false,
-      reason: `Limite de ${advogadoAtualizado.leadsLimiteMes} leads/mês atingido`,
+      reason: `Limite de ${effectiveMonthlyLimit} leads/mês atingido`,
     }
   }
 

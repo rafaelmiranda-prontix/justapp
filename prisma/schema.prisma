@@ -57,6 +57,8 @@ model advogados {
   stripeSubscriptionId    String?                   @unique
   leadsRecebidosMes       Int                       @default(0)
   leadsLimiteMes          Int                       @default(0)
+  freeLeadsBonusMes       Int                       @default(0) // bônus temporário para FREE (válido no mês corrente)
+  freeLeadsBonusRef       String?                   @db.VarChar(7) // formato YYYY-MM
   ultimoResetLeads        DateTime                  @default(now())
   casosRecebidosHora      Int                       @default(0)
   ultimoResetCasosHora    DateTime                  @default(now())
