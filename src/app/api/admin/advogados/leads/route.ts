@@ -29,24 +29,34 @@ function statusSql(status: StatusFilter): Prisma.Sql {
 }
 
 function cotaSql(cota: CotaFilter): Prisma.Sql {
+  const effectiveLimit = Prisma.sql`(
+    CASE
+      WHEN a.plano::text = 'FREE'
+        AND a."freeLeadsBonusMes" > 0
+        AND a."freeLeadsBonusRef" = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+      THEN a."leadsLimiteMes" + a."freeLeadsBonusMes"
+      ELSE a."leadsLimiteMes"
+    END
+  )`
+
   if (cota === 'esgotado') {
     return Prisma.sql`
-      AND a."leadsLimiteMes" > 0 AND a."leadsLimiteMes" < 999
-      AND a."leadsRecebidosMes" >= a."leadsLimiteMes"`
+      AND ${effectiveLimit} > 0 AND ${effectiveLimit} < 999
+      AND a."leadsRecebidosMes" >= ${effectiveLimit}`
   }
   if (cota === 'proximo') {
     return Prisma.sql`
-      AND a."leadsLimiteMes" > 0 AND a."leadsLimiteMes" < 999
-      AND a."leadsRecebidosMes" < a."leadsLimiteMes"
-      AND (a."leadsRecebidosMes"::float / NULLIF(a."leadsLimiteMes", 0)) >= 0.8`
+      AND ${effectiveLimit} > 0 AND ${effectiveLimit} < 999
+      AND a."leadsRecebidosMes" < ${effectiveLimit}
+      AND (a."leadsRecebidosMes"::float / NULLIF(${effectiveLimit}, 0)) >= 0.8`
   }
   if (cota === 'ok') {
     return Prisma.sql`
       AND (
-        a."leadsLimiteMes" = -1 OR a."leadsLimiteMes" >= 999
+        ${effectiveLimit} = -1 OR ${effectiveLimit} >= 999
         OR (
-          a."leadsLimiteMes" > 0 AND a."leadsLimiteMes" < 999
-          AND (a."leadsRecebidosMes"::float / NULLIF(a."leadsLimiteMes", 0)) < 0.8
+          ${effectiveLimit} > 0 AND ${effectiveLimit} < 999
+          AND (a."leadsRecebidosMes"::float / NULLIF(${effectiveLimit}, 0)) < 0.8
         )
       )`
   }
@@ -54,6 +64,16 @@ function cotaSql(cota: CotaFilter): Prisma.Sql {
 }
 
 function orderSql(sort: SortKey): Prisma.Sql {
+  const effectiveLimit = Prisma.sql`(
+    CASE
+      WHEN a.plano::text = 'FREE'
+        AND a."freeLeadsBonusMes" > 0
+        AND a."freeLeadsBonusRef" = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+      THEN a."leadsLimiteMes" + a."freeLeadsBonusMes"
+      ELSE a."leadsLimiteMes"
+    END
+  )`
+
   if (sort === 'nome') {
     return Prisma.sql`ORDER BY u.name ASC NULLS LAST, a.id ASC`
   }
@@ -62,8 +82,8 @@ function orderSql(sort: SortKey): Prisma.Sql {
   }
   return Prisma.sql`ORDER BY
     CASE
-      WHEN a."leadsLimiteMes" > 0 AND a."leadsLimiteMes" < 999
-      THEN a."leadsRecebidosMes"::float / NULLIF(a."leadsLimiteMes", 0)
+      WHEN ${effectiveLimit} > 0 AND ${effectiveLimit} < 999
+      THEN a."leadsRecebidosMes"::float / NULLIF(${effectiveLimit}, 0)
       ELSE -1
     END DESC NULLS LAST,
     a."leadsRecebidosMes" DESC,
@@ -117,6 +137,8 @@ export async function GET(req: Request) {
       aprovado: boolean
       leadsRecebidosMes: number
       leadsLimiteMes: number
+      freeLeadsBonusMes: number
+      freeLeadsBonusRef: string | null
       ultimoResetLeads: Date
       casosRecebidosHora: number
       ultimoResetCasosHora: Date
@@ -132,6 +154,8 @@ export async function GET(req: Request) {
         a.aprovado,
         a."leadsRecebidosMes",
         a."leadsLimiteMes",
+        a."freeLeadsBonusMes",
+        a."freeLeadsBonusRef",
         a."ultimoResetLeads",
         a."casosRecebidosHora",
         a."ultimoResetCasosHora",
@@ -163,26 +187,135 @@ export async function GET(req: Request) {
         COUNT(*) FILTER (WHERE a.aprovado)::bigint AS aprovados_total,
         COUNT(*) FILTER (
           WHERE a.aprovado
-            AND (a."leadsLimiteMes" = -1 OR a."leadsLimiteMes" >= 999)
+            AND (
+              (
+                CASE
+                  WHEN a.plano::text = 'FREE'
+                    AND a."freeLeadsBonusMes" > 0
+                    AND a."freeLeadsBonusRef" = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+                  THEN a."leadsLimiteMes" + a."freeLeadsBonusMes"
+                  ELSE a."leadsLimiteMes"
+                END
+              ) = -1
+              OR (
+                CASE
+                  WHEN a.plano::text = 'FREE'
+                    AND a."freeLeadsBonusMes" > 0
+                    AND a."freeLeadsBonusRef" = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+                  THEN a."leadsLimiteMes" + a."freeLeadsBonusMes"
+                  ELSE a."leadsLimiteMes"
+                END
+              ) >= 999
+            )
         )::bigint AS ilimitados,
         COUNT(*) FILTER (
           WHERE a.aprovado
-            AND a."leadsLimiteMes" > 0
-            AND a."leadsLimiteMes" < 999
-            AND a."leadsRecebidosMes" >= a."leadsLimiteMes"
+            AND (
+              CASE
+                WHEN a.plano::text = 'FREE'
+                  AND a."freeLeadsBonusMes" > 0
+                  AND a."freeLeadsBonusRef" = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+                THEN a."leadsLimiteMes" + a."freeLeadsBonusMes"
+                ELSE a."leadsLimiteMes"
+              END
+            ) > 0
+            AND (
+              CASE
+                WHEN a.plano::text = 'FREE'
+                  AND a."freeLeadsBonusMes" > 0
+                  AND a."freeLeadsBonusRef" = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+                THEN a."leadsLimiteMes" + a."freeLeadsBonusMes"
+                ELSE a."leadsLimiteMes"
+              END
+            ) < 999
+            AND a."leadsRecebidosMes" >= (
+              CASE
+                WHEN a.plano::text = 'FREE'
+                  AND a."freeLeadsBonusMes" > 0
+                  AND a."freeLeadsBonusRef" = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+                THEN a."leadsLimiteMes" + a."freeLeadsBonusMes"
+                ELSE a."leadsLimiteMes"
+              END
+            )
         )::bigint AS esgotado,
         COUNT(*) FILTER (
           WHERE a.aprovado
-            AND a."leadsLimiteMes" > 0
-            AND a."leadsLimiteMes" < 999
-            AND a."leadsRecebidosMes" < a."leadsLimiteMes"
-            AND (a."leadsRecebidosMes"::float / NULLIF(a."leadsLimiteMes", 0)) >= 0.8
+            AND (
+              CASE
+                WHEN a.plano::text = 'FREE'
+                  AND a."freeLeadsBonusMes" > 0
+                  AND a."freeLeadsBonusRef" = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+                THEN a."leadsLimiteMes" + a."freeLeadsBonusMes"
+                ELSE a."leadsLimiteMes"
+              END
+            ) > 0
+            AND (
+              CASE
+                WHEN a.plano::text = 'FREE'
+                  AND a."freeLeadsBonusMes" > 0
+                  AND a."freeLeadsBonusRef" = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+                THEN a."leadsLimiteMes" + a."freeLeadsBonusMes"
+                ELSE a."leadsLimiteMes"
+              END
+            ) < 999
+            AND a."leadsRecebidosMes" < (
+              CASE
+                WHEN a.plano::text = 'FREE'
+                  AND a."freeLeadsBonusMes" > 0
+                  AND a."freeLeadsBonusRef" = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+                THEN a."leadsLimiteMes" + a."freeLeadsBonusMes"
+                ELSE a."leadsLimiteMes"
+              END
+            )
+            AND (
+              a."leadsRecebidosMes"::float / NULLIF(
+                (
+                  CASE
+                    WHEN a.plano::text = 'FREE'
+                      AND a."freeLeadsBonusMes" > 0
+                      AND a."freeLeadsBonusRef" = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+                    THEN a."leadsLimiteMes" + a."freeLeadsBonusMes"
+                    ELSE a."leadsLimiteMes"
+                  END
+                ),
+                0
+              )
+            ) >= 0.8
         )::bigint AS proximo,
         COUNT(*) FILTER (
           WHERE a.aprovado
-            AND a."leadsLimiteMes" > 0
-            AND a."leadsLimiteMes" < 999
-            AND (a."leadsRecebidosMes"::float / NULLIF(a."leadsLimiteMes", 0)) < 0.8
+            AND (
+              CASE
+                WHEN a.plano::text = 'FREE'
+                  AND a."freeLeadsBonusMes" > 0
+                  AND a."freeLeadsBonusRef" = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+                THEN a."leadsLimiteMes" + a."freeLeadsBonusMes"
+                ELSE a."leadsLimiteMes"
+              END
+            ) > 0
+            AND (
+              CASE
+                WHEN a.plano::text = 'FREE'
+                  AND a."freeLeadsBonusMes" > 0
+                  AND a."freeLeadsBonusRef" = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+                THEN a."leadsLimiteMes" + a."freeLeadsBonusMes"
+                ELSE a."leadsLimiteMes"
+              END
+            ) < 999
+            AND (
+              a."leadsRecebidosMes"::float / NULLIF(
+                (
+                  CASE
+                    WHEN a.plano::text = 'FREE'
+                      AND a."freeLeadsBonusMes" > 0
+                      AND a."freeLeadsBonusRef" = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+                    THEN a."leadsLimiteMes" + a."freeLeadsBonusMes"
+                    ELSE a."leadsLimiteMes"
+                  END
+                ),
+                0
+              )
+            ) < 0.8
         )::bigint AS ok_cota
       FROM advogados a
     `
@@ -204,8 +337,17 @@ export async function GET(req: Request) {
         }
 
     const data = rows.map((r) => {
-      const unlimited = r.leadsLimiteMes === -1 || r.leadsLimiteMes >= 999
-      const limiteFinito = r.leadsLimiteMes > 0 && r.leadsLimiteMes < 999
+      const now = new Date()
+      const monthRef = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+      const bonusAtivo =
+        r.plano === 'FREE' &&
+        r.freeLeadsBonusMes > 0 &&
+        r.freeLeadsBonusRef === monthRef
+          ? r.freeLeadsBonusMes
+          : 0
+      const effectiveLimit = r.leadsLimiteMes + bonusAtivo
+      const unlimited = effectiveLimit === -1 || effectiveLimit >= 999
+      const limiteFinito = effectiveLimit > 0 && effectiveLimit < 999
       let usoPercent: number | null = null
       let situacao: 'ilimitado' | 'esgotado' | 'proximo' | 'ok' | 'sem_cota'
 
@@ -216,10 +358,10 @@ export async function GET(req: Request) {
       } else {
         usoPercent = Math.min(
           100,
-          Math.round((r.leadsRecebidosMes / r.leadsLimiteMes) * 100)
+          Math.round((r.leadsRecebidosMes / effectiveLimit) * 100)
         )
-        if (r.leadsRecebidosMes >= r.leadsLimiteMes) situacao = 'esgotado'
-        else if (r.leadsRecebidosMes / r.leadsLimiteMes >= 0.8) situacao = 'proximo'
+        if (r.leadsRecebidosMes >= effectiveLimit) situacao = 'esgotado'
+        else if (r.leadsRecebidosMes / effectiveLimit >= 0.8) situacao = 'proximo'
         else situacao = 'ok'
       }
 
@@ -231,7 +373,10 @@ export async function GET(req: Request) {
         nome: r.userName ?? '—',
         email: r.userEmail ?? '—',
         leadsRecebidosMes: r.leadsRecebidosMes,
-        leadsLimiteMes: r.leadsLimiteMes,
+        leadsLimiteMes: effectiveLimit,
+        leadsLimiteMesBase: r.leadsLimiteMes,
+        freeLeadsBonusMes: bonusAtivo,
+        freeLeadsBonusRef: r.freeLeadsBonusRef,
         ultimoResetLeads: r.ultimoResetLeads.toISOString(),
         casosRecebidosHora: r.casosRecebidosHora,
         ultimoResetCasosHora: r.ultimoResetCasosHora.toISOString(),

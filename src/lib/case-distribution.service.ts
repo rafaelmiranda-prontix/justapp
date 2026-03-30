@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { ConfigService } from '@/lib/config-service'
 import { logger } from '@/lib/logger'
 import { getPlanLimits } from '@/lib/plans'
-import { resetHourlyCasesIfNeeded } from '@/lib/subscription-service'
+import { getEffectiveMonthlyLeadLimit, resetHourlyCasesIfNeeded } from '@/lib/subscription-service'
 
 /**
  * Serviço de Distribuição Automática de Casos
@@ -240,10 +240,11 @@ export class CaseDistributionService {
 
     for (const advogado of advogados) {
       // 1. Verificar limite de leads mensal (trata -1 e >= 999 como ilimitado)
+      const effectiveMonthlyLimit = getEffectiveMonthlyLeadLimit(advogado)
       if (
-        advogado.leadsLimiteMes !== -1 &&
-        advogado.leadsLimiteMes < 999 &&
-        advogado.leadsRecebidosMes >= advogado.leadsLimiteMes
+        effectiveMonthlyLimit !== -1 &&
+        effectiveMonthlyLimit < 999 &&
+        advogado.leadsRecebidosMes >= effectiveMonthlyLimit
       ) {
         continue
       }
@@ -333,10 +334,11 @@ export class CaseDistributionService {
 
     for (const advogado of advogados) {
       // Verificar limite de leads (trata -1 e >= 999 como ilimitado)
+      const effectiveMonthlyLimit = getEffectiveMonthlyLeadLimit(advogado)
       if (
-        advogado.leadsLimiteMes !== -1 &&
-        advogado.leadsLimiteMes < 999 &&
-        advogado.leadsRecebidosMes >= advogado.leadsLimiteMes
+        effectiveMonthlyLimit !== -1 &&
+        effectiveMonthlyLimit < 999 &&
+        advogado.leadsRecebidosMes >= effectiveMonthlyLimit
       ) {
         continue
       }
@@ -409,10 +411,11 @@ export class CaseDistributionService {
 
     for (const advogado of advogados) {
       // Verificar limite de leads (trata -1 e >= 999 como ilimitado)
+      const effectiveMonthlyLimit = getEffectiveMonthlyLeadLimit(advogado)
       if (
-        advogado.leadsLimiteMes !== -1 &&
-        advogado.leadsLimiteMes < 999 &&
-        advogado.leadsRecebidosMes >= advogado.leadsLimiteMes
+        effectiveMonthlyLimit !== -1 &&
+        effectiveMonthlyLimit < 999 &&
+        advogado.leadsRecebidosMes >= effectiveMonthlyLimit
       ) {
         continue
       }
@@ -592,13 +595,14 @@ export class CaseDistributionService {
     }
 
     // Verificar cota de leads mensal (trata -1 e >= 999 como ilimitado)
+    const effectiveMonthlyLimit = getEffectiveMonthlyLeadLimit(advogado)
     if (
-      advogado.leadsLimiteMes !== -1 &&
-      advogado.leadsLimiteMes < 999 &&
-      advogado.leadsRecebidosMes >= advogado.leadsLimiteMes
+      effectiveMonthlyLimit !== -1 &&
+      effectiveMonthlyLimit < 999 &&
+      advogado.leadsRecebidosMes >= effectiveMonthlyLimit
     ) {
       logger.debug(
-        `[Redistribution] Lawyer reached monthly limit (${advogado.leadsRecebidosMes}/${advogado.leadsLimiteMes})`
+        `[Redistribution] Lawyer reached monthly limit (${advogado.leadsRecebidosMes}/${effectiveMonthlyLimit})`
       )
       return { casosDistribuidos: 0, matchesCriados: 0 }
     }

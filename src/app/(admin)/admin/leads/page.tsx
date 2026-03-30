@@ -40,6 +40,9 @@ interface LeadRow {
   email: string
   leadsRecebidosMes: number
   leadsLimiteMes: number
+  leadsLimiteMesBase: number
+  freeLeadsBonusMes: number
+  freeLeadsBonusRef: string | null
   ultimoResetLeads: string
   casosRecebidosHora: number
   ultimoResetCasosHora: string
@@ -96,6 +99,51 @@ export default function AdminLeadsQuotaPage() {
   const [cota, setCota] = useState('all')
   const [status, setStatus] = useState('aprovados')
   const [sort, setSort] = useState('uso_desc')
+
+  async function grantFreeBonus(row: LeadRow) {
+    const leadsStr = window.prompt(
+      'Quantidade de leads temporários para este mês (1 a 100):',
+      '3'
+    )
+    if (!leadsStr) return
+    const leads = Number(leadsStr)
+    if (!Number.isInteger(leads) || leads < 1 || leads > 100) {
+      toast({
+        title: 'Valor inválido',
+        description: 'Informe um número inteiro entre 1 e 100.',
+        variant: 'destructive',
+      })
+      return
+    }
+    const motivo =
+      window.prompt(
+        'Motivo da concessão (opcional):',
+        'Bônus temporário para advogado FREE esgotado'
+      ) || undefined
+
+    try {
+      const res = await fetch(`/api/admin/advogados/${row.id}/grant-free-bonus`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leads, motivo }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Falha ao conceder bônus')
+      }
+      toast({
+        title: 'Bônus concedido',
+        description: `${leads} lead(s) adicionados para este mês.`,
+      })
+      await fetchData()
+    } catch (e) {
+      toast({
+        title: 'Erro',
+        description: e instanceof Error ? e.message : 'Falha ao conceder bônus',
+        variant: 'destructive',
+      })
+    }
+  }
 
   useEffect(() => {
     const t = window.setTimeout(() => setSearchDebounced(search.trim()), 350)
@@ -337,13 +385,14 @@ export default function AdminLeadsQuotaPage() {
                     Na hora
                   </TableHead>
                   <TableHead>Reset mensal</TableHead>
+                  <TableHead className="text-right">Ação</TableHead>
                 </TableRow>
               </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     [...Array(6)].map((_, i) => (
                       <TableRow key={i}>
-                        {[...Array(7)].map((__, j) => (
+                        {[...Array(8)].map((__, j) => (
                           <TableCell key={j}>
                             <Skeleton className="h-8 w-full" />
                           </TableCell>
@@ -353,7 +402,7 @@ export default function AdminLeadsQuotaPage() {
                   ) : rows.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={7}
+                        colSpan={8}
                         className="text-center text-muted-foreground py-12"
                       >
                         Nenhum registro encontrado.
@@ -416,6 +465,11 @@ export default function AdminLeadsQuotaPage() {
                                   value={r.usoPercent ?? 0}
                                   className="h-2"
                                 />
+                                {r.freeLeadsBonusMes > 0 && (
+                                  <div className="text-[11px] text-muted-foreground">
+                                    Base {r.leadsLimiteMesBase} + bônus {r.freeLeadsBonusMes}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </TableCell>
@@ -427,6 +481,19 @@ export default function AdminLeadsQuotaPage() {
                               new Date(r.ultimoResetLeads),
                               "dd/MM/yyyy HH:mm",
                               { locale: ptBR }
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {r.aprovado && r.plano === 'FREE' && r.situacao === 'esgotado' ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => grantFreeBonus(r)}
+                              >
+                                Dar bônus mês
+                              </Button>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
                             )}
                           </TableCell>
                         </TableRow>
