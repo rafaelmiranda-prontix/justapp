@@ -4,14 +4,19 @@ import { prisma } from '@/lib/prisma'
 import { requireIntegrationAuth } from '@/lib/integration-auth'
 import { normalizeCrm, normalizeEmail, normalizePhone } from '@/lib/support/normalize'
 
+/** JSON frequentemente manda "" — tratar como campo ausente (email não é obrigatório). */
+function emptyToUndefined<T extends z.ZodTypeAny>(schema: T) {
+  return z.preprocess((v) => (v === '' || v === null ? undefined : v), schema)
+}
+
 const contactSchema = z
   .object({
-    name: z.string().max(200).optional(),
-    email: z.string().email().optional(),
-    phone: z.string().max(32).optional(),
-    crm: z.string().max(32).optional(),
+    name: emptyToUndefined(z.string().max(200).optional()),
+    email: emptyToUndefined(z.string().email().optional()),
+    phone: emptyToUndefined(z.string().max(32).optional()),
+    crm: emptyToUndefined(z.string().max(32).optional()),
     source: z.enum(['WHATSAPP', 'FORM', 'OTHER']).optional(),
-    whatsappWaId: z.string().min(1).max(64).optional(),
+    whatsappWaId: emptyToUndefined(z.string().min(1).max(64).optional()),
     channel: z.enum(['WHATSAPP', 'OTHER']).optional(),
   })
   .refine(
