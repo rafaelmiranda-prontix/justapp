@@ -1,39 +1,37 @@
 #!/bin/bash
+# Reset completo: schema = só migrations (igual produção na Vercel).
+# NUNCA aponte DATABASE_URL para produção ao rodar isto.
+
+set -e
 
 echo "🗑️  Resetando banco de dados..."
 echo ""
-echo "⚠️  ATENÇÃO: Isso irá APAGAR TODOS OS DADOS do banco!"
+echo "⚠️  ATENÇÃO: Isso irá APAGAR TODOS OS DADOS e recriar o schema via prisma/migrations!"
 echo ""
 read -p "Tem certeza? Digite 'SIM' para confirmar: " confirm
 
 if [ "$confirm" != "SIM" ]; then
-    echo "❌ Operação cancelada."
-    exit 0
+  echo "❌ Operação cancelada."
+  exit 0
 fi
 
 echo ""
 echo "📊 Executando reset..."
 
-# Gerar Prisma Client
 echo "1. Gerando Prisma Client..."
 npm run db:generate
 
-# Reset usando Prisma
 echo ""
-echo "2. Resetando banco de dados..."
+echo "2. Reset (drop + todas as migrations do repositório)..."
 npx prisma migrate reset --force --skip-seed
 
-# Aplicar schema
 echo ""
-echo "3. Aplicando schema..."
-npx prisma db push --force-reset
-
-# Popular com seed
-echo ""
-echo "4. Populando banco com dados iniciais..."
-npm run db:seed
+echo "3. Populando dados iniciais (configs, planos, especialidades, advogados, casos [EXEMPLO])..."
+echo "   (use CASOS=50 ./scripts/reset-database.sh para mais casos — export antes de rodar)"
+npm run seed
 
 echo ""
-echo "✅ Banco de dados resetado com sucesso!"
+echo "✅ Banco resetado. Schema alinhado ao que prod obtém com «migrate deploy»."
 echo ""
+echo "📝 Opcional: admin — npm run admin:create ou npm run admin:seed"
 echo "📝 Próximo passo: npm run dev"

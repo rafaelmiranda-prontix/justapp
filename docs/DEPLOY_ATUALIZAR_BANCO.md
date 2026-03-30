@@ -11,6 +11,34 @@ Se o migrate automático falhar ou você preferir aplicar à mão, use os passos
 
 ---
 
+## Reset completo (staging / dev) — mesmo schema que produção
+
+**Produção** só usa `prisma migrate deploy` sobre `prisma/migrations`; não use `db push` em ambiente que deve espelhar prod.
+
+Para **zerar** um banco (ex.: staging) e recriar só com as migrations do repositório:
+
+1. No `.env`, use o **`DATABASE_URL` do banco que pode apagar** (nunca o de produção, a menos que seja explícito e seguro).
+2. Com Supabase pooler, se o reset falhar, use a URL **direta** (5432) na mesma variável só para este comando.
+3. Rode:
+
+```bash
+./scripts/reset-database.sh
+```
+
+O script acima já roda **`npm run seed`** ao final.
+
+Se preferir só o Prisma (pergunta confirmação no próprio CLI):
+
+```bash
+npm run db:migrate:reset
+```
+
+Nesse caso rode em seguida **`npm run seed`** (configs, planos, especialidades, advogados de teste e **casos de exemplo**; padrão **25** casos marcados `[EXEMPLO]`. Outra quantidade: `CASOS=50 npm run seed`).
+
+**Variáveis de ambiente** (Stripe, auth, etc.) não vêm do banco: para staging “igual prod”, copie as variáveis relevantes do projeto de **Production** para o de **Preview/staging** na Vercel (ou use o mesmo `.env` local de referência **sem** apontar `DATABASE_URL` para prod ao dar reset).
+
+---
+
 ## Passo a passo manual (se precisar)
 
 ### 1) Tentar Prisma (recomendado)
