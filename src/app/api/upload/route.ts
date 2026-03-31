@@ -150,13 +150,18 @@ export async function POST(req: NextRequest) {
         session.user.id
       )
 
-      if (!result.success) {
-        return NextResponse.json({ error: result.error }, { status: 400 })
+      if (!result.success || !result.path) {
+        return NextResponse.json(
+          { error: result.error ?? 'Upload sem path de armazenamento' },
+          { status: 400 }
+        )
       }
 
-      // Retornar URL do BFF autenticado ao invés de signed URL
-      // O BFF sempre valida autenticação e permissões
-      const bffUrl = `/api/chat/attachments/${result.path}`
+      // Retornar URL do BFF (catch-all [...path]); codificar cada segmento para nomes com espaços/acentos
+      const bffUrl = `/api/chat/attachments/${result.path
+        .split('/')
+        .map(encodeURIComponent)
+        .join('/')}`
 
       return NextResponse.json({
         success: true,
