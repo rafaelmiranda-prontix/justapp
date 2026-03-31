@@ -18,6 +18,24 @@ import {
 import { OperationalServiceKind } from '@prisma/client'
 import { OPERATIONAL_KIND_LABEL } from '@/lib/service-requests/labels'
 
+const BRL_NUMBER_FORMATTER = new Intl.NumberFormat('pt-BR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
+function formatCurrencyInput(value: string): string {
+  const digits = value.replace(/\D/g, '')
+  if (!digits) return ''
+  const amount = Number(digits) / 100
+  return BRL_NUMBER_FORMATTER.format(amount)
+}
+
+function parseCurrencyInputToCents(value: string): number | null {
+  const digits = value.replace(/\D/g, '')
+  if (!digits) return null
+  return Number(digits)
+}
+
 export default function PublicarServicoPage() {
   const router = useRouter()
   const [kind, setKind] = useState<OperationalServiceKind>(OperationalServiceKind.AUDIENCIA)
@@ -39,8 +57,7 @@ export default function PublicarServicoPage() {
     setErr(null)
     setSending(true)
     try {
-      const offeredAmountCents =
-        offeredReais.trim() === '' ? null : Math.round(parseFloat(offeredReais.replace(',', '.')) * 100)
+      const offeredAmountCents = parseCurrencyInputToCents(offeredReais)
       const body = {
         kind,
         customKindDescription: kind === OperationalServiceKind.PERSONALIZADO ? customKind : undefined,
@@ -188,7 +205,8 @@ export default function PublicarServicoPage() {
                 id="val"
                 inputMode="decimal"
                 value={offeredReais}
-                onChange={(e) => setOfferedReais(e.target.value)}
+                onChange={(e) => setOfferedReais(formatCurrencyInput(e.target.value))}
+                placeholder="0,00"
               />
             </div>
 

@@ -42,6 +42,11 @@ const CANCEL_SOLICITOR_STATUSES = new Set<ServiceRequestStatus>([
 const SECURITY_POLICY_URL =
   process.env.NEXT_PUBLIC_SECURITY_POLICY_URL || 'https://SEU-LINK-DE-POLITICA-AQUI'
 
+const BRL_FORMATTER = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+})
+
 export default function ServiceRequestDetailPage() {
   const params = useParams()
   const id = params.id as string
@@ -210,6 +215,9 @@ export default function ServiceRequestDetailPage() {
   const downloadPath = (path: string) =>
     `/api/service-requests/attachments/${path.split('/').map(encodeURIComponent).join('/')}`
 
+  const offeredAmountLabel =
+    sr.offeredAmountCents != null ? BRL_FORMATTER.format(sr.offeredAmountCents / 100) : null
+
   return (
     <div className="container max-w-3xl py-8 space-y-6">
       <div className="flex justify-between gap-4 items-start">
@@ -239,9 +247,7 @@ export default function ServiceRequestDetailPage() {
           {[sr.location, sr.comarca, sr.forum].filter(Boolean).map((x, i) => (
             <p key={i}>{x}</p>
           ))}
-          {sr.offeredAmountCents != null && (
-            <p>Valor ofertado: R$ {(sr.offeredAmountCents / 100).toFixed(2)}</p>
-          )}
+          {offeredAmountLabel && <p>Valor ofertado: {offeredAmountLabel}</p>}
           <p>Solicitante: {sr.solicitor.users.name}</p>
           {sr.correspondent && <p>Correspondente: {sr.correspondent.users.name}</p>}
         </CardContent>
@@ -328,10 +334,8 @@ export default function ServiceRequestDetailPage() {
                 {OPERATIONAL_KIND_LABEL[sr.kind]} · {sr.location || sr.comarca || 'Local não informado'} ·{' '}
                 {new Date(sr.scheduledAt).toLocaleString('pt-BR')} · {SERVICE_STATUS_LABEL[sr.status]}
               </p>
-              {sr.offeredAmountCents != null && (
-                <p className="text-muted-foreground">
-                  Valor ofertado: R$ {(sr.offeredAmountCents / 100).toFixed(2)}
-                </p>
+              {offeredAmountLabel && (
+                <p className="text-muted-foreground">Valor ofertado: {offeredAmountLabel}</p>
               )}
             </div>
 
