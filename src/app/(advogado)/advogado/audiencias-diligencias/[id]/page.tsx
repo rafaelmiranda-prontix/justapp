@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { OPERATIONAL_KIND_LABEL, SERVICE_STATUS_LABEL } from '@/lib/service-requests/labels'
+import { cn } from '@/lib/utils'
 import {
   ServiceRequestAttachmentKind,
   ServiceRequestStatus,
@@ -123,7 +124,7 @@ export default function ServiceRequestDetailPage() {
     id: string
     content: string
     createdAt: string
-    author: { name: string }
+    author: { id: string; name: string }
   }>
 
   const history = (data.statusHistory || []) as Array<{
@@ -356,15 +357,25 @@ export default function ServiceRequestDetailPage() {
                   Nenhuma mensagem ainda. Use este espaço para alinhar instruções do serviço.
                 </p>
               )}
-              {messages.map((m) => (
-                <div key={m.id} className="text-sm">
-                  <span className="font-medium">{m.author.name}</span>{' '}
-                  <span className="text-muted-foreground text-xs">
-                    {new Date(m.createdAt).toLocaleString('pt-BR')}
-                  </span>
-                  <p>{m.content}</p>
-                </div>
-              ))}
+              {messages.map((m) => {
+                const isCurrentUser = myUserId === m.author.id
+                return (
+                  <div key={m.id} className={cn('flex', isCurrentUser ? 'justify-end' : 'justify-start')}>
+                    <div
+                      className={cn(
+                        'max-w-[78%] rounded-lg px-3 py-2 text-sm',
+                        isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
+                      )}
+                    >
+                      <p className="text-xs opacity-80">
+                        <span className="font-medium">{m.author.name}</span> ·{' '}
+                        {new Date(m.createdAt).toLocaleString('pt-BR')}
+                      </p>
+                      <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
 
             {chatReadOnly && (

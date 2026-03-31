@@ -23,7 +23,8 @@ export async function GET(
       return NextResponse.json({ error: 'Sem permissão' }, { status: 403 })
     }
 
-    const [attachments, messages, history, reviews, correspondentProfile] = await Promise.all([
+    // Evita burst de conexões com várias queries simultâneas.
+    const [attachments, messages, history, reviews] = await prisma.$transaction([
       prisma.serviceRequestAttachment.findMany({
         where: { requestId: id },
         orderBy: { createdAt: 'asc' },
@@ -42,24 +43,35 @@ export async function GET(
         where: { serviceRequestId: id },
         include: { reviewer: { select: { userId: true } } },
       }),
-      row.correspondentAdvogadoId
-        ? prisma.correspondentProfile.findUnique({
-            where: { advogadoId: row.correspondentAdvogadoId },
-            include: { acceptedKinds: true, regions: true },
-          })
-        : Promise.resolve(null),
     ])
+
+    let correspondentProfile: Awaited<ReturnType<typeof prisma.correspondentProfile.findUnique>> | null =
+      null
+    if (row.correspondentAdvogadoId) {
+      try {
+        correspondentProfile = await prisma.correspondentProfile.findUnique({
+          where: { advogadoId: row.correspondentAdvogadoId },
+          include: { acceptedKinds: true, regions: true },
+        })
+      } catch (profileError) {
+        console.warn('[service-requests id GET] correspondentProfile unavailable:', profileError)
+      }
+    }
 
     let reviewerAvg: { average: number; count: number } | null = null
     if (row.correspondentAdvogadoId) {
-      const agg = await prisma.serviceReview.aggregate({
-        where: { targetAdvogadoId: row.correspondentAdvogadoId },
-        _avg: { rating: true },
-        _count: { _all: true },
-      })
-      reviewerAvg = {
-        average: agg._avg.rating ?? 0,
-        count: agg._count._all,
+      try {
+        const agg = await prisma.serviceReview.aggregate({
+          where: { targetAdvogadoId: row.correspondentAdvogadoId },
+          _avg: { rating: true },
+          _count: { _all: true },
+        })
+        reviewerAvg = {
+          average: agg._avg.rating ?? 0,
+          count: agg._count._all,
+        }
+      } catch (aggError) {
+        console.warn('[service-requests id GET] correspondent rating unavailable:', aggError)
       }
     }
 
