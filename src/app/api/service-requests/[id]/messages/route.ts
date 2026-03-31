@@ -14,7 +14,16 @@ const bodySchema = z.object({
   content: z.string().min(1).max(20000),
 })
 
-const chatAllowedStatuses: ServiceRequestStatus[] = [
+const chatVisibleStatuses: ServiceRequestStatus[] = [
+  ServiceRequestStatus.ACEITO,
+  ServiceRequestStatus.EM_ANDAMENTO,
+  ServiceRequestStatus.REALIZADO,
+  ServiceRequestStatus.AGUARDANDO_VALIDACAO,
+  ServiceRequestStatus.CONCLUIDO,
+  ServiceRequestStatus.CANCELADO,
+]
+
+const chatSendStatuses: ServiceRequestStatus[] = [
   ServiceRequestStatus.ACEITO,
   ServiceRequestStatus.EM_ANDAMENTO,
   ServiceRequestStatus.REALIZADO,
@@ -37,7 +46,7 @@ export async function GET(
     if (!canAccessServiceRequest(userId, session.user.role ?? 'CIDADAO', row)) {
       return NextResponse.json({ error: 'Sem permissão' }, { status: 403 })
     }
-    if (!chatAllowedStatuses.includes(row.status)) {
+    if (!chatVisibleStatuses.includes(row.status)) {
       return NextResponse.json({ error: 'Chat indisponível neste status.' }, { status: 400 })
     }
 
@@ -78,8 +87,26 @@ export async function POST(
     if (!canAccessServiceRequest(userId, session.user.role ?? 'CIDADAO', row)) {
       return NextResponse.json({ error: 'Sem permissão' }, { status: 403 })
     }
-    if (!chatAllowedStatuses.includes(row.status)) {
+    if (!chatVisibleStatuses.includes(row.status)) {
       return NextResponse.json({ error: 'Chat indisponível neste status.' }, { status: 400 })
+    }
+    const isAdmin = (session.user.role ?? 'CIDADAO') === 'ADMIN'
+    const isSolicitor = row.solicitor.userId === userId
+    const isCorrespondent = row.correspondent?.userId === userId
+    if (isAdmin) {
+      return NextResponse.json(
+        { error: 'Admin possui acesso somente leitura ao chat do serviço.' },
+        { status: 403 }
+      )
+    }
+    if (!isSolicitor && !isCorrespondent) {
+      return NextResponse.json({ error: 'Sem permissão para enviar mensagens.' }, { status: 403 })
+    }
+    if (!chatSendStatuses.includes(row.status)) {
+      return NextResponse.json(
+        { error: 'Envio bloqueado neste status. O histórico permanece disponível.' },
+        { status: 400 }
+      )
     }
 
     const { content } = bodySchema.parse(await req.json())

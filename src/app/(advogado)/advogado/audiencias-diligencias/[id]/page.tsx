@@ -15,19 +15,31 @@ import {
 } from '@prisma/client'
 import { useSession } from 'next-auth/react'
 
-const CHAT_STATUSES = new Set<ServiceRequestStatus>([
+const CHAT_VISIBLE_STATUSES = new Set<ServiceRequestStatus>([
+  ServiceRequestStatus.ACEITO,
+  ServiceRequestStatus.EM_ANDAMENTO,
+  ServiceRequestStatus.REALIZADO,
+  ServiceRequestStatus.AGUARDANDO_VALIDACAO,
+  ServiceRequestStatus.CONCLUIDO,
+  ServiceRequestStatus.CANCELADO,
+])
+
+const CHAT_SEND_STATUSES = new Set<ServiceRequestStatus>([
   ServiceRequestStatus.ACEITO,
   ServiceRequestStatus.EM_ANDAMENTO,
   ServiceRequestStatus.REALIZADO,
   ServiceRequestStatus.AGUARDANDO_VALIDACAO,
 ])
 
-const EVIDENCE_STATUSES = CHAT_STATUSES
+const EVIDENCE_STATUSES = CHAT_SEND_STATUSES
 
 const CANCEL_SOLICITOR_STATUSES = new Set<ServiceRequestStatus>([
   ServiceRequestStatus.PUBLICADO,
   ServiceRequestStatus.ACEITO,
 ])
+
+const SECURITY_POLICY_URL =
+  process.env.NEXT_PUBLIC_SECURITY_POLICY_URL || 'https://SEU-LINK-DE-POLITICA-AQUI'
 
 export default function ServiceRequestDetailPage() {
   const params = useParams()
@@ -91,6 +103,8 @@ export default function ServiceRequestDetailPage() {
   }
 
   const myUserId = session?.user?.id
+  const myRole = session?.user?.role
+  const isAdmin = myRole === 'ADMIN'
   const isSolicitor = myUserId === sr.solicitor.userId
   const isCorr = sr.correspondent && myUserId === sr.correspondent.userId
   const canAccept =
@@ -136,7 +150,13 @@ export default function ServiceRequestDetailPage() {
     else load()
   }
 
+  const showChat = CHAT_VISIBLE_STATUSES.has(sr.status)
+  const chatReadOnly = sr.status === ServiceRequestStatus.CONCLUIDO || sr.status === ServiceRequestStatus.CANCELADO
+  const canSendChat =
+    CHAT_SEND_STATUSES.has(sr.status) && !isAdmin && (Boolean(isSolicitor) || Boolean(isCorr))
+
   async function postChat() {
+    if (!canSendChat) return
     if (!chatText.trim()) return
     const r = await fetch(`/api/service-requests/${id}/messages`, {
       method: 'POST',
@@ -188,8 +208,6 @@ export default function ServiceRequestDetailPage() {
 
   const downloadPath = (path: string) =>
     `/api/service-requests/attachments/${path.split('/').map(encodeURIComponent).join('/')}`
-
-  const showChat = CHAT_STATUSES.has(sr.status)
 
   return (
     <div className="container max-w-3xl py-8 space-y-6">
@@ -297,13 +315,47 @@ export default function ServiceRequestDetailPage() {
         </CardContent>
       </Card>
 
-      {showChat && (isSolicitor || isCorr) && (
+      {showChat && (isSolicitor || isCorr || isAdmin) && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Chat</CardTitle>
+            <CardTitle className="text-base">Chat do serviço</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            <div className="rounded-md border bg-muted/40 p-3 text-sm">
+              <p className="font-medium">Resumo do serviço</p>
+              <p className="text-muted-foreground">
+                {OPERATIONAL_KIND_LABEL[sr.kind]} · {sr.location || sr.comarca || 'Local não informado'} ·{' '}
+                {new Date(sr.scheduledAt).toLocaleString('pt-BR')} · {SERVICE_STATUS_LABEL[sr.status]}
+              </p>
+              {sr.offeredAmountCents != null && (
+                <p className="text-muted-foreground">
+                  Valor ofertado: R$ {(sr.offeredAmountCents / 100).toFixed(2)}
+                </p>
+              )}
+            </div>
+
+            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+              <p className="font-medium">Boas práticas de segurança</p>
+              <p>
+                Use este chat apenas para informações relacionadas ao serviço. Evite compartilhar
+                senhas, dados bancários sensíveis ou informações pessoais além do necessário.
+              </p>
+              <a
+                href={SECURITY_POLICY_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="underline"
+              >
+                Política de Segurança
+              </a>
+            </div>
+
             <div className="space-y-2 max-h-64 overflow-y-auto border rounded p-2">
+              {messages.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma mensagem ainda. Use este espaço para alinhar instruções do serviço.
+                </p>
+              )}
               {messages.map((m) => (
                 <div key={m.id} className="text-sm">
                   <span className="font-medium">{m.author.name}</span>{' '}
@@ -314,8 +366,30 @@ export default function ServiceRequestDetailPage() {
                 </div>
               ))}
             </div>
-            <Textarea value={chatText} onChange={(e) => setChatText(e.target.value)} rows={2} />
-            <Button type="button" onClick={postChat}>
+
+            {chatReadOnly && (
+              <p className="text-xs text-muted-foreground">
+                Chat em modo histórico: novas mensagens estão bloqueadas após conclusão/cancelamento.
+              </p>
+            )}
+            {isAdmin && (
+              <p className="text-xs text-muted-foreground">
+                Modo auditoria: administradores possuem acesso somente leitura neste chat.
+              </p>
+            )}
+
+            <Textarea
+              value={chatText}
+              onChange={(e) => setChatText(e.target.value)}
+              rows={2}
+              disabled={!canSendChat}
+              placeholder={
+                canSendChat
+                  ? 'Digite uma mensagem'
+                  : 'Envio desabilitado para este perfil/status'
+              }
+            />
+            <Button type="button" onClick={postChat} disabled={!canSendChat || !chatText.trim()}>
               Enviar
             </Button>
           </CardContent>

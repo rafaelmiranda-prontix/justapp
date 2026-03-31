@@ -80,6 +80,14 @@ export async function POST(
           note: 'Aceito pelo correspondente',
         },
       })
+      await tx.serviceRequestMessage.create({
+        data: {
+          requestId: id,
+          authorUserId: session.user.id,
+          content:
+            'Sistema: Chat do serviço iniciado. Utilize este espaço para alinhar instruções, documentos e atualizações da diligência com segurança e objetividade.',
+        },
+      })
       return row
     })
 
