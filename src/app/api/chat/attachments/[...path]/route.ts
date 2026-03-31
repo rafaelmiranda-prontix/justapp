@@ -6,15 +6,16 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 
 /**
- * GET /api/chat/attachments/[path]
+ * GET /api/chat/attachments/[...path]
  * BFF autenticado para servir arquivos anexos
  * Verifica autenticação e permissões antes de servir o arquivo
- * 
+ *
  * Path format: {matchId}/{userId}/{timestamp}-{randomId}.{ext}
+ * (catch-all: cada segmento da URL é um elemento do array `path`)
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string }> }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -23,10 +24,16 @@ export async function GET(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const { path } = await params
+    const { path: segments } = await params
+
+    if (!segments?.length) {
+      return NextResponse.json({ error: 'Path inválido' }, { status: 400 })
+    }
+
+    const storagePath = segments.join('/')
 
     // Extrair matchId do path (formato: matchId/userId/timestamp-randomId.ext)
-    const pathParts = path.split('/')
+    const pathParts = storagePath.split('/')
     if (pathParts.length < 2) {
       return NextResponse.json({ error: 'Path inválido' }, { status: 400 })
     }
@@ -78,7 +85,7 @@ export async function GET(
     }
 
     // Buscar o arquivo do Supabase Storage
-    const fileResult = await getChatAttachmentFile(path)
+    const fileResult = await getChatAttachmentFile(storagePath)
 
     if (!fileResult.success || !fileResult.data) {
       return NextResponse.json(

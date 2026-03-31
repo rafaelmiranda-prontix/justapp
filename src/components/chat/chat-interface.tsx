@@ -44,7 +44,9 @@ export function ChatInterface({
   const [newMessage, setNewMessage] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pollingInterval = useRef<NodeJS.Timeout>()
   const { toast } = useToast()
@@ -88,12 +90,52 @@ export function ChatInterface({
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!newMessage.trim() || isSending) return
+    if ((!newMessage.trim() && !selectedFile && !attachmentUrl) || isSending || isUploading) {
+      return
+    }
 
-    // Validação de tamanho
     if (newMessage.length > 2000) {
       return
     }
+
+    const draftText = newMessage
+    let messageAttachment: string | null = attachmentUrl
+
+    if (selectedFile) {
+      setIsUploading(true)
+      try {
+        const formData = new FormData()
+        formData.append('file', selectedFile)
+        formData.append('matchId', matchId)
+
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        })
+        const uploadResult = await uploadRes.json()
+
+        if (!uploadRes.ok) {
+          throw new Error(uploadResult.error || 'Erro ao fazer upload')
+        }
+        if (!uploadResult.data?.url) {
+          throw new Error('URL do anexo não foi retornada pelo servidor')
+        }
+        messageAttachment = uploadResult.data.url
+      } catch (err) {
+        toast({
+          title: 'Erro ao fazer upload',
+          description: err instanceof Error ? err.message : 'Tente novamente',
+          variant: 'destructive',
+        })
+        return
+      } finally {
+        setIsUploading(false)
+      }
+    }
+
+    const conteudo =
+      draftText.trim() || (messageAttachment ? '📎 Arquivo anexado' : '')
+    if (!conteudo) return
 
     setIsSending(true)
 
@@ -102,8 +144,8 @@ export function ChatInterface({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          conteudo: newMessage,
-          anexoUrl: attachmentUrl,
+          conteudo,
+          anexoUrl: messageAttachment,
         }),
       })
 
@@ -112,6 +154,7 @@ export function ChatInterface({
       if (result.success) {
         setNewMessage('')
         setAttachmentUrl(null)
+        setSelectedFile(null)
         fetchMessages()
       }
     } catch (error) {
@@ -260,8 +303,18 @@ export function ChatInterface({
 
           <FileUpload
             matchId={matchId}
+            controlled
+            selectedFile={selectedFile}
+            onFileSelect={(file) => {
+              setSelectedFile(file)
+              setAttachmentUrl(null)
+            }}
+            onClear={() => {
+              setSelectedFile(null)
+              setAttachmentUrl(null)
+            }}
             onUploadError={(error) => toast({ title: 'Erro', description: error, variant: 'destructive' })}
-            disabled={isSending}
+            disabled={isSending || isUploading}
           />
 
           <form onSubmit={handleSendMessage} className="flex gap-2 w-full">
@@ -272,11 +325,17 @@ export function ChatInterface({
             placeholder="Digite sua mensagem..."
             className="min-h-[60px] max-h-[120px] resize-none"
             maxLength={2000}
-            disabled={isSending}
+            disabled={isSending || isUploading}
           />
           <div className="flex flex-col gap-2">
-            <Button type="submit" size="icon" disabled={isSending || !newMessage.trim()}>
-              {isSending ? (
+            <Button
+              type="submit"
+              size="icon"
+              disabled={
+                isSending || isUploading || (!newMessage.trim() && !selectedFile && !attachmentUrl)
+              }
+            >
+              {isSending || isUploading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Send className="h-4 w-4" />
