@@ -40,6 +40,7 @@ Documentação relacionada: [CHAT_CIDADAO_ADVOGADO.md](CHAT_CIDADAO_ADVOGADO.md)
 - **Planos e assinatura** (Stripe): limites de leads, upgrade/downgrade ([STRIPE_SETUP.md](STRIPE_SETUP.md)).
 - Perfil público, especialidades, onboarding, suporte ao advogado (canais configuráveis).
 - Fluxo **Beta / pré-aprovação**: advogado pode estar `preAprovado` antes de `aprovado` ([workflow-n8n-pre-aprovacao.md](workflow-n8n-pre-aprovacao.md)).
+- **Audiências e diligências** (`/advogado/audiencias-diligencias`): perfil de **correspondente** (regiões, tipos aceitos, valor mínimo); **publicação** de serviços operacionais; **oportunidades** para correspondentes; **aceite** com trava concorrente; **chat interno**, **status**, **anexos** (prefixo `service-requests/` no bucket `chat-attachments` do Supabase); **avaliação** mútua após conclusão. APIs REST em `/api/service-requests/*`. Backlog: [features/backlog_modulo_audiencias_diligencias.md](features/backlog_modulo_audiencias_diligencias.md).
 
 ---
 
@@ -61,7 +62,7 @@ Documentação relacionada: [CHAT_CIDADAO_ADVOGADO.md](CHAT_CIDADAO_ADVOGADO.md)
 
 ## Notificações
 
-- Modelo `Notification` com tipos (nova mensagem no chat, match, mudança de caso, mediação, etc.).
+- Modelo `Notification` com tipos (nova mensagem no chat, match, mudança de caso, mediação, serviços operacionais aceitos/mensagens/status etc.).
 - Hooks/APIs para leitura e arquivo.
 
 ---
@@ -83,6 +84,7 @@ Acesso apenas com `role === ADMIN`. Principais telas:
 | `/admin/chat-config` | Modo de chat (ex.: MVP vs Pusher). |
 | `/admin/chat-mensagens` | Auditoria de mensagens **cidadão↔advogado** (integridade por match). |
 | `/admin/suporte` | **Inbox de suporte WhatsApp** — conversas e mensagens ingeridas pela API `/api/suporte/*`. |
+| `/admin/audiencias-diligencias` | Serviços operacionais (audiências/diligências): listagem, detalhe, trilha de auditoria, alteração de status com justificativa. |
 | `/admin/analytics` | Funil / métricas. |
 | `/admin/auditoria` | `security_logs` e trilha de ações. |
 | `/admin/design-system` | Referência de UI (se em uso). |

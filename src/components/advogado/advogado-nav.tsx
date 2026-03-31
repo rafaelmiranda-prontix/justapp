@@ -15,6 +15,7 @@ import {
   User,
   BarChart3,
   HelpCircle,
+  CalendarDays,
 } from 'lucide-react'
 
 export const navItems: NavItem[] = [
@@ -47,6 +48,11 @@ export const navItems: NavItem[] = [
     title: 'Assinatura',
     href: '/advogado/assinatura',
     icon: CreditCard,
+  },
+  {
+    title: 'Audiências e diligências',
+    href: '/advogado/audiencias-diligencias',
+    icon: CalendarDays,
   },
   {
     title: 'Suporte',

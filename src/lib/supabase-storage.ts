@@ -37,6 +37,8 @@ const supabase = supabaseUrl && supabaseServiceKey
 // IMPORTANTE: Use o nome exato do bucket criado no Supabase
 const AUDIO_BUCKET = 'audio-messages'
 const CHAT_ATTACHMENTS_BUCKET = 'chat-attachments' // Bucket privado para anexos de chat
+/** Prefixo dentro do mesmo bucket (evita bucket extra). Path: service-requests/{requestId}/{userId}/file */
+const SERVICE_REQUEST_STORAGE_PREFIX = 'service-requests'
 
 interface UploadAudioResult {
   success: boolean
@@ -549,6 +551,95 @@ export async function getChatAttachmentFile(
       success: false,
       error: error.message || 'Erro ao baixar arquivo',
     }
+  }
+}
+
+interface UploadServiceRequestAttachmentResult {
+  success: boolean
+  path?: string
+  error?: string
+}
+
+/**
+ * Upload de anexo de audiências/diligências — mesmo bucket de chat, prefixo service-requests/
+ */
+export async function uploadServiceRequestAttachmentToSupabase(
+  file: File,
+  requestId: string,
+  userId: string
+): Promise<UploadServiceRequestAttachmentResult> {
+  if (!supabase) {
+    return {
+      success: false,
+      error: 'Supabase não configurado. Configure NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY',
+    }
+  }
+
+  if (supabaseServiceKey && !supabaseServiceKey.startsWith('eyJ')) {
+    return {
+      success: false,
+      error: 'A service role key está incorreta.',
+    }
+  }
+
+  try {
+    const MAX_SIZE = 20 * 1024 * 1024
+    if (file.size > MAX_SIZE) {
+      return {
+        success: false,
+        error: `Arquivo muito grande. Máximo: ${MAX_SIZE / 1024 / 1024}MB`,
+      }
+    }
+
+    const ALLOWED_TYPES = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain',
+    ]
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return { success: false, error: 'Tipo de arquivo não permitido' }
+    }
+
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 255)
+    const timestamp = Date.now()
+    const randomId = Math.random().toString(36).substring(2, 15)
+    const fileExtension = sanitizedName.split('.').pop() || 'bin'
+    const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt']
+    const ext = `.${fileExtension}`.toLowerCase()
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      return { success: false, error: 'Extensão não permitida' }
+    }
+
+    const filename = `${SERVICE_REQUEST_STORAGE_PREFIX}/${requestId}/${userId}/${timestamp}-${randomId}.${fileExtension}`
+    const arrayBuffer = await file.arrayBuffer()
+    const fileBlob = new File([arrayBuffer], filename, { type: file.type })
+
+    const { data, error } = await supabase.storage
+      .from(CHAT_ATTACHMENTS_BUCKET)
+      .upload(filename, fileBlob, {
+        contentType: file.type,
+        upsert: false,
+        cacheControl: '3600',
+      })
+
+    if (error) {
+      logger.error('[Supabase Storage] service-request upload:', error)
+      return { success: false, error: error.message || 'Erro no upload' }
+    }
+
+    return { success: true, path: data.path }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : 'Erro no upload'
+    return { success: false, error: msg }
   }
 }
 

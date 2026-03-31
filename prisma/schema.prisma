@@ -74,6 +74,11 @@ model advogados {
   matches                 matches[]
   historicoAssinaturas    historicoAssinaturas[]
   emailActionTokens       EmailActionToken[]
+  correspondentProfile    CorrespondentProfile?
+  serviceRequestsSolicitor ServiceRequest[]      @relation("ServiceRequestSolicitor")
+  serviceRequestsCorrespondent ServiceRequest[]  @relation("ServiceRequestCorrespondent")
+  serviceReviewsGiven     ServiceReview[]        @relation("ServiceReviewReviewer")
+  serviceReviewsAbout     ServiceReview[]        @relation("ServiceReviewTarget")
 }
 
 /// Tokens únicos para ações a partir de e-mails (ex.: aceitar/recusar convite beta).
@@ -366,6 +371,10 @@ model users {
   emailActionTokensCreated EmailActionToken[] @relation("EmailActionTokenCreatedBy")
   supportContacts      SupportContact[]
   supportConversations SupportConversation[]
+  serviceRequestMessages ServiceRequestMessage[]
+  serviceRequestStatusEvents ServiceRequestStatusHistory[]
+  serviceRequestAttachmentsUploaded ServiceRequestAttachment[]
+  serviceRequestsCreated            ServiceRequest[]             @relation("ServiceRequestCreatedBy")
 }
 
 model Notification {
@@ -480,6 +489,10 @@ enum NotificationType {
   ADMIN_MEDIATION_ASSIGNED
   ADMIN_ACTION_REQUIRED
   SYSTEM
+  SERVICE_REQUEST_ACCEPTED
+  SERVICE_REQUEST_MESSAGE
+  SERVICE_REQUEST_STATUS
+  SERVICE_REQUEST_PENDING_COMPLETION
 }
 
 enum UserStatus {
@@ -593,4 +606,171 @@ model security_logs {
   @@index([createdAt])
   @@index([severity])
   @@map("security_logs")
+}
+
+// --- Audiências e diligências (correspondentes / solicitações operacionais) ---
+
+enum OperationalServiceKind {
+  AUDIENCIA
+  PROTOCOLO
+  COPIA
+  DILIGENCIA_FORUM
+  DESPACHO
+  PERSONALIZADO
+}
+
+enum ServiceRequestStatus {
+  PUBLICADO
+  ACEITO
+  EM_ANDAMENTO
+  REALIZADO
+  AGUARDANDO_VALIDACAO
+  CONCLUIDO
+  CANCELADO
+}
+
+enum ServiceRequestAttachmentKind {
+  PUBLICACAO
+  EVIDENCIA
+}
+
+/// Perfil de correspondente (1:1 com advogado).
+model CorrespondentProfile {
+  id               String                       @id @default(cuid())
+  advogadoId       String                       @unique
+  isActive         Boolean                      @default(false)
+  /// Valor mínimo desejado em centavos (informativo no MVP).
+  minFeeCents      Int?
+  /// Disponibilidade por dia/período (JSON validado na API).
+  availabilityJson Json?
+  createdAt        DateTime                     @default(now())
+  updatedAt        DateTime                     @updatedAt
+  advogados        advogados                    @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+  regions          CorrespondentRegion[]
+  acceptedKinds    CorrespondentAcceptedKind[]
+
+  @@map("correspondent_profiles")
+}
+
+model CorrespondentRegion {
+  id        String             @id @default(cuid())
+  profileId String
+  cidade    String?
+  estado    String?
+  comarca   String?
+  forum     String?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  profile   CorrespondentProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([estado, cidade])
+  @@map("correspondent_regions")
+}
+
+model CorrespondentAcceptedKind {
+  id        String               @id @default(cuid())
+  profileId String
+  kind      OperationalServiceKind
+  profile   CorrespondentProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, kind])
+  @@map("correspondent_accepted_kinds")
+}
+
+model ServiceRequest {
+  id                       String                 @id @default(cuid())
+  solicitorAdvogadoId       String
+  correspondentAdvogadoId String?
+  createdByUserId           String
+  kind                     OperationalServiceKind
+  customKindDescription    String?
+  title                    String
+  description              String
+  scheduledAt              DateTime
+  location                 String?
+  comarca                  String?
+  forum                    String?
+  offeredAmountCents       Int?
+  acceptDeadlineAt         DateTime
+  status                   ServiceRequestStatus   @default(PUBLICADO)
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  solicitor                advogados              @relation("ServiceRequestSolicitor", fields: [solicitorAdvogadoId], references: [id], onDelete: Cascade)
+  correspondent            advogados?             @relation("ServiceRequestCorrespondent", fields: [correspondentAdvogadoId], references: [id], onDelete: SetNull)
+  createdBy                users                  @relation("ServiceRequestCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  attachments              ServiceRequestAttachment[]
+  messages                 ServiceRequestMessage[]
+  statusHistory            ServiceRequestStatusHistory[]
+  reviews                  ServiceReview[]
+
+  @@index([status, scheduledAt])
+  @@index([solicitorAdvogadoId])
+  @@index([correspondentAdvogadoId])
+  @@index([status, kind])
+  @@map("service_requests")
+}
+
+model ServiceRequestAttachment {
+  id              String                     @id @default(cuid())
+  requestId       String
+  uploadedByUserId String
+  storagePath     String
+  originalName    String
+  mimeType        String
+  sizeBytes       Int
+  kind            ServiceRequestAttachmentKind
+  createdAt       DateTime                   @default(now())
+  request         ServiceRequest             @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  uploadedBy      users                      @relation(fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@map("service_request_attachments")
+}
+
+model ServiceRequestMessage {
+  id           String         @id @default(cuid())
+  requestId    String
+  authorUserId String
+  content      String         @db.Text
+  createdAt    DateTime       @default(now())
+  request      ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  author       users          @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt])
+  @@map("service_request_messages")
+}
+
+model ServiceRequestStatusHistory {
+  id               String               @id @default(cuid())
+  requestId        String
+  fromStatus       ServiceRequestStatus?
+  toStatus         ServiceRequestStatus
+  actorUserId      String
+  note             String?
+  isAdminOverride  Boolean              @default(false)
+  adminReason      String?
+  createdAt        DateTime             @default(now())
+  request          ServiceRequest       @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  actor            users                @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt])
+  @@map("service_request_status_history")
+}
+
+model ServiceReview {
+  id                  String         @id @default(cuid())
+  serviceRequestId    String
+  reviewerAdvogadoId  String
+  targetAdvogadoId    String
+  rating              Int
+  comment             String?
+  createdAt           DateTime       @default(now())
+  serviceRequest      ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  reviewer            advogados      @relation("ServiceReviewReviewer", fields: [reviewerAdvogadoId], references: [id], onDelete: Cascade)
+  target              advogados      @relation("ServiceReviewTarget", fields: [targetAdvogadoId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceRequestId, reviewerAdvogadoId])
+  @@index([targetAdvogadoId])
+  @@map("service_reviews")
 }

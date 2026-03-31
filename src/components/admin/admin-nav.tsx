@@ -25,6 +25,7 @@ import {
   ClipboardList,
   MoreHorizontal,
   Gauge,
+  CalendarDays,
 } from 'lucide-react'
 
 const navItems = [
@@ -77,6 +78,11 @@ const navItems = [
     title: 'Suporte WhatsApp',
     href: '/admin/suporte',
     icon: MessageSquare,
+  },
+  {
+    title: 'Audiências / diligências',
+    href: '/admin/audiencias-diligencias',
+    icon: CalendarDays,
   },
   {
     title: 'Planos',

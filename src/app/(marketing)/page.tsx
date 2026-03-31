@@ -18,7 +18,7 @@ import {
   Sparkles,
   Target,
   Award,
-  BarChart3,
+  CalendarDays,
 } from 'lucide-react'
 import { AnonymousChatButton } from '@/components/anonymous-chat/anonymous-chat-button'
 import { AnonymousChatSheet } from '@/components/anonymous-chat/anonymous-chat-sheet'
@@ -97,6 +97,7 @@ const benefitsAdvogado = [
   'Plano flexível: gratuito ou premium',
   'Atendimento em todo o Brasil',
   'Aumente sua base de clientes',
+  'Audiências e diligências: publique demandas ou atue como correspondente em outras comarcas',
 ]
 
 const stats = [
@@ -365,7 +366,10 @@ export default function LandingPage() {
       </section>
 
       {/* Benefits - Advogado */}
-      <section className="container mx-auto px-4 py-20 md:py-28">
+      <section
+        id="audiencias-diligencias"
+        className="container mx-auto px-4 py-20 md:py-28 scroll-mt-20"
+      >
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
@@ -383,6 +387,32 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+
+          <Card className="mt-10 border-2 border-primary/25 bg-primary/5">
+            <CardContent className="pt-8 pb-8 md:flex md:items-center md:gap-8">
+              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/15 shrink-0 mb-6 md:mb-0 mx-auto md:mx-0">
+                <CalendarDays className="h-8 w-8 text-primary" />
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-2xl font-semibold mb-2">
+                  Audiências e diligências entre advogados
+                </h3>
+                <p className="text-muted-foreground text-lg mb-4">
+                  Precisa de correspondente em outra cidade? Quer atuar como correspondente?
+                  No painel, você publica serviços operacionais (audiência, protocolo, cópias,
+                  diligências) ou aceita oportunidades compatíveis com sua região — com chat,
+                  status, anexos e histórico na própria plataforma.
+                </p>
+                <Button asChild>
+                  <Link href="/signup/advogado">
+                    Criar conta e acessar o módulo
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="text-center mt-12">
             <Button size="lg" variant="outline" className="text-lg px-8 border-2" asChild>
               <Link href="/signup/advogado">
