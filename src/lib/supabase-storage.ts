@@ -36,7 +36,9 @@ const supabase = supabaseUrl && supabaseServiceKey
 // Nome dos buckets - Supabase Storage é case-sensitive
 // IMPORTANTE: Use o nome exato do bucket criado no Supabase
 const AUDIO_BUCKET = 'audio-messages'
-const CHAT_ATTACHMENTS_BUCKET = 'chat-attachments' // Bucket privado para anexos de chat
+/** Anexos de chat e de audiências/diligências (paths: `{matchId}/...` vs `service-requests/...`). */
+const CHAT_ATTACHMENTS_BUCKET =
+  process.env.SUPABASE_STORAGE_ATTACHMENTS_BUCKET?.trim() || 'chat-attachments'
 /** Prefixo dentro do mesmo bucket (evita bucket extra). Path: service-requests/{requestId}/{userId}/file */
 const SERVICE_REQUEST_STORAGE_PREFIX = 'service-requests'
 
@@ -633,7 +635,21 @@ export async function uploadServiceRequestAttachmentToSupabase(
 
     if (error) {
       logger.error('[Supabase Storage] service-request upload:', error)
-      return { success: false, error: error.message || 'Erro no upload' }
+      const raw = error.message || 'Erro no upload'
+      if (
+        raw.includes('Bucket not found') ||
+        String((error as { statusCode?: string }).statusCode) === '404'
+      ) {
+        return {
+          success: false,
+          error:
+            `Bucket "${CHAT_ATTACHMENTS_BUCKET}" não existe no Supabase Storage. ` +
+            `Crie um bucket privado com esse nome (Dashboard → Storage → New bucket) ou defina ` +
+            `SUPABASE_STORAGE_ATTACHMENTS_BUCKET com o nome do bucket que você usa. ` +
+            `Guia: docs/SUPABASE_CHAT_ATTACHMENTS_SETUP.md`,
+        }
+      }
+      return { success: false, error: raw }
     }
 
     return { success: true, path: data.path }

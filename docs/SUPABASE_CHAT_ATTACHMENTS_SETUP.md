@@ -61,6 +61,18 @@ chat-attachments/
           └── {timestamp}-{randomId}.{ext}
 ```
 
+**Audiências e diligências** usam o **mesmo bucket** (ou o nome definido em `SUPABASE_STORAGE_ATTACHMENTS_BUCKET`), com prefixo separado:
+
+```
+chat-attachments/
+  └── service-requests/
+      └── {serviceRequestId}/
+          └── {userId}/
+              └── {timestamp}-{randomId}.{ext}
+```
+
+Se o bucket no seu projeto tiver **outro nome**, defina no `.env`: `SUPABASE_STORAGE_ATTACHMENTS_BUCKET=nome-do-bucket` e ajuste as políticas SQL abaixo trocando `chat-attachments` por esse nome.
+
 Exemplo:
 ```
 chat-attachments/
