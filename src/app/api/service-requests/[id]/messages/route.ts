@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { ServiceRequestStatus } from '@prisma/client'
+import { ServiceRequestAttachmentKind, ServiceRequestStatus } from '@prisma/client'
 import { z } from 'zod'
 import {
   canAccessServiceRequest,
@@ -12,6 +12,7 @@ import { notifyServiceRequestEvent } from '@/lib/service-requests/notify'
 
 const bodySchema = z.object({
   content: z.string().min(1).max(20000),
+  attachmentId: z.string().cuid().optional(),
 })
 
 const chatVisibleStatuses: ServiceRequestStatus[] = [
@@ -58,7 +59,12 @@ export async function GET(
       orderBy: { createdAt: 'desc' },
       take: take + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      include: { author: { select: { id: true, name: true } } },
+      include: {
+        author: { select: { id: true, name: true } },
+        attachment: {
+          select: { id: true, originalName: true, storagePath: true, kind: true },
+        },
+      },
     })
     const hasMore = messages.length > take
     const list = hasMore ? messages.slice(0, take) : messages
@@ -109,14 +115,33 @@ export async function POST(
       )
     }
 
-    const { content } = bodySchema.parse(await req.json())
+    const { content, attachmentId } = bodySchema.parse(await req.json())
+    if (attachmentId) {
+      const att = await prisma.serviceRequestAttachment.findFirst({
+        where: {
+          id: attachmentId,
+          requestId: id,
+          kind: ServiceRequestAttachmentKind.CHAT,
+        },
+      })
+      if (!att) {
+        return NextResponse.json({ error: 'Anexo inválido para este chat.' }, { status: 400 })
+      }
+    }
+
     const msg = await prisma.serviceRequestMessage.create({
       data: {
         requestId: id,
         authorUserId: userId,
         content: content.trim(),
+        attachmentId: attachmentId ?? null,
       },
-      include: { author: { select: { id: true, name: true } } },
+      include: {
+        author: { select: { id: true, name: true } },
+        attachment: {
+          select: { id: true, originalName: true, storagePath: true, kind: true },
+        },
+      },
     })
 
     const recipientUserIds: string[] = []

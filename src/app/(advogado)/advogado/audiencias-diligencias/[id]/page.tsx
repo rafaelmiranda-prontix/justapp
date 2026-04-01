@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,13 +8,28 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { OPERATIONAL_KIND_LABEL, SERVICE_STATUS_LABEL } from '@/lib/service-requests/labels'
-import { cn } from '@/lib/utils'
 import {
   ServiceRequestAttachmentKind,
   ServiceRequestStatus,
+  OperationalServiceKind,
 } from '@prisma/client'
 import { useSession } from 'next-auth/react'
+import { ServiceRequestChat } from '@/components/service-requests/service-request-chat'
 
 const CHAT_VISIBLE_STATUSES = new Set<ServiceRequestStatus>([
   ServiceRequestStatus.ACEITO,
@@ -39,13 +54,70 @@ const CANCEL_SOLICITOR_STATUSES = new Set<ServiceRequestStatus>([
   ServiceRequestStatus.ACEITO,
 ])
 
-const SECURITY_POLICY_URL =
-  process.env.NEXT_PUBLIC_SECURITY_POLICY_URL || 'https://SEU-LINK-DE-POLITICA-AQUI'
+const POST_ACCEPT_EDIT_STATUSES = new Set<ServiceRequestStatus>([
+  ServiceRequestStatus.ACEITO,
+  ServiceRequestStatus.EM_ANDAMENTO,
+  ServiceRequestStatus.REALIZADO,
+  ServiceRequestStatus.AGUARDANDO_VALIDACAO,
+])
+
+const SENSITIVE_PATCH_KEYS = new Set([
+  'scheduledAt',
+  'location',
+  'comarca',
+  'forum',
+  'offeredAmountCents',
+  'kind',
+  'acceptDeadlineAt',
+  'customKindDescription',
+])
 
 const BRL_FORMATTER = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',
 })
+
+const BRL_NUMBER_FORMATTER = new Intl.NumberFormat('pt-BR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
+function formatCurrencyInput(value: string): string {
+  const digits = value.replace(/\D/g, '')
+  if (!digits) return ''
+  const amount = Number(digits) / 100
+  return BRL_NUMBER_FORMATTER.format(amount)
+}
+
+function parseCurrencyInputToCents(value: string): number | null {
+  const digits = value.replace(/\D/g, '')
+  if (!digits) return null
+  return Number(digits)
+}
+
+function centsToCurrencyMask(cents: number): string {
+  return BRL_NUMBER_FORMATTER.format(cents / 100)
+}
+
+function toDatetimeLocal(iso: string): string {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+type EditSnapshot = {
+  title: string
+  description: string
+  solicitorNotes: string
+  kind: OperationalServiceKind
+  customKind: string
+  scheduledAt: string
+  acceptDeadlineAt: string
+  location: string
+  comarca: string
+  forum: string
+  offeredReais: string
+}
 
 export default function ServiceRequestDetailPage() {
   const params = useParams()
@@ -55,9 +127,24 @@ export default function ServiceRequestDetailPage() {
   const [err, setErr] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
 
-  const [chatText, setChatText] = useState('')
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewComment, setReviewComment] = useState('')
+
+  const [editOpen, setEditOpen] = useState(false)
+  const [editSaving, setEditSaving] = useState(false)
+  const editSnap = useRef<EditSnapshot | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editSolicitorNotes, setEditSolicitorNotes] = useState('')
+  const [editKind, setEditKind] = useState<OperationalServiceKind>(OperationalServiceKind.AUDIENCIA)
+  const [editCustomKind, setEditCustomKind] = useState('')
+  const [editScheduledAt, setEditScheduledAt] = useState('')
+  const [editAcceptDeadlineAt, setEditAcceptDeadlineAt] = useState('')
+  const [editLocation, setEditLocation] = useState('')
+  const [editComarca, setEditComarca] = useState('')
+  const [editForum, setEditForum] = useState('')
+  const [editOfferedReais, setEditOfferedReais] = useState('')
+  const [editReason, setEditReason] = useState('')
 
   const load = useCallback(async () => {
     if (!id) return
@@ -76,6 +163,51 @@ export default function ServiceRequestDetailPage() {
   useEffect(() => {
     load()
   }, [load])
+
+  const openEditDialog = useCallback(() => {
+    if (!data?.serviceRequest) return
+    const row = data.serviceRequest as {
+      title: string
+      description: string
+      solicitorNotes: string | null
+      kind: OperationalServiceKind
+      customKindDescription: string | null
+      scheduledAt: string
+      acceptDeadlineAt: string
+      location: string | null
+      comarca: string | null
+      forum: string | null
+      offeredAmountCents: number | null
+    }
+    const offeredReais =
+      row.offeredAmountCents != null ? centsToCurrencyMask(row.offeredAmountCents) : ''
+    editSnap.current = {
+      title: row.title,
+      description: row.description,
+      solicitorNotes: row.solicitorNotes ?? '',
+      kind: row.kind,
+      customKind: row.customKindDescription ?? '',
+      scheduledAt: toDatetimeLocal(row.scheduledAt),
+      acceptDeadlineAt: toDatetimeLocal(row.acceptDeadlineAt),
+      location: row.location ?? '',
+      comarca: row.comarca ?? '',
+      forum: row.forum ?? '',
+      offeredReais,
+    }
+    setEditTitle(row.title)
+    setEditDescription(row.description)
+    setEditSolicitorNotes(row.solicitorNotes ?? '')
+    setEditKind(row.kind)
+    setEditCustomKind(row.customKindDescription ?? '')
+    setEditScheduledAt(toDatetimeLocal(row.scheduledAt))
+    setEditAcceptDeadlineAt(toDatetimeLocal(row.acceptDeadlineAt))
+    setEditLocation(row.location ?? '')
+    setEditComarca(row.comarca ?? '')
+    setEditForum(row.forum ?? '')
+    setEditOfferedReais(offeredReais)
+    setEditReason('')
+    setEditOpen(true)
+  }, [data])
 
   if (err && !data) {
     return (
@@ -96,7 +228,9 @@ export default function ServiceRequestDetailPage() {
     id: string
     title: string
     description: string
+    solicitorNotes: string | null
     kind: keyof typeof OPERATIONAL_KIND_LABEL
+    customKindDescription: string | null
     status: ServiceRequestStatus
     scheduledAt: string
     acceptDeadlineAt: string
@@ -118,6 +252,10 @@ export default function ServiceRequestDetailPage() {
     !sr.correspondent &&
     !isSolicitor
 
+  const preAcceptEdit = sr.status === ServiceRequestStatus.PUBLICADO
+  const postAcceptEdit = POST_ACCEPT_EDIT_STATUSES.has(sr.status)
+  const canEditAsSolicitor = isSolicitor && (preAcceptEdit || postAcceptEdit)
+
   const attachments = (data.attachments || []) as Array<{
     id: string
     originalName: string
@@ -130,6 +268,22 @@ export default function ServiceRequestDetailPage() {
     content: string
     createdAt: string
     author: { id: string; name: string }
+    attachment?: {
+      id: string
+      originalName: string
+      storagePath: string
+      kind: string
+    } | null
+  }>
+
+  const fieldChanges = (data.fieldChanges || []) as Array<{
+    id: string
+    fieldName: string
+    oldValue: string | null
+    newValue: string | null
+    reason: string | null
+    createdAt: string
+    changedBy: { id: string; name: string }
   }>
 
   const history = (data.statusHistory || []) as Array<{
@@ -161,19 +315,84 @@ export default function ServiceRequestDetailPage() {
   const canSendChat =
     CHAT_SEND_STATUSES.has(sr.status) && !isAdmin && (Boolean(isSolicitor) || Boolean(isCorr))
 
-  async function postChat() {
-    if (!canSendChat) return
-    if (!chatText.trim()) return
-    const r = await fetch(`/api/service-requests/${id}/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: chatText }),
-    })
-    const d = await r.json()
-    if (!r.ok) setMsg(d.error || 'Erro')
-    else {
-      setChatText('')
-      load()
+  async function submitEdit(e: React.FormEvent) {
+    e.preventDefault()
+    setMsg(null)
+    const snap = editSnap.current
+    if (!snap) return
+
+    const offeredCents = parseCurrencyInputToCents(editOfferedReais)
+    const patch: Record<string, unknown> = {}
+
+    if (preAcceptEdit) {
+      if (editTitle.trim() !== snap.title) patch.title = editTitle.trim()
+      if (editDescription.trim() !== snap.description) patch.description = editDescription.trim()
+      if (editSolicitorNotes.trim() !== snap.solicitorNotes)
+        patch.solicitorNotes = editSolicitorNotes.trim() || null
+      if (editKind !== snap.kind) patch.kind = editKind
+      const nextCustom =
+        editKind === OperationalServiceKind.PERSONALIZADO ? editCustomKind.trim() : null
+      const prevCustom = snap.customKind.trim() || null
+      if (nextCustom !== prevCustom) patch.customKindDescription = nextCustom
+      if (editScheduledAt !== snap.scheduledAt)
+        patch.scheduledAt = new Date(editScheduledAt).toISOString()
+      if (editAcceptDeadlineAt !== snap.acceptDeadlineAt)
+        patch.acceptDeadlineAt = new Date(editAcceptDeadlineAt).toISOString()
+      if (editLocation.trim() !== snap.location) patch.location = editLocation.trim() || null
+      if (editComarca.trim() !== snap.comarca) patch.comarca = editComarca.trim() || null
+      if (editForum.trim() !== snap.forum) patch.forum = editForum.trim() || null
+      const prevCents = parseCurrencyInputToCents(snap.offeredReais)
+      if (offeredCents !== prevCents) patch.offeredAmountCents = offeredCents
+    } else if (postAcceptEdit) {
+      if (editDescription.trim() !== snap.description) patch.description = editDescription.trim()
+      if (editSolicitorNotes.trim() !== snap.solicitorNotes)
+        patch.solicitorNotes = editSolicitorNotes.trim() || null
+      if (editKind !== snap.kind) patch.kind = editKind
+      const nextCustom =
+        editKind === OperationalServiceKind.PERSONALIZADO ? editCustomKind.trim() : null
+      const prevCustom = snap.customKind.trim() || null
+      if (nextCustom !== prevCustom) patch.customKindDescription = nextCustom
+      if (editScheduledAt !== snap.scheduledAt)
+        patch.scheduledAt = new Date(editScheduledAt).toISOString()
+      if (editAcceptDeadlineAt !== snap.acceptDeadlineAt)
+        patch.acceptDeadlineAt = new Date(editAcceptDeadlineAt).toISOString()
+      if (editLocation.trim() !== snap.location) patch.location = editLocation.trim() || null
+      if (editComarca.trim() !== snap.comarca) patch.comarca = editComarca.trim() || null
+      if (editForum.trim() !== snap.forum) patch.forum = editForum.trim() || null
+      const prevCents = parseCurrencyInputToCents(snap.offeredReais)
+      if (offeredCents !== prevCents) patch.offeredAmountCents = offeredCents
+    }
+
+    const needsReason =
+      postAcceptEdit &&
+      Object.keys(patch).some((k) => SENSITIVE_PATCH_KEYS.has(k))
+
+    if (needsReason && !editReason.trim()) {
+      setMsg('Informe a justificativa para alterar data, local, valor, tipo ou prazo após o aceite.')
+      return
+    }
+    if (needsReason) patch.reason = editReason.trim()
+
+    if (Object.keys(patch).length === 0) {
+      setMsg('Nenhuma alteração.')
+      return
+    }
+
+    setEditSaving(true)
+    try {
+      const r = await fetch(`/api/service-requests/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error || 'Erro')
+      setEditOpen(false)
+      await load()
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erro')
+    } finally {
+      setEditSaving(false)
     }
   }
 
@@ -218,6 +437,8 @@ export default function ServiceRequestDetailPage() {
   const offeredAmountLabel =
     sr.offeredAmountCents != null ? BRL_FORMATTER.format(sr.offeredAmountCents / 100) : null
 
+  const locationLine = [sr.location, sr.comarca, sr.forum].filter(Boolean).join(' · ') || 'Local não informado'
+
   return (
     <div className="container max-w-3xl py-8 space-y-6">
       <div className="flex justify-between gap-4 items-start">
@@ -227,9 +448,157 @@ export default function ServiceRequestDetailPage() {
             {OPERATIONAL_KIND_LABEL[sr.kind]} · {SERVICE_STATUS_LABEL[sr.status]}
           </p>
         </div>
-        <Button variant="outline" asChild>
-          <Link href="/advogado/audiencias-diligencias">Voltar</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2 justify-end">
+          {canEditAsSolicitor && (
+            <>
+              <Button type="button" variant="secondary" onClick={openEditDialog}>
+                Editar serviço
+              </Button>
+              <Dialog open={editOpen} onOpenChange={setEditOpen}>
+              <DialogContent className="max-h-[90vh] overflow-y-auto max-w-lg">
+                <form onSubmit={submitEdit}>
+                  <DialogHeader>
+                    <DialogTitle>Editar serviço</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-3 py-4">
+                    {preAcceptEdit && (
+                      <div>
+                        <Label htmlFor="edit-title">Título</Label>
+                        <Input
+                          id="edit-title"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          required
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <Label htmlFor="edit-desc">Descrição</Label>
+                      <Textarea
+                        id="edit-desc"
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        rows={4}
+                        required={preAcceptEdit}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-notes">Observações (solicitante)</Label>
+                      <Textarea
+                        id="edit-notes"
+                        value={editSolicitorNotes}
+                        onChange={(e) => setEditSolicitorNotes(e.target.value)}
+                        rows={2}
+                      />
+                    </div>
+                    <div>
+                      <Label>Tipo</Label>
+                      <Select
+                        value={editKind}
+                        onValueChange={(v) => setEditKind(v as OperationalServiceKind)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.values(OperationalServiceKind).map((k) => (
+                            <SelectItem key={k} value={k}>
+                              {OPERATIONAL_KIND_LABEL[k]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {editKind === OperationalServiceKind.PERSONALIZADO && (
+                      <div>
+                        <Label htmlFor="edit-custom">Descrição do tipo personalizado</Label>
+                        <Input
+                          id="edit-custom"
+                          value={editCustomKind}
+                          onChange={(e) => setEditCustomKind(e.target.value)}
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <Label htmlFor="edit-sched">Data/hora agendada</Label>
+                      <Input
+                        id="edit-sched"
+                        type="datetime-local"
+                        value={editScheduledAt}
+                        onChange={(e) => setEditScheduledAt(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-deadline">Prazo para aceite</Label>
+                      <Input
+                        id="edit-deadline"
+                        type="datetime-local"
+                        value={editAcceptDeadlineAt}
+                        onChange={(e) => setEditAcceptDeadlineAt(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-loc">Local</Label>
+                      <Input
+                        id="edit-loc"
+                        value={editLocation}
+                        onChange={(e) => setEditLocation(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-comarca">Comarca</Label>
+                      <Input
+                        id="edit-comarca"
+                        value={editComarca}
+                        onChange={(e) => setEditComarca(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-forum">Fórum</Label>
+                      <Input id="edit-forum" value={editForum} onChange={(e) => setEditForum(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-valor">Valor ofertado (opcional)</Label>
+                      <Input
+                        id="edit-valor"
+                        inputMode="numeric"
+                        value={editOfferedReais}
+                        onChange={(e) => setEditOfferedReais(formatCurrencyInput(e.target.value))}
+                        placeholder="R$ 0,00"
+                      />
+                    </div>
+                    {postAcceptEdit && (
+                      <div>
+                        <Label htmlFor="edit-reason">Justificativa (obrigatória para alterações sensíveis)</Label>
+                        <Textarea
+                          id="edit-reason"
+                          value={editReason}
+                          onChange={(e) => setEditReason(e.target.value)}
+                          rows={2}
+                          placeholder="Ex.: remarcação acordada com o correspondente"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" disabled={editSaving}>
+                      {editSaving ? 'Salvando…' : 'Salvar'}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+              </Dialog>
+            </>
+          )}
+          <Button variant="outline" asChild>
+            <Link href="/advogado/audiencias-diligencias">Voltar</Link>
+          </Button>
+        </div>
       </div>
 
       {msg && <p className="text-sm text-amber-700">{msg}</p>}
@@ -240,6 +609,12 @@ export default function ServiceRequestDetailPage() {
         </CardHeader>
         <CardContent className="text-sm space-y-2 whitespace-pre-wrap">
           <p>{sr.description}</p>
+          {sr.solicitorNotes?.trim() && (
+            <div className="rounded border bg-muted/30 p-2">
+              <p className="text-xs font-medium text-muted-foreground">Observações do solicitante</p>
+              <p>{sr.solicitorNotes}</p>
+            </div>
+          )}
           <p>
             Agendado: {new Date(sr.scheduledAt).toLocaleString('pt-BR')} · Aceite até{' '}
             {new Date(sr.acceptDeadlineAt).toLocaleString('pt-BR')}
@@ -253,9 +628,7 @@ export default function ServiceRequestDetailPage() {
         </CardContent>
       </Card>
 
-      {canAccept && (
-        <Button onClick={accept}>Aceitar este serviço</Button>
-      )}
+      {canAccept && <Button onClick={accept}>Aceitar este serviço</Button>}
 
       {isCorr && sr.status === ServiceRequestStatus.ACEITO && (
         <Button variant="secondary" onClick={() => changeStatus(ServiceRequestStatus.EM_ANDAMENTO)}>
@@ -278,25 +651,20 @@ export default function ServiceRequestDetailPage() {
         </Button>
       )}
       {isSolicitor && sr.status === ServiceRequestStatus.AGUARDANDO_VALIDACAO && (
-        <Button onClick={() => changeStatus(ServiceRequestStatus.CONCLUIDO)}>
-          Confirmar conclusão
-        </Button>
+        <Button onClick={() => changeStatus(ServiceRequestStatus.CONCLUIDO)}>Confirmar conclusão</Button>
       )}
       {isSolicitor && CANCEL_SOLICITOR_STATUSES.has(sr.status) && (
-          <Button variant="outline" onClick={() => changeStatus(ServiceRequestStatus.CANCELADO)}>
-            Cancelar
-          </Button>
-        )}
+        <Button variant="outline" onClick={() => changeStatus(ServiceRequestStatus.CANCELADO)}>
+          Cancelar
+        </Button>
+      )}
 
       {isCorr && EVIDENCE_STATUSES.has(sr.status) && (
-          <div>
-            <Label className="mb-1">Evidência (arquivo)</Label>
-            <Input
-              type="file"
-              onChange={(e) => e.target.files?.[0] && uploadEvidence(e.target.files[0])}
-            />
-          </div>
-        )}
+        <div>
+          <Label className="mb-1">Evidência (arquivo)</Label>
+          <Input type="file" onChange={(e) => e.target.files?.[0] && uploadEvidence(e.target.files[0])} />
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -323,90 +691,56 @@ export default function ServiceRequestDetailPage() {
       </Card>
 
       {showChat && (isSolicitor || isCorr || isAdmin) && (
+        <ServiceRequestChat
+          requestId={id}
+          currentUserId={myUserId}
+          isAdmin={isAdmin}
+          kind={sr.kind}
+          status={sr.status}
+          scheduledAt={sr.scheduledAt}
+          locationLine={locationLine}
+          offeredAmountLabel={offeredAmountLabel}
+          messages={messages}
+          chatReadOnly={chatReadOnly}
+          canSendChat={canSendChat}
+          onSend={async (text, attachmentId) => {
+            const r = await fetch(`/api/service-requests/${id}/messages`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                content: text,
+                ...(attachmentId ? { attachmentId } : {}),
+              }),
+            })
+            const d = await r.json()
+            if (!r.ok) throw new Error(d.error || 'Erro ao enviar')
+          }}
+          onAfterSend={() => load()}
+        />
+      )}
+
+      {isSolicitor && fieldChanges.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Chat do serviço</CardTitle>
+            <CardTitle className="text-base">Alterações registradas</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="rounded-md border bg-muted/40 p-3 text-sm">
-              <p className="font-medium">Resumo do serviço</p>
-              <p className="text-muted-foreground">
-                {OPERATIONAL_KIND_LABEL[sr.kind]} · {sr.location || sr.comarca || 'Local não informado'} ·{' '}
-                {new Date(sr.scheduledAt).toLocaleString('pt-BR')} · {SERVICE_STATUS_LABEL[sr.status]}
-              </p>
-              {offeredAmountLabel && (
-                <p className="text-muted-foreground">Valor ofertado: {offeredAmountLabel}</p>
-              )}
-            </div>
-
-            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-              <p className="font-medium">Boas práticas de segurança</p>
-              <p>
-                Use este chat apenas para informações relacionadas ao serviço. Evite compartilhar
-                senhas, dados bancários sensíveis ou informações pessoais além do necessário.
-              </p>
-              <a
-                href={SECURITY_POLICY_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="underline"
-              >
-                Política de Segurança
-              </a>
-            </div>
-
-            <div className="space-y-2 max-h-64 overflow-y-auto border rounded p-2">
-              {messages.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  Nenhuma mensagem ainda. Use este espaço para alinhar instruções do serviço.
+          <CardContent className="text-sm space-y-3">
+            {fieldChanges.map((c) => (
+              <div key={c.id} className="border-b pb-2 last:border-0">
+                <p className="font-medium">
+                  {c.fieldName}
+                  {c.reason ? ` — ${c.reason}` : ''}
                 </p>
-              )}
-              {messages.map((m) => {
-                const isCurrentUser = myUserId === m.author.id
-                return (
-                  <div key={m.id} className={cn('flex', isCurrentUser ? 'justify-end' : 'justify-start')}>
-                    <div
-                      className={cn(
-                        'max-w-[78%] rounded-lg px-3 py-2 text-sm',
-                        isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
-                      )}
-                    >
-                      <p className="text-xs opacity-80">
-                        <span className="font-medium">{m.author.name}</span> ·{' '}
-                        {new Date(m.createdAt).toLocaleString('pt-BR')}
-                      </p>
-                      <p className="whitespace-pre-wrap break-words">{m.content}</p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {chatReadOnly && (
-              <p className="text-xs text-muted-foreground">
-                Chat em modo histórico: novas mensagens estão bloqueadas após conclusão/cancelamento.
-              </p>
-            )}
-            {isAdmin && (
-              <p className="text-xs text-muted-foreground">
-                Modo auditoria: administradores possuem acesso somente leitura neste chat.
-              </p>
-            )}
-
-            <Textarea
-              value={chatText}
-              onChange={(e) => setChatText(e.target.value)}
-              rows={2}
-              disabled={!canSendChat}
-              placeholder={
-                canSendChat
-                  ? 'Digite uma mensagem'
-                  : 'Envio desabilitado para este perfil/status'
-              }
-            />
-            <Button type="button" onClick={postChat} disabled={!canSendChat || !chatText.trim()}>
-              Enviar
-            </Button>
+                <p className="text-xs text-muted-foreground">
+                  {c.changedBy.name} · {new Date(c.createdAt).toLocaleString('pt-BR')}
+                </p>
+                <p className="text-muted-foreground break-all">
+                  <span className="line-through">{c.oldValue ?? '—'}</span>
+                  {' → '}
+                  <span>{c.newValue ?? '—'}</span>
+                </p>
+              </div>
+            ))}
           </CardContent>
         </Card>
       )}
@@ -435,30 +769,30 @@ export default function ServiceRequestDetailPage() {
         (isSolicitor || isCorr) &&
         sessionUserId &&
         !alreadyReviewed && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Avaliar</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm text-muted-foreground">Nota de 1 a 5 (após conclusão)</p>
-            <Input
-              type="number"
-              min={1}
-              max={5}
-              value={reviewRating}
-              onChange={(e) => setReviewRating(Number(e.target.value))}
-            />
-            <Textarea
-              placeholder="Comentário opcional"
-              value={reviewComment}
-              onChange={(e) => setReviewComment(e.target.value)}
-            />
-            <Button type="button" onClick={submitReview}>
-              Enviar avaliação
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Avaliar</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-sm text-muted-foreground">Nota de 1 a 5 (após conclusão)</p>
+              <Input
+                type="number"
+                min={1}
+                max={5}
+                value={reviewRating}
+                onChange={(e) => setReviewRating(Number(e.target.value))}
+              />
+              <Textarea
+                placeholder="Comentário opcional"
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+              />
+              <Button type="button" onClick={submitReview}>
+                Enviar avaliação
+              </Button>
+            </CardContent>
+          </Card>
+        )}
     </div>
   )
 }

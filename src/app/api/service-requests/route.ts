@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { OperationalServiceKind, ServiceRequestStatus } from '@prisma/client'
 import { getAdvogadoForUserId } from '@/lib/service-requests/access'
+import { seedDistributionBatchForRequest } from '@/lib/service-requests/distribution'
 
 const createSchema = z.object({
   kind: z.nativeEnum(OperationalServiceKind),
@@ -80,6 +81,8 @@ export async function POST(req: NextRequest) {
         note: 'Publicação criada',
       },
     })
+
+    await seedDistributionBatchForRequest(reqRow.id)
 
     return NextResponse.json({ serviceRequest: reqRow })
   } catch (e) {

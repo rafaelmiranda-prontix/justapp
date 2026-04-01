@@ -26,6 +26,7 @@ import {
   MoreHorizontal,
   Gauge,
   CalendarDays,
+  PieChart,
 } from 'lucide-react'
 
 const navItems = [
@@ -83,6 +84,11 @@ const navItems = [
     title: 'Audiências / diligências',
     href: '/admin/audiencias-diligencias',
     icon: CalendarDays,
+  },
+  {
+    title: 'Cotas distribuição',
+    href: '/admin/audiencias-diligencias/cotas',
+    icon: PieChart,
   },
   {
     title: 'Planos',

@@ -16,8 +16,15 @@ const evidenceStatuses: ServiceRequestStatus[] = [
   ServiceRequestStatus.AGUARDANDO_VALIDACAO,
 ]
 
+const chatUploadStatuses: ServiceRequestStatus[] = [
+  ServiceRequestStatus.ACEITO,
+  ServiceRequestStatus.EM_ANDAMENTO,
+  ServiceRequestStatus.REALIZADO,
+  ServiceRequestStatus.AGUARDANDO_VALIDACAO,
+]
+
 /**
- * POST multipart: file + kind=PUBLICACAO|EVIDENCIA
+ * POST multipart: file + kind=PUBLICACAO|EVIDENCIA|CHAT
  */
 export async function POST(
   req: NextRequest,
@@ -43,10 +50,12 @@ export async function POST(
       return NextResponse.json({ error: 'Arquivo obrigatório' }, { status: 400 })
     }
 
-    const kind =
+    const kind: ServiceRequestAttachmentKind =
       kindRaw === 'EVIDENCIA'
         ? ServiceRequestAttachmentKind.EVIDENCIA
-        : ServiceRequestAttachmentKind.PUBLICACAO
+        : kindRaw === 'CHAT'
+          ? ServiceRequestAttachmentKind.CHAT
+          : ServiceRequestAttachmentKind.PUBLICACAO
 
     const isSolicitor = row.solicitor.userId === userId
     const isCorrespondent = row.correspondent?.userId === userId
@@ -61,12 +70,19 @@ export async function POST(
       ) {
         return NextResponse.json({ error: 'Não é possível anexar neste status.' }, { status: 400 })
       }
-    } else {
+    } else if (kind === ServiceRequestAttachmentKind.EVIDENCIA) {
       if (!isCorrespondent) {
         return NextResponse.json({ error: 'Só o correspondente envia evidências.' }, { status: 403 })
       }
       if (!evidenceStatuses.includes(row.status)) {
         return NextResponse.json({ error: 'Evidências só após aceite.' }, { status: 400 })
+      }
+    } else {
+      if (!isSolicitor && !isCorrespondent) {
+        return NextResponse.json({ error: 'Sem permissão para anexar no chat.' }, { status: 403 })
+      }
+      if (!chatUploadStatuses.includes(row.status)) {
+        return NextResponse.json({ error: 'Anexos do chat indisponíveis neste status.' }, { status: 400 })
       }
     }
 

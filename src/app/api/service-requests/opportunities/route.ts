@@ -2,8 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { OperationalServiceKind, Prisma, ServiceRequestStatus } from '@prisma/client'
+import { OperationalServiceKind, Prisma } from '@prisma/client'
 import { getAdvogadoForUserId } from '@/lib/service-requests/access'
+import {
+  buildOpportunityAccessWhere,
+  canUserReceiveMoreOpportunities,
+  expandDistributionForExpiredBatches,
+  recordOpportunityExposureIfNeeded,
+} from '@/lib/service-requests/distribution'
+import {
+  buildBaseOpportunityWhere,
+  buildRegionWhereForOpportunities,
+} from '@/lib/service-requests/opportunity-eligibility'
 
 /**
  * GET /api/service-requests/opportunities
@@ -19,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     const profile = await prisma.correspondentProfile.findUnique({
       where: { advogadoId: advogado.id },
-      include: { acceptedKinds: true },
+      include: { acceptedKinds: true, regions: true },
     })
     if (!profile?.isActive) {
       return NextResponse.json(
@@ -27,6 +37,8 @@ export async function GET(req: NextRequest) {
         { status: 403 }
       )
     }
+
+    await expandDistributionForExpiredBatches()
 
     const { searchParams } = req.nextUrl
     const kindParam = searchParams.get('kind') as OperationalServiceKind | null
@@ -43,29 +55,25 @@ export async function GET(req: NextRequest) {
 
     const acceptedKinds = profile.acceptedKinds.map((k) => k.kind)
 
-    const where: Prisma.ServiceRequestWhereInput = {
-      status: ServiceRequestStatus.PUBLICADO,
-      correspondentAdvogadoId: null,
-      acceptDeadlineAt: { gte: new Date() },
-      solicitorAdvogadoId: { not: advogado.id },
-    }
+    let base = buildBaseOpportunityWhere(advogado.id, acceptedKinds)
 
-    if (acceptedKinds.length > 0) {
-      where.kind = { in: acceptedKinds }
+    const regionFilter = buildRegionWhereForOpportunities(profile.regions)
+    if (regionFilter) {
+      base = { AND: [base, regionFilter] }
     }
 
     if (kindParam && Object.values(OperationalServiceKind).includes(kindParam)) {
-      where.kind = kindParam
+      base = { AND: [base, { kind: kindParam }] }
     }
 
     if (comarca) {
-      where.comarca = { contains: comarca, mode: 'insensitive' }
+      base = { AND: [base, { comarca: { contains: comarca, mode: 'insensitive' } }] }
     }
     if (forum) {
-      where.forum = { contains: forum, mode: 'insensitive' }
+      base = { AND: [base, { forum: { contains: forum, mode: 'insensitive' } }] }
     }
     if (cidade || estado) {
-      where.OR = [
+      const ors: Prisma.ServiceRequestWhereInput[] = [
         ...(cidade
           ? [{ location: { contains: cidade, mode: 'insensitive' as const } }]
           : []),
@@ -73,18 +81,30 @@ export async function GET(req: NextRequest) {
           ? [{ location: { contains: estado, mode: 'insensitive' as const } }]
           : []),
       ]
+      if (ors.length) base = { AND: [base, { OR: ors }] }
     }
 
     if (scheduledFrom || scheduledTo) {
-      where.scheduledAt = {}
-      if (scheduledFrom) where.scheduledAt.gte = new Date(scheduledFrom)
-      if (scheduledTo) where.scheduledAt.lte = new Date(scheduledTo)
+      const sched: Prisma.DateTimeFilter = {}
+      if (scheduledFrom) sched.gte = new Date(scheduledFrom)
+      if (scheduledTo) sched.lte = new Date(scheduledTo)
+      base = { AND: [base, { scheduledAt: sched }] }
     }
 
     if (minAmount || maxAmount) {
-      where.offeredAmountCents = {}
-      if (minAmount) where.offeredAmountCents.gte = parseInt(minAmount, 10)
-      if (maxAmount) where.offeredAmountCents.lte = parseInt(maxAmount, 10)
+      const amt: Prisma.IntNullableFilter = {}
+      if (minAmount) amt.gte = parseInt(minAmount, 10)
+      if (maxAmount) amt.lte = parseInt(maxAmount, 10)
+      base = { AND: [base, { offeredAmountCents: amt }] }
+    }
+
+    let where = buildOpportunityAccessWhere(advogado.id, base)
+
+    const quotaOk = await canUserReceiveMoreOpportunities(session.user.id)
+    if (!quotaOk) {
+      where = {
+        AND: [where, { distributionBatches: { none: {} } }],
+      }
     }
 
     const items = await prisma.serviceRequest.findMany({
@@ -104,6 +124,10 @@ export async function GET(req: NextRequest) {
     const hasMore = items.length > take
     const list = hasMore ? items.slice(0, take) : items
     const nextCursor = hasMore && list.length > 0 ? list[list.length - 1].id : null
+
+    for (const it of list) {
+      await recordOpportunityExposureIfNeeded(it.id, advogado.id, session.user.id)
+    }
 
     return NextResponse.json({ items: list, nextCursor })
   } catch (e) {

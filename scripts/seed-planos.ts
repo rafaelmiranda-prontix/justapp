@@ -1,5 +1,6 @@
 import { prisma } from '../src/lib/prisma'
 import { nanoid } from 'nanoid'
+import type { Plano } from '@prisma/client'
 
 /**
  * Script para popular a tabela de planos
@@ -108,6 +109,37 @@ async function seedPlanos() {
   console.log(`   🔄 Atualizados: ${updated}`)
   console.log(`   📝 Total: ${planos.length}`)
   console.log('\n✅ Catálogo de planos configurado com sucesso!')
+
+  const distDefaults: Record<
+    Extract<Plano, 'FREE' | 'BASIC' | 'PREMIUM'>,
+    { monthlyOpportunityQuota: number; batchSize: number; priorityWeight: number; acceptanceWindowMinutes: number }
+  > = {
+    FREE: { monthlyOpportunityQuota: 30, batchSize: 20, priorityWeight: 0, acceptanceWindowMinutes: 720 },
+    BASIC: { monthlyOpportunityQuota: 80, batchSize: 35, priorityWeight: 10, acceptanceWindowMinutes: 1440 },
+    PREMIUM: { monthlyOpportunityQuota: 200, batchSize: 50, priorityWeight: 25, acceptanceWindowMinutes: 1440 },
+  }
+
+  for (const codigo of ['FREE', 'BASIC', 'PREMIUM'] as const) {
+    const pl = await prisma.planos.findUnique({ where: { codigo } })
+    if (!pl) continue
+    const d = distDefaults[codigo]
+    await prisma.planDistributionRule.upsert({
+      where: { planId: pl.id },
+      create: {
+        id: nanoid(),
+        planId: pl.id,
+        monthlyOpportunityQuota: d.monthlyOpportunityQuota,
+        batchSize: d.batchSize,
+        priorityWeight: d.priorityWeight,
+        acceptanceWindowMinutes: d.acceptanceWindowMinutes,
+        updatedAt: new Date(),
+      },
+      update: {
+        updatedAt: new Date(),
+      },
+    })
+    console.log(`✅ Regra de distribuição: ${codigo}`)
+  }
 }
 
 seedPlanos()

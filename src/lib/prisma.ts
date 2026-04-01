@@ -20,7 +20,9 @@ function getPrisma(): PrismaClient {
     const stale =
       process.env.NODE_ENV === 'development' &&
       (typeof (cached as unknown as { emailActionToken?: unknown }).emailActionToken === 'undefined' ||
-        typeof (cached as unknown as { supportContact?: unknown }).supportContact === 'undefined')
+        typeof (cached as unknown as { supportContact?: unknown }).supportContact === 'undefined' ||
+        typeof (cached as unknown as { serviceDistributionBatch?: unknown }).serviceDistributionBatch ===
+          'undefined')
     if (stale) {
       void cached.$disconnect().catch(() => {})
       const next = createPrismaClient()

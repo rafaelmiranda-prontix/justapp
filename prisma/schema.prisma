@@ -35,50 +35,51 @@ model advogado_especialidades {
 }
 
 model advogados {
-  id                      String                    @id
-  userId                  String                    @unique
-  oab                     String                    @unique
-  oabVerificado           Boolean                   @default(false)
-  aprovado                Boolean                   @default(false) // Aprovação final (recebe leads)
-  preAprovado             Boolean                   @default(false) // Pré-aprovado após 1ª análise (não recebe leads; aguarda confirmação para aprovar)
-  bio                     String?
-  fotoUrl                 String?
-  cidade                  String
-  estado                  String
-  latitude                Float?
-  longitude               Float?
-  raioAtuacao             Int                       @default(50)
-  precoConsulta           Float?
-  aceitaOnline            Boolean                   @default(true)
-  aceitaOutrosEstados     Boolean                   @default(false)
-  plano                   Plano                     @default(FREE)
-  planoExpira             DateTime?
-  stripeCustomerId        String?                   @unique
-  stripeSubscriptionId    String?                   @unique
-  leadsRecebidosMes       Int                       @default(0)
-  leadsLimiteMes          Int                       @default(0)
-  freeLeadsBonusMes       Int                       @default(0) // bônus temporário para FREE (válido no mês corrente)
-  freeLeadsBonusRef       String?                   @db.VarChar(7) // formato YYYY-MM
-  ultimoResetLeads        DateTime                  @default(now())
-  casosRecebidosHora      Int                       @default(0)
-  ultimoResetCasosHora    DateTime                  @default(now())
-  isBeta                  Boolean                   @default(false)
-  betaInviteCode          String?                   @unique
-  betaInviteDeclinedAt    DateTime?
-  onboardingCompleted     Boolean                   @default(false)
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime
-  advogado_especialidades advogado_especialidades[]
-  users                   users                     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  avaliacoes              avaliacoes[]
-  matches                 matches[]
-  historicoAssinaturas    historicoAssinaturas[]
-  emailActionTokens       EmailActionToken[]
-  correspondentProfile    CorrespondentProfile?
-  serviceRequestsSolicitor ServiceRequest[]      @relation("ServiceRequestSolicitor")
-  serviceRequestsCorrespondent ServiceRequest[]  @relation("ServiceRequestCorrespondent")
-  serviceReviewsGiven     ServiceReview[]        @relation("ServiceReviewReviewer")
-  serviceReviewsAbout     ServiceReview[]        @relation("ServiceReviewTarget")
+  id                            String                         @id
+  userId                        String                         @unique
+  oab                           String                         @unique
+  oabVerificado                 Boolean                        @default(false)
+  aprovado                      Boolean                        @default(false) // Aprovação final (recebe leads)
+  preAprovado                   Boolean                        @default(false) // Pré-aprovado após 1ª análise (não recebe leads; aguarda confirmação para aprovar)
+  bio                           String?
+  fotoUrl                       String?
+  cidade                        String
+  estado                        String
+  latitude                      Float?
+  longitude                     Float?
+  raioAtuacao                   Int                            @default(50)
+  precoConsulta                 Float?
+  aceitaOnline                  Boolean                        @default(true)
+  aceitaOutrosEstados           Boolean                        @default(false)
+  plano                         Plano                          @default(FREE)
+  planoExpira                   DateTime?
+  stripeCustomerId              String?                        @unique
+  stripeSubscriptionId          String?                        @unique
+  leadsRecebidosMes             Int                            @default(0)
+  leadsLimiteMes                Int                            @default(0)
+  freeLeadsBonusMes             Int                            @default(0) // bônus temporário para FREE (válido no mês corrente)
+  freeLeadsBonusRef             String?                        @db.VarChar(7) // formato YYYY-MM
+  ultimoResetLeads              DateTime                       @default(now())
+  casosRecebidosHora            Int                            @default(0)
+  ultimoResetCasosHora          DateTime                       @default(now())
+  isBeta                        Boolean                        @default(false)
+  betaInviteCode                String?                        @unique
+  betaInviteDeclinedAt          DateTime?
+  onboardingCompleted           Boolean                        @default(false)
+  createdAt                     DateTime                       @default(now())
+  updatedAt                     DateTime
+  advogado_especialidades       advogado_especialidades[]
+  users                         users                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  avaliacoes                    avaliacoes[]
+  matches                       matches[]
+  historicoAssinaturas          historicoAssinaturas[]
+  emailActionTokens             EmailActionToken[]
+  correspondentProfile          CorrespondentProfile?
+  serviceRequestsSolicitor      ServiceRequest[]               @relation("ServiceRequestSolicitor")
+  serviceRequestsCorrespondent  ServiceRequest[]               @relation("ServiceRequestCorrespondent")
+  serviceReviewsGiven           ServiceReview[]                @relation("ServiceReviewReviewer")
+  serviceReviewsAbout           ServiceReview[]                @relation("ServiceReviewTarget")
+  serviceDistributionCandidates ServiceDistributionCandidate[]
 }
 
 /// Tokens únicos para ações a partir de e-mails (ex.: aceitar/recusar convite beta).
@@ -143,35 +144,35 @@ model avaliacoes {
 }
 
 model casos {
-  id                  String          @id
-  cidadaoId           String
-  descricao           String // Resumo do problema (não concatenado)
-  descricaoIA         String? // Análise da IA sobre o caso
-  conversaHistorico   Json? // Histórico completo do chat anônimo
-  especialidadeId     String?
-  urgencia            Urgencia        @default(NORMAL)
-  complexidade        Int             @default(1)
-  status              CasoStatus      @default(PENDENTE_ATIVACAO)
-  sessionId           String?         @unique
-  redistribuicoes     Int             @default(0) // Contador de redistribuições após recusas
+  id                String          @id
+  cidadaoId         String
+  descricao         String // Resumo do problema (não concatenado)
+  descricaoIA       String? // Análise da IA sobre o caso
+  conversaHistorico Json? // Histórico completo do chat anônimo
+  especialidadeId   String?
+  urgencia          Urgencia        @default(NORMAL)
+  complexidade      Int             @default(1)
+  status            CasoStatus      @default(PENDENTE_ATIVACAO)
+  sessionId         String?         @unique
+  redistribuicoes   Int             @default(0) // Contador de redistribuições após recusas
   // Mediação pelo admin
-  mediatedByAdminId   String?
-  mediatedAt          DateTime?
+  mediatedByAdminId String?
+  mediatedAt        DateTime?
   // Fechamento pelo admin
-  closedByAdminId     String?
-  closedAt            DateTime?
-  closeReason         CloseReason?
-  closeSummary        String?
+  closedByAdminId   String?
+  closedAt          DateTime?
+  closeReason       CloseReason?
+  closeSummary      String?
   // Checklist para fechamento (documentos, infos, orientação, encaminhado)
-  checklist           Json?           // { documentosRecebidos, informacoesMinimas, orientacaoEnviada, encaminhadoAdvogado }
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime
-  cidadaos            cidadaos        @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)
-  especialidades      especialidades? @relation(fields: [especialidadeId], references: [id])
-  matches             matches[]
-  case_messages       case_messages[]
-  mediatedByAdmin     users?            @relation("CasosMediatedBy", fields: [mediatedByAdminId], references: [id])
-  closedByAdmin       users?            @relation("CasosClosedBy", fields: [closedByAdminId], references: [id])
+  checklist         Json? // { documentosRecebidos, informacoesMinimas, orientacaoEnviada, encaminhadoAdvogado }
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime
+  cidadaos          cidadaos        @relation(fields: [cidadaoId], references: [id], onDelete: Cascade)
+  especialidades    especialidades? @relation(fields: [especialidadeId], references: [id])
+  matches           matches[]
+  case_messages     case_messages[]
+  mediatedByAdmin   users?          @relation("CasosMediatedBy", fields: [mediatedByAdminId], references: [id])
+  closedByAdmin     users?          @relation("CasosClosedBy", fields: [closedByAdminId], references: [id])
 
   @@index([cidadaoId])
   @@index([especialidadeId])
@@ -181,16 +182,16 @@ model casos {
 }
 
 model case_messages {
-  id            String                 @id
-  casoId        String
-  senderRole    CaseMessageSenderRole   // ADMIN | CIDADAO
-  senderId      String                  // userId
-  message       String
-  attachmentUrls String[]               @default([]) // URLs de anexos (reaproveita upload existente)
-  visibility     CaseMessageVisibility   @default(PUBLIC) // PUBLIC = admin↔cidadão; INTERNAL = só admin
-  createdAt     DateTime                @default(now())
-  casos         casos                   @relation(fields: [casoId], references: [id], onDelete: Cascade)
-  sender        users                   @relation("CaseMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  id             String                @id
+  casoId         String
+  senderRole     CaseMessageSenderRole // ADMIN | CIDADAO
+  senderId       String // userId
+  message        String
+  attachmentUrls String[]              @default([]) // URLs de anexos (reaproveita upload existente)
+  visibility     CaseMessageVisibility @default(PUBLIC) // PUBLIC = admin↔cidadão; INTERNAL = só admin
+  createdAt      DateTime              @default(now())
+  casos          casos                 @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  sender         users                 @relation("CaseMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([casoId])
   @@index([senderId])
@@ -291,6 +292,7 @@ model planos {
   createdAt            DateTime               @default(now())
   updatedAt            DateTime
   historicoAssinaturas historicoAssinaturas[]
+  distributionRule     PlanDistributionRule?
 
   @@index([ativo])
   @@index([ordem])
@@ -346,50 +348,53 @@ model sessions {
 }
 
 model users {
-  id                String      @id
-  email             String      @unique
-  emailVerified     DateTime?
-  name              String
-  image             String?
-  phone             String?
-  password          String?
-  role              UserRole
-  status            UserStatus  @default(ACTIVE)
-  activationToken   String?     @unique
-  activationExpires DateTime?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime
-  accounts          accounts[]
-  advogados         advogados?
-  cidadaos          cidadaos?
-  sessions          sessions[]
-  mensagens         mensagens[] @relation("MensagensRemetente")
-  case_messages     case_messages[] @relation("CaseMessageSender")
-  casosMediated    casos[]         @relation("CasosMediatedBy")
-  casosClosed      casos[]         @relation("CasosClosedBy")
-  notifications    Notification[]
-  emailActionTokensCreated EmailActionToken[] @relation("EmailActionTokenCreatedBy")
-  supportContacts      SupportContact[]
-  supportConversations SupportConversation[]
-  serviceRequestMessages ServiceRequestMessage[]
-  serviceRequestStatusEvents ServiceRequestStatusHistory[]
+  id                                String                          @id
+  email                             String                          @unique
+  emailVerified                     DateTime?
+  name                              String
+  image                             String?
+  phone                             String?
+  password                          String?
+  role                              UserRole
+  status                            UserStatus                      @default(ACTIVE)
+  activationToken                   String?                         @unique
+  activationExpires                 DateTime?
+  createdAt                         DateTime                        @default(now())
+  updatedAt                         DateTime
+  accounts                          accounts[]
+  advogados                         advogados?
+  cidadaos                          cidadaos?
+  sessions                          sessions[]
+  mensagens                         mensagens[]                     @relation("MensagensRemetente")
+  case_messages                     case_messages[]                 @relation("CaseMessageSender")
+  casosMediated                     casos[]                         @relation("CasosMediatedBy")
+  casosClosed                       casos[]                         @relation("CasosClosedBy")
+  notifications                     Notification[]
+  emailActionTokensCreated          EmailActionToken[]              @relation("EmailActionTokenCreatedBy")
+  supportContacts                   SupportContact[]
+  supportConversations              SupportConversation[]
+  serviceRequestMessages            ServiceRequestMessage[]
+  serviceRequestStatusEvents        ServiceRequestStatusHistory[]
   serviceRequestAttachmentsUploaded ServiceRequestAttachment[]
-  serviceRequestsCreated            ServiceRequest[]             @relation("ServiceRequestCreatedBy")
+  serviceRequestsCreated            ServiceRequest[]                @relation("ServiceRequestCreatedBy")
+  serviceRequestFieldChanges        ServiceRequestFieldChange[]
+  distributionQuotaUsage            UserDistributionQuotaUsage[]
+  serviceRequestParticipantReads    ServiceRequestParticipantRead[]
 }
 
 model Notification {
-  id          String           @id @default(cuid())
-  userId      String
-  role        UserRole?
-  type        NotificationType
-  title       String
-  message     String           // curto, ~160 chars
-  href        String
-  metadata    Json?
-  createdAt   DateTime         @default(now())
-  readAt      DateTime?
-  archivedAt  DateTime?
-  user        users            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String           @id @default(cuid())
+  userId     String
+  role       UserRole?
+  type       NotificationType
+  title      String
+  message    String // curto, ~160 chars
+  href       String
+  metadata   Json?
+  createdAt  DateTime         @default(now())
+  readAt     DateTime?
+  archivedAt DateTime?
+  user       users            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt])
   @@index([userId, createdAt])
@@ -428,7 +433,7 @@ enum CaseMessageSenderRole {
 }
 
 enum CaseMessageVisibility {
-  PUBLIC   // Visível para admin e cidadão
+  PUBLIC // Visível para admin e cidadão
   INTERNAL // Apenas admin (nota interna)
 }
 
@@ -493,6 +498,7 @@ enum NotificationType {
   SERVICE_REQUEST_MESSAGE
   SERVICE_REQUEST_STATUS
   SERVICE_REQUEST_PENDING_COMPLETION
+  SERVICE_REQUEST_UPDATED
 }
 
 enum UserStatus {
@@ -504,16 +510,16 @@ enum UserStatus {
 
 /// Contato de suporte (pode ou não estar vinculado a um usuário do sistema).
 model SupportContact {
-  id            String               @id @default(cuid())
+  id            String                @id @default(cuid())
   name          String?
   email         String?
   phone         String?
   crm           String?
   userId        String?
-  source        SupportContactSource @default(WHATSAPP)
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-  user          users?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  source        SupportContactSource  @default(WHATSAPP)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  user          users?                @relation(fields: [userId], references: [id], onDelete: SetNull)
   conversations SupportConversation[]
 
   @@index([email])
@@ -525,19 +531,19 @@ model SupportContact {
 
 /// Thread de suporte (ex.: WhatsApp) por contato.
 model SupportConversation {
-  id             String                    @id @default(cuid())
-  contactId      String
-  userId         String?
-  channel        SupportChannel            @default(WHATSAPP)
-  status         SupportConversationStatus @default(OPEN)
+  id            String                    @id @default(cuid())
+  contactId     String
+  userId        String?
+  channel       SupportChannel            @default(WHATSAPP)
+  status        SupportConversationStatus @default(OPEN)
   /// WA ID do provedor, para deduplicar conversa por número.
-  whatsappWaId   String?
-  lastMessageAt  DateTime?
-  createdAt      DateTime                  @default(now())
-  updatedAt      DateTime                  @updatedAt
-  contact        SupportContact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  user           users?                    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  messages       SupportMessage[]
+  whatsappWaId  String?
+  lastMessageAt DateTime?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  contact       SupportContact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  user          users?                    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  messages      SupportMessage[]
 
   @@index([contactId])
   @@index([userId])
@@ -548,14 +554,14 @@ model SupportConversation {
 }
 
 model SupportMessage {
-  id                 String                 @id @default(cuid())
-  conversationId     String
-  senderType         SupportMessageSenderType
-  content            String
-  metadata           Json?
-  externalMessageId  String?                @unique
-  createdAt          DateTime               @default(now())
-  conversation       SupportConversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  id                String                   @id @default(cuid())
+  conversationId    String
+  senderType        SupportMessageSenderType
+  content           String
+  metadata          Json?
+  externalMessageId String?                  @unique
+  createdAt         DateTime                 @default(now())
+  conversation      SupportConversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
   @@map("support_messages")
@@ -632,20 +638,21 @@ enum ServiceRequestStatus {
 enum ServiceRequestAttachmentKind {
   PUBLICACAO
   EVIDENCIA
+  CHAT
 }
 
 /// Perfil de correspondente (1:1 com advogado).
 model CorrespondentProfile {
-  id               String                       @id @default(cuid())
-  advogadoId       String                       @unique
-  isActive         Boolean                      @default(false)
+  id               String                      @id @default(cuid())
+  advogadoId       String                      @unique
+  isActive         Boolean                     @default(false)
   /// Valor mínimo desejado em centavos (informativo no MVP).
   minFeeCents      Int?
   /// Disponibilidade por dia/período (JSON validado na API).
   availabilityJson Json?
-  createdAt        DateTime                     @default(now())
-  updatedAt        DateTime                     @updatedAt
-  advogados        advogados                    @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+  advogados        advogados                   @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
   regions          CorrespondentRegion[]
   acceptedKinds    CorrespondentAcceptedKind[]
 
@@ -653,14 +660,14 @@ model CorrespondentProfile {
 }
 
 model CorrespondentRegion {
-  id        String             @id @default(cuid())
+  id        String               @id @default(cuid())
   profileId String
   cidade    String?
   estado    String?
   comarca   String?
   forum     String?
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
   profile   CorrespondentProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId])
@@ -669,7 +676,7 @@ model CorrespondentRegion {
 }
 
 model CorrespondentAcceptedKind {
-  id        String               @id @default(cuid())
+  id        String                 @id @default(cuid())
   profileId String
   kind      OperationalServiceKind
   profile   CorrespondentProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
@@ -679,30 +686,36 @@ model CorrespondentAcceptedKind {
 }
 
 model ServiceRequest {
-  id                       String                 @id @default(cuid())
-  solicitorAdvogadoId       String
+  id                      String                          @id @default(cuid())
+  solicitorAdvogadoId     String
   correspondentAdvogadoId String?
-  createdByUserId           String
-  kind                     OperationalServiceKind
-  customKindDescription    String?
-  title                    String
-  description              String
-  scheduledAt              DateTime
-  location                 String?
-  comarca                  String?
-  forum                    String?
-  offeredAmountCents       Int?
-  acceptDeadlineAt         DateTime
-  status                   ServiceRequestStatus   @default(PUBLICADO)
-  createdAt                DateTime               @default(now())
-  updatedAt                DateTime               @updatedAt
-  solicitor                advogados              @relation("ServiceRequestSolicitor", fields: [solicitorAdvogadoId], references: [id], onDelete: Cascade)
-  correspondent            advogados?             @relation("ServiceRequestCorrespondent", fields: [correspondentAdvogadoId], references: [id], onDelete: SetNull)
-  createdBy                users                  @relation("ServiceRequestCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
-  attachments              ServiceRequestAttachment[]
-  messages                 ServiceRequestMessage[]
-  statusHistory            ServiceRequestStatusHistory[]
-  reviews                  ServiceReview[]
+  createdByUserId         String
+  kind                    OperationalServiceKind
+  customKindDescription   String?
+  title                   String
+  description             String
+  /// Observações / instruções complementares (editáveis após aceite).
+  solicitorNotes          String?                         @db.Text
+  scheduledAt             DateTime
+  location                String?
+  comarca                 String?
+  forum                   String?
+  offeredAmountCents      Int?
+  acceptDeadlineAt        DateTime
+  status                  ServiceRequestStatus            @default(PUBLICADO)
+  createdAt               DateTime                        @default(now())
+  updatedAt               DateTime                        @updatedAt
+  solicitor               advogados                       @relation("ServiceRequestSolicitor", fields: [solicitorAdvogadoId], references: [id], onDelete: Cascade)
+  correspondent           advogados?                      @relation("ServiceRequestCorrespondent", fields: [correspondentAdvogadoId], references: [id], onDelete: SetNull)
+  createdBy               users                           @relation("ServiceRequestCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  attachments             ServiceRequestAttachment[]
+  messages                ServiceRequestMessage[]
+  statusHistory           ServiceRequestStatusHistory[]
+  reviews                 ServiceReview[]
+  fieldChanges            ServiceRequestFieldChange[]
+  distributionBatches     ServiceDistributionBatch[]
+  distributionCandidates  ServiceDistributionCandidate[]
+  participantReads        ServiceRequestParticipantRead[]
 
   @@index([status, scheduledAt])
   @@index([solicitorAdvogadoId])
@@ -712,63 +725,166 @@ model ServiceRequest {
 }
 
 model ServiceRequestAttachment {
-  id              String                     @id @default(cuid())
-  requestId       String
+  id               String                       @id @default(cuid())
+  requestId        String
   uploadedByUserId String
-  storagePath     String
-  originalName    String
-  mimeType        String
-  sizeBytes       Int
-  kind            ServiceRequestAttachmentKind
-  createdAt       DateTime                   @default(now())
-  request         ServiceRequest             @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  uploadedBy      users                      @relation(fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+  storagePath      String
+  originalName     String
+  mimeType         String
+  sizeBytes        Int
+  kind             ServiceRequestAttachmentKind
+  createdAt        DateTime                     @default(now())
+  request          ServiceRequest               @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  uploadedBy       users                        @relation(fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+  linkedMessages   ServiceRequestMessage[]
 
   @@index([requestId])
   @@map("service_request_attachments")
 }
 
-model ServiceRequestMessage {
-  id           String         @id @default(cuid())
-  requestId    String
-  authorUserId String
-  content      String         @db.Text
-  createdAt    DateTime       @default(now())
-  request      ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  author       users          @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+/// Histórico de alterações de campos do serviço (auditoria).
+model ServiceRequestFieldChange {
+  id              String         @id @default(cuid())
+  requestId       String
+  changedByUserId String
+  changeType      String         @default("update")
+  fieldName       String
+  oldValue        String?        @db.Text
+  newValue        String?        @db.Text
+  reason          String?        @db.Text
+  createdAt       DateTime       @default(now())
+  request         ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  changedBy       users          @relation(fields: [changedByUserId], references: [id], onDelete: Cascade)
 
   @@index([requestId, createdAt])
+  @@map("service_request_field_changes")
+}
+
+enum ServiceDistributionBatchStatus {
+  OPEN
+  CLOSED
+}
+
+/// Regras de distribuição de oportunidades por plano (1:1 com planos).
+model PlanDistributionRule {
+  id                      String   @id @default(cuid())
+  planId                  String   @unique
+  monthlyOpportunityQuota Int      @default(100)
+  batchSize               Int      @default(30)
+  priorityWeight          Int      @default(0)
+  acceptanceWindowMinutes Int      @default(1440)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  plan                    planos   @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("plan_distribution_rules")
+}
+
+/// Consumo mensal de cota de oportunidades por usuário (advogado).
+model UserDistributionQuotaUsage {
+  id                     String   @id @default(cuid())
+  userId                 String
+  referenceMonth         String
+  opportunitiesDelivered Int      @default(0)
+  updatedAt              DateTime @updatedAt
+  user                   users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, referenceMonth])
+  @@index([referenceMonth])
+  @@map("user_distribution_quota_usage")
+}
+
+model ServiceDistributionBatch {
+  id                     String                         @id @default(cuid())
+  requestId              String
+  batchNumber            Int
+  distributedAt          DateTime                       @default(now())
+  acceptanceWindowEndsAt DateTime
+  status                 ServiceDistributionBatchStatus @default(OPEN)
+  request                ServiceRequest                 @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  candidates             ServiceDistributionCandidate[]
+
+  @@index([requestId, batchNumber])
+  @@index([status, acceptanceWindowEndsAt])
+  @@map("service_distribution_batches")
+}
+
+model ServiceDistributionCandidate {
+  id            String                   @id @default(cuid())
+  requestId     String
+  batchId       String
+  advogadoId    String
+  priorityScore Int                      @default(0)
+  deliveredAt   DateTime                 @default(now())
+  exposureCountedAt DateTime?
+  request       ServiceRequest           @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  batch         ServiceDistributionBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  advogado      advogados                @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, advogadoId])
+  @@index([batchId])
+  @@index([advogadoId])
+  @@map("service_distribution_candidates")
+}
+
+/// Última leitura do chat por usuário (MVP para badge / não lidas).
+model ServiceRequestParticipantRead {
+  id                String         @id @default(cuid())
+  requestId         String
+  userId            String
+  lastReadMessageId String?
+  lastReadAt        DateTime       @default(now())
+  request           ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user              users          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, userId])
+  @@map("service_request_participant_reads")
+}
+
+model ServiceRequestMessage {
+  id           String                    @id @default(cuid())
+  requestId    String
+  authorUserId String
+  content      String                    @db.Text
+  attachmentId String?
+  createdAt    DateTime                  @default(now())
+  request      ServiceRequest            @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  author       users                     @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+  attachment   ServiceRequestAttachment? @relation(fields: [attachmentId], references: [id], onDelete: SetNull)
+
+  @@index([requestId, createdAt])
+  @@index([attachmentId])
   @@map("service_request_messages")
 }
 
 model ServiceRequestStatusHistory {
-  id               String               @id @default(cuid())
-  requestId        String
-  fromStatus       ServiceRequestStatus?
-  toStatus         ServiceRequestStatus
-  actorUserId      String
-  note             String?
-  isAdminOverride  Boolean              @default(false)
-  adminReason      String?
-  createdAt        DateTime             @default(now())
-  request          ServiceRequest       @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  actor            users                @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+  id              String                @id @default(cuid())
+  requestId       String
+  fromStatus      ServiceRequestStatus?
+  toStatus        ServiceRequestStatus
+  actorUserId     String
+  note            String?
+  isAdminOverride Boolean               @default(false)
+  adminReason     String?
+  createdAt       DateTime              @default(now())
+  request         ServiceRequest        @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  actor           users                 @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
 
   @@index([requestId, createdAt])
   @@map("service_request_status_history")
 }
 
 model ServiceReview {
-  id                  String         @id @default(cuid())
-  serviceRequestId    String
-  reviewerAdvogadoId  String
-  targetAdvogadoId    String
-  rating              Int
-  comment             String?
-  createdAt           DateTime       @default(now())
-  serviceRequest      ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
-  reviewer            advogados      @relation("ServiceReviewReviewer", fields: [reviewerAdvogadoId], references: [id], onDelete: Cascade)
-  target              advogados      @relation("ServiceReviewTarget", fields: [targetAdvogadoId], references: [id], onDelete: Cascade)
+  id                 String         @id @default(cuid())
+  serviceRequestId   String
+  reviewerAdvogadoId String
+  targetAdvogadoId   String
+  rating             Int
+  comment            String?
+  createdAt          DateTime       @default(now())
+  serviceRequest     ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  reviewer           advogados      @relation("ServiceReviewReviewer", fields: [reviewerAdvogadoId], references: [id], onDelete: Cascade)
+  target             advogados      @relation("ServiceReviewTarget", fields: [targetAdvogadoId], references: [id], onDelete: Cascade)
 
   @@unique([serviceRequestId, reviewerAdvogadoId])
   @@index([targetAdvogadoId])
