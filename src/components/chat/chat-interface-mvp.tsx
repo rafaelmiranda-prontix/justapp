@@ -82,23 +82,24 @@ const ChatMessage = memo(
           )}
         >
           {isEditing ? (
-            <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="space-y-2 rounded-md border border-border bg-background p-2 text-foreground shadow-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Textarea
                 value={editDraft}
                 onChange={(e) => onDraftChange(e.target.value)}
-                className={cn(
-                  'min-h-[72px] text-sm text-foreground bg-background',
-                  isCurrentUser && 'border-primary-foreground/30'
-                )}
+                className="min-h-[72px] text-sm bg-background"
                 maxLength={2000}
                 disabled={savingEdit}
               />
-              <div className="flex gap-2 justify-end">
-                <Button type="button" variant="secondary" size="sm" disabled={savingEdit} onClick={onCancelEdit}>
+              <div className="flex flex-wrap gap-2 justify-end">
+                <Button type="button" variant="outline" size="sm" disabled={savingEdit} onClick={onCancelEdit}>
                   Cancelar
                 </Button>
                 <Button
                   type="button"
+                  variant="default"
                   size="sm"
                   disabled={savingEdit || !editDraft.trim()}
                   onClick={() => onSaveEdit(message.id)}
@@ -110,7 +111,7 @@ const ChatMessage = memo(
           ) : (
             <p className="text-sm whitespace-pre-wrap break-words">{message.conteudo}</p>
           )}
-          {message.anexoUrl && (
+          {!isEditing && message.anexoUrl && (
             <a
               href={message.anexoUrl}
               target="_blank"
@@ -123,6 +124,7 @@ const ChatMessage = memo(
           <div
             className={cn(
               'text-xs mt-1 flex flex-wrap items-center gap-x-2 gap-y-1',
+              isEditing ? 'hidden' : '',
               isCurrentUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
             )}
           >
