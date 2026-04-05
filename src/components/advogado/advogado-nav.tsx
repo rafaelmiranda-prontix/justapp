@@ -66,16 +66,33 @@ export const navItems: NavItem[] = [
   },
 ]
 
-export function AdvogadoNav() {
-  return <DashboardSidebar items={navItems} variant="indigo" />
+const AUDIENCIAS_HREF = '/advogado/audiencias-diligencias'
+
+function filterNavItems(items: NavItem[], audienciasDiligenciasEnabled: boolean): NavItem[] {
+  if (audienciasDiligenciasEnabled) return items
+  return items.filter((item) => item.href !== AUDIENCIAS_HREF && !item.href.startsWith(AUDIENCIAS_HREF + '/'))
 }
 
-export function AdvogadoMobileNav() {
+export function AdvogadoNav({
+  audienciasDiligenciasEnabled = true,
+}: {
+  audienciasDiligenciasEnabled?: boolean
+}) {
+  const items = filterNavItems(navItems, audienciasDiligenciasEnabled)
+  return <DashboardSidebar items={items} variant="indigo" />
+}
+
+export function AdvogadoMobileNav({
+  audienciasDiligenciasEnabled = true,
+}: {
+  audienciasDiligenciasEnabled?: boolean
+}) {
   const pathname = usePathname()
+  const items = filterNavItems(navItems, audienciasDiligenciasEnabled)
 
   return (
     <nav className="flex flex-col space-y-1 p-4">
-      {navItems.map((item) => {
+      {items.map((item) => {
         const Icon = item.icon
         const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
 

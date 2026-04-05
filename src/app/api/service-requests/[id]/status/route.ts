@@ -10,6 +10,7 @@ import {
 } from '@/lib/service-requests/access'
 import { isStatusTransitionAllowed } from '@/lib/service-requests/status'
 import { notifyServiceRequestEvent } from '@/lib/service-requests/notify'
+import { assertAudienciasDiligenciasEnabled } from '@/lib/service-requests/feature-guard'
 
 const bodySchema = z.object({
   toStatus: z.nativeEnum(ServiceRequestStatus),
@@ -26,6 +27,8 @@ export async function POST(
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+    const featureBlocked = await assertAudienciasDiligenciasEnabled()
+    if (featureBlocked) return featureBlocked
     const { id } = await params
     const row = await getServiceRequestWithParties(id)
     if (!row) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })

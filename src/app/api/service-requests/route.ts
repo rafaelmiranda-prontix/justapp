@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { OperationalServiceKind, ServiceRequestStatus } from '@prisma/client'
 import { getAdvogadoForUserId } from '@/lib/service-requests/access'
 import { seedDistributionBatchForRequest } from '@/lib/service-requests/distribution'
+import { assertAudienciasDiligenciasEnabled } from '@/lib/service-requests/feature-guard'
 
 const createSchema = z.object({
   kind: z.nativeEnum(OperationalServiceKind),
@@ -29,6 +30,8 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.id || session.user.role !== 'ADVOGADO') {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+    const featureBlocked = await assertAudienciasDiligenciasEnabled()
+    if (featureBlocked) return featureBlocked
     const advogado = await getAdvogadoForUserId(session.user.id)
     if (!advogado) return NextResponse.json({ error: 'Advogado não encontrado' }, { status: 404 })
     if (!advogado.aprovado) {

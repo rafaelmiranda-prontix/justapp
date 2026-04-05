@@ -213,6 +213,14 @@ async function main() {
       descricao: 'Ativar modo beta (requer código de convite)',
       categoria: 'geral',
     },
+    {
+      chave: 'audiencias_diligencias_enabled',
+      valor: 'true',
+      tipo: 'BOOLEAN',
+      descricao:
+        'Ativar módulo Audiências e diligências para advogados (menu, páginas e APIs). O painel administrativo de gestão permanece disponível.',
+      categoria: 'funcionalidades',
+    },
   ]
 
   for (const config of configuracoesPadrao) {

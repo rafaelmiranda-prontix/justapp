@@ -1,22 +1,17 @@
-'use client'
+import { ConfigService } from '@/lib/config-service'
+import { AdvogadoLayoutClient } from './advogado-layout-client'
 
-import { DashboardHeader } from '@/components/layout/dashboard-header'
-import { AdvogadoNav, AdvogadoMobileNav } from '@/components/advogado/advogado-nav'
+export const dynamic = 'force-dynamic'
 
-export default function AdvogadoLayout({
+export default async function AdvogadoLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const audienciasDiligenciasEnabled = await ConfigService.isAudienciasDiligenciasEnabled()
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50">
-      <DashboardHeader mobileNav={<AdvogadoMobileNav />} />
-      <div className="flex">
-        <AdvogadoNav />
-        <main className="flex-1">
-          {children}
-        </main>
-      </div>
-    </div>
+    <AdvogadoLayoutClient audienciasDiligenciasEnabled={audienciasDiligenciasEnabled}>
+      {children}
+    </AdvogadoLayoutClient>
   )
 }

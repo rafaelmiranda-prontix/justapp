@@ -116,6 +116,14 @@ async function seedConfigs() {
       descricao: 'Modo beta ativo (requer código de convite)',
       categoria: 'sistema',
     },
+    {
+      chave: 'audiencias_diligencias_enabled',
+      valor: 'true',
+      tipo: 'BOOLEAN' as const,
+      descricao:
+        'Ativar módulo Audiências e diligências para advogados (menu, páginas e APIs). O painel administrativo permanece disponível.',
+      categoria: 'funcionalidades',
+    },
 
     // === CHAT ANÔNIMO ===
     {

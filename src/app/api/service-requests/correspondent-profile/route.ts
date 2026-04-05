@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { OperationalServiceKind } from '@prisma/client'
 import { getAdvogadoForUserId } from '@/lib/service-requests/access'
+import { assertAudienciasDiligenciasEnabled } from '@/lib/service-requests/feature-guard'
 
 const kindEnum = z.nativeEnum(OperationalServiceKind)
 
@@ -33,6 +34,8 @@ export async function GET() {
     if (!session?.user?.id || session.user.role !== 'ADVOGADO') {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+    const featureBlockedGet = await assertAudienciasDiligenciasEnabled()
+    if (featureBlockedGet) return featureBlockedGet
     const advogado = await getAdvogadoForUserId(session.user.id)
     if (!advogado) return NextResponse.json({ error: 'Advogado não encontrado' }, { status: 404 })
 
@@ -73,6 +76,8 @@ export async function PATCH(req: NextRequest) {
     if (!session?.user?.id || session.user.role !== 'ADVOGADO') {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+    const featureBlockedPatch = await assertAudienciasDiligenciasEnabled()
+    if (featureBlockedPatch) return featureBlockedPatch
     const advogado = await getAdvogadoForUserId(session.user.id)
     if (!advogado) return NextResponse.json({ error: 'Advogado não encontrado' }, { status: 404 })
 

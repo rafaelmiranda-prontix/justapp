@@ -27,6 +27,13 @@ const categoriaLabels: Record<string, string> = {
   chat: 'Chat e Mensagens',
   leads: 'Leads e Limites',
   sistema: 'Sistema Geral',
+  geral: 'Sistema Geral',
+  funcionalidades: 'Funcionalidades',
+  notificacao: 'Notificações',
+  notificacoes: 'Notificações',
+  avaliacoes: 'Avaliações',
+  anonymous: 'Chat anônimo',
+  email: 'E-mail',
   outros: 'Outros',
 }
 

@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -90,6 +91,9 @@ const benefitsCidadao = [
   'Sem custos para você',
 ]
 
+const beneficioAudienciasDiligenciasLanding =
+  'Audiências e diligências: publique demandas ou atue como correspondente em outras comarcas'
+
 const benefitsAdvogado = [
   'Leads qualificados na sua área',
   'Conexão inteligente reduz perda de tempo',
@@ -97,7 +101,7 @@ const benefitsAdvogado = [
   'Plano flexível: gratuito ou premium',
   'Atendimento em todo o Brasil',
   'Aumente sua base de clientes',
-  'Audiências e diligências: publique demandas ou atue como correspondente em outras comarcas',
+  beneficioAudienciasDiligenciasLanding,
 ]
 
 const stats = [
@@ -145,6 +149,24 @@ export default function LandingPage() {
     submitLeadData,
     resetChat,
   } = useAnonymousChat()
+
+  const [audienciasFeatureOn, setAudienciasFeatureOn] = useState(true)
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/public/feature-flags')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled) setAudienciasFeatureOn(d.audienciasDiligenciasEnabled !== false)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const benefitsAdvogadoVisiveis = audienciasFeatureOn
+    ? benefitsAdvogado
+    : benefitsAdvogado.filter((b) => b !== beneficioAudienciasDiligenciasLanding)
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -367,7 +389,7 @@ export default function LandingPage() {
 
       {/* Benefits - Advogado */}
       <section
-        id="audiencias-diligencias"
+        id={audienciasFeatureOn ? 'audiencias-diligencias' : undefined}
         className="container mx-auto px-4 py-20 md:py-28 scroll-mt-20"
       >
         <div className="max-w-6xl mx-auto">
@@ -380,7 +402,7 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-6">
-            {benefitsAdvogado.map((benefit, idx) => (
+            {benefitsAdvogadoVisiveis.map((benefit, idx) => (
               <div key={idx} className="flex items-start gap-4 p-4 rounded-lg bg-muted/50">
                 <Award className="h-6 w-6 text-primary shrink-0 mt-1" />
                 <p className="text-lg">{benefit}</p>
@@ -388,30 +410,32 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <Card className="mt-10 border-2 border-primary/25 bg-primary/5">
-            <CardContent className="pt-8 pb-8 md:flex md:items-center md:gap-8">
-              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/15 shrink-0 mb-6 md:mb-0 mx-auto md:mx-0">
-                <CalendarDays className="h-8 w-8 text-primary" />
-              </div>
-              <div className="flex-1 text-center md:text-left">
-                <h3 className="text-2xl font-semibold mb-2">
-                  Audiências e diligências entre advogados
-                </h3>
-                <p className="text-muted-foreground text-lg mb-4">
-                  Precisa de correspondente em outra cidade? Quer atuar como correspondente?
-                  No painel, você publica serviços operacionais (audiência, protocolo, cópias,
-                  diligências) ou aceita oportunidades compatíveis com sua região — com chat,
-                  status, anexos e histórico na própria plataforma.
-                </p>
-                <Button asChild>
-                  <Link href="/signup/advogado">
-                    Criar conta e acessar o módulo
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {audienciasFeatureOn && (
+            <Card className="mt-10 border-2 border-primary/25 bg-primary/5">
+              <CardContent className="pt-8 pb-8 md:flex md:items-center md:gap-8">
+                <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/15 shrink-0 mb-6 md:mb-0 mx-auto md:mx-0">
+                  <CalendarDays className="h-8 w-8 text-primary" />
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <h3 className="text-2xl font-semibold mb-2">
+                    Audiências e diligências entre advogados
+                  </h3>
+                  <p className="text-muted-foreground text-lg mb-4">
+                    Precisa de correspondente em outra cidade? Quer atuar como correspondente?
+                    No painel, você publica serviços operacionais (audiência, protocolo, cópias,
+                    diligências) ou aceita oportunidades compatíveis com sua região — com chat,
+                    status, anexos e histórico na própria plataforma.
+                  </p>
+                  <Button asChild>
+                    <Link href="/signup/advogado">
+                      Criar conta e acessar o módulo
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="text-center mt-12">
             <Button size="lg" variant="outline" className="text-lg px-8 border-2" asChild>

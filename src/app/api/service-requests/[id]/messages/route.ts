@@ -9,6 +9,7 @@ import {
   getServiceRequestWithParties,
 } from '@/lib/service-requests/access'
 import { notifyServiceRequestEvent } from '@/lib/service-requests/notify'
+import { assertAudienciasDiligenciasEnabled } from '@/lib/service-requests/feature-guard'
 
 const bodySchema = z.object({
   content: z.string().min(1).max(20000),
@@ -41,6 +42,8 @@ export async function GET(
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+    const featureBlocked = await assertAudienciasDiligenciasEnabled()
+    if (featureBlocked) return featureBlocked
     const { id } = await params
     const row = await getServiceRequestWithParties(id)
     if (!row) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
@@ -87,6 +90,8 @@ export async function POST(
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+    const featureBlockedPost = await assertAudienciasDiligenciasEnabled()
+    if (featureBlockedPost) return featureBlockedPost
     const { id } = await params
     const row = await getServiceRequestWithParties(id)
     if (!row) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { ServiceRequestStatus } from '@prisma/client'
 import { getAdvogadoForUserId } from '@/lib/service-requests/access'
 import { notifyServiceRequestEvent } from '@/lib/service-requests/notify'
+import { assertAudienciasDiligenciasEnabled } from '@/lib/service-requests/feature-guard'
 
 export async function POST(
   _req: NextRequest,
@@ -15,6 +16,8 @@ export async function POST(
     if (!session?.user?.id || session.user.role !== 'ADVOGADO') {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+    const featureBlocked = await assertAudienciasDiligenciasEnabled()
+    if (featureBlocked) return featureBlocked
     const advogado = await getAdvogadoForUserId(session.user.id)
     if (!advogado) return NextResponse.json({ error: 'Advogado não encontrado' }, { status: 404 })
 

@@ -6,6 +6,7 @@ import { getAdvogadoForUserId, getServiceRequestWithParties } from '@/lib/servic
 import { canViewServiceRequestDetail } from '@/lib/service-requests/can-view'
 import { updateServiceRequestBySolicitor } from '@/lib/service-requests/update-service-request'
 import { z } from 'zod'
+import { assertAudienciasDiligenciasEnabled } from '@/lib/service-requests/feature-guard'
 
 export async function GET(
   _req: NextRequest,
@@ -17,6 +18,8 @@ export async function GET(
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+    const featureBlocked = await assertAudienciasDiligenciasEnabled()
+    if (featureBlocked) return featureBlocked
     const { id } = await params
     const row = await getServiceRequestWithParties(id)
     if (!row) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
@@ -113,6 +116,8 @@ export async function PATCH(
     if (!session?.user?.id || session.user.role !== 'ADVOGADO') {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+    const featureBlocked = await assertAudienciasDiligenciasEnabled()
+    if (featureBlocked) return featureBlocked
     const advogado = await getAdvogadoForUserId(session.user.id)
     if (!advogado) return NextResponse.json({ error: 'Advogado não encontrado' }, { status: 404 })
 

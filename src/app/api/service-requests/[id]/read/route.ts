@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { canAccessServiceRequest, getServiceRequestWithParties } from '@/lib/service-requests/access'
 import { z } from 'zod'
+import { assertAudienciasDiligenciasEnabled } from '@/lib/service-requests/feature-guard'
 
 const bodySchema = z.object({
   lastReadMessageId: z.string().cuid().optional(),
@@ -22,6 +23,8 @@ export async function POST(
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+    const featureBlocked = await assertAudienciasDiligenciasEnabled()
+    if (featureBlocked) return featureBlocked
     const { id } = await params
     const row = await getServiceRequestWithParties(id)
     if (!row) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })

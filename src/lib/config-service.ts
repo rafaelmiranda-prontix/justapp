@@ -211,6 +211,34 @@ export class ConfigService {
   static async getMaxRedistributionsPerCase(): Promise<number> {
     return this.get<number>('max_redistributions_per_case', 3)
   }
+
+  /**
+   * Módulo Audiências e diligências (advogado + APIs públicas do recurso).
+   * Painel admin permanece acessível para gestão e para alterar esta chave.
+   *
+   * Sempre lê do banco (sem cache em memória) para refletir alterações imediatas
+   * no painel ou no SQL. Normaliza boolean mesmo se `tipo` ou `valor` estiverem incorretos.
+   */
+  static async isAudienciasDiligenciasEnabled(): Promise<boolean> {
+    const chave = 'audiencias_diligencias_enabled'
+    try {
+      const config = await prisma.configuracoes.findUnique({
+        where: { chave },
+      })
+      configCache.delete(chave)
+      if (!config) return true
+      if (config.tipo === 'BOOLEAN') {
+        return config.valor === 'true'
+      }
+      const s = String(config.valor).trim().toLowerCase()
+      if (s === 'false' || s === '0' || s === 'no' || s === 'off') return false
+      if (s === 'true' || s === '1' || s === 'yes' || s === 'on') return true
+      return true
+    } catch (error) {
+      console.error(`Erro ao buscar configuração ${chave}:`, error)
+      return true
+    }
+  }
 }
 
 // Exporta instância padrão e helpers individuais

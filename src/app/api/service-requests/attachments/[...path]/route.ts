@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { getServiceRequestWithParties } from '@/lib/service-requests/access'
 import { canViewServiceRequestDetail } from '@/lib/service-requests/can-view'
+import { assertAudienciasDiligenciasEnabled } from '@/lib/service-requests/feature-guard'
 
 /** Path no storage: service-requests/{requestId}/... */
 export async function GET(
@@ -18,6 +19,9 @@ export async function GET(
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+
+    const featureBlocked = await assertAudienciasDiligenciasEnabled()
+    if (featureBlocked) return featureBlocked
 
     const { path: segments } = await params
     if (!segments?.length) {

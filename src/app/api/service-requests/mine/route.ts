@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma, ServiceRequestStatus } from '@prisma/client'
 import { getAdvogadoForUserId } from '@/lib/service-requests/access'
+import { assertAudienciasDiligenciasEnabled } from '@/lib/service-requests/feature-guard'
 
 /**
  * GET /api/service-requests/mine?role=solicitor|correspondent&status=&from=&to=
@@ -14,6 +15,8 @@ export async function GET(req: NextRequest) {
     if (!session?.user?.id || session.user.role !== 'ADVOGADO') {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+    const featureBlocked = await assertAudienciasDiligenciasEnabled()
+    if (featureBlocked) return featureBlocked
     const advogado = await getAdvogadoForUserId(session.user.id)
     if (!advogado) return NextResponse.json({ error: 'Advogado não encontrado' }, { status: 404 })
 
