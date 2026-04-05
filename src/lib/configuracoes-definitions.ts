@@ -17,6 +17,13 @@ export const CONFIGURACOES_DEFINIDAS: Record<
       'Ativar módulo Audiências e diligências para advogados (menu, páginas e APIs). O painel administrativo permanece disponível.',
     categoria: 'funcionalidades',
   },
+  chat_message_edit_window_minutes: {
+    tipo: 'NUMBER',
+    valorPadrao: '15',
+    descricao:
+      'Janela em minutos após o envio em que o autor pode editar mensagens no chat cidadão ↔ advogado (matches).',
+    categoria: 'chat',
+  },
 }
 
 export function getDefinicaoConfiguracao(chave: string) {

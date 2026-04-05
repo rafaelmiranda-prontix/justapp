@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth'
 import { pusherServer } from '@/lib/pusher'
 import { randomUUID } from 'crypto'
 import { logger } from '@/lib/logger'
+import { ConfigService } from '@/lib/config-service'
 
 const createMessageSchema = z.object({
   conteudo: z.string().min(1).max(2000),
@@ -74,7 +75,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ matchId:
     const afterId = url.searchParams.get('after') // Para buscar apenas novas mensagens (MVP polling)
 
     // Se `after` é fornecido, buscar apenas mensagens mais recentes que este ID
-    const whereClause: any = { matchId }
+    const whereClause: any = { matchId, deletedAt: null }
     if (afterId) {
       // Buscar mensagens criadas depois do ID fornecido
       const afterMessage = await prisma.mensagens.findUnique({
@@ -95,6 +96,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ matchId:
         anexoUrl: true,
         lida: true,
         createdAt: true,
+        isEdited: true,
+        editedAt: true,
+        editCount: true,
         remetente: {
           select: {
             id: true,
@@ -113,9 +117,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ matchId:
       mensagens.reverse()
     }
 
+    const editWindowMinutes = await ConfigService.getChatMessageEditWindowMinutes()
+
     return NextResponse.json({
       success: true,
       data: mensagens,
+      editWindowMinutes,
     })
   } catch (error) {
     console.error('Error fetching messages:', error)

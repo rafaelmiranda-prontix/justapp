@@ -38,6 +38,8 @@ type Row = {
   remetenteId: string
   conteudo: string
   lida: boolean
+  isEdited: boolean
+  editCount: number
   createdAt: Date
   remetente: { id: string; name: string; email: string; role: string }
   matches: {
@@ -103,6 +105,8 @@ function mapRow(m: Row) {
     conteudoPreview: preview,
     conteudoLength: m.conteudo.length,
     lida: m.lida,
+    isEdited: m.isEdited,
+    editCount: m.editCount,
     remetente: {
       id: m.remetente.id,
       name: m.remetente.name,

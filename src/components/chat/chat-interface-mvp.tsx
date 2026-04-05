@@ -8,23 +8,21 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FileUpload } from '@/components/ui/file-upload'
-import { Send, Loader2 } from 'lucide-react'
+import { Send, Loader2, Pencil } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import { getPusherClient } from '@/lib/pusher'
+import type { ChatMatchMessage } from '@/hooks/use-realtime-messages'
 
-interface Message {
-  id: string
-  conteudo: string
-  anexoUrl: string | null
-  lida: boolean
-  createdAt: string
-  remetente: {
-    id: string
-    name: string
-    image: string | null
-  }
+type Message = ChatMatchMessage
+
+function canEditInWindow(m: Message, currentUserId: string, windowMinutes: number) {
+  if (m.remetente.id !== currentUserId) return false
+  if (m.id.startsWith('temp-')) return false
+  const deadline = new Date(m.createdAt).getTime() + windowMinutes * 60 * 1000
+  return Date.now() <= deadline
 }
 
 interface ChatInterfaceProps {
@@ -42,11 +40,33 @@ const ChatMessage = memo(
     message,
     isCurrentUser,
     getInitials,
+    currentUserId,
+    editWindowMinutes,
+    editingId,
+    editDraft,
+    onDraftChange,
+    onStartEdit,
+    onCancelEdit,
+    onSaveEdit,
+    savingEdit,
   }: {
     message: Message
     isCurrentUser: boolean
     getInitials: (name: string) => string
+    currentUserId: string
+    editWindowMinutes: number
+    editingId: string | null
+    editDraft: string
+    onDraftChange: (v: string) => void
+    onStartEdit: (m: Message) => void
+    onCancelEdit: () => void
+    onSaveEdit: (messageId: string) => void
+    savingEdit: boolean
   }) => {
+    const showEdit =
+      isCurrentUser && canEditInWindow(message, currentUserId, editWindowMinutes) && editingId !== message.id
+    const isEditing = editingId === message.id
+
     return (
       <div className={cn('flex gap-2', isCurrentUser ? 'justify-end' : '')}>
         {!isCurrentUser && (
@@ -61,7 +81,35 @@ const ChatMessage = memo(
             isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
           )}
         >
-          <p className="text-sm whitespace-pre-wrap break-words">{message.conteudo}</p>
+          {isEditing ? (
+            <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+              <Textarea
+                value={editDraft}
+                onChange={(e) => onDraftChange(e.target.value)}
+                className={cn(
+                  'min-h-[72px] text-sm text-foreground bg-background',
+                  isCurrentUser && 'border-primary-foreground/30'
+                )}
+                maxLength={2000}
+                disabled={savingEdit}
+              />
+              <div className="flex gap-2 justify-end">
+                <Button type="button" variant="secondary" size="sm" disabled={savingEdit} onClick={onCancelEdit}>
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={savingEdit || !editDraft.trim()}
+                  onClick={() => onSaveEdit(message.id)}
+                >
+                  Salvar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm whitespace-pre-wrap break-words">{message.conteudo}</p>
+          )}
           {message.anexoUrl && (
             <a
               href={message.anexoUrl}
@@ -72,17 +120,42 @@ const ChatMessage = memo(
               Ver anexo
             </a>
           )}
-          <p
+          <div
             className={cn(
-              'text-xs mt-1',
+              'text-xs mt-1 flex flex-wrap items-center gap-x-2 gap-y-1',
               isCurrentUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
             )}
           >
-            {formatDistanceToNow(new Date(message.createdAt), {
-              addSuffix: true,
-              locale: ptBR,
-            })}
-          </p>
+            <span>
+              {formatDistanceToNow(new Date(message.createdAt), {
+                addSuffix: true,
+                locale: ptBR,
+              })}
+            </span>
+            {message.isEdited && (
+              <span className="opacity-90">
+                · Editado
+                {message.editedAt
+                  ? ` ${formatDistanceToNow(new Date(message.editedAt), { addSuffix: true, locale: ptBR })}`
+                  : ''}
+              </span>
+            )}
+            {showEdit && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'h-6 px-1.5 text-xs',
+                  isCurrentUser && 'text-primary-foreground hover:bg-primary-foreground/10'
+                )}
+                onClick={() => onStartEdit(message)}
+              >
+                <Pencil className="h-3 w-3 mr-1" />
+                Editar
+              </Button>
+            )}
+          </div>
         </div>
         {isCurrentUser && (
           <Avatar className="h-8 w-8">
@@ -106,6 +179,10 @@ export function ChatInterfaceMVP({
   otherUserImage,
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
+  const [editWindowMinutes, setEditWindowMinutes] = useState(15)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editDraft, setEditDraft] = useState('')
+  const [savingEdit, setSavingEdit] = useState(false)
   const [newMessage, setNewMessage] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -131,6 +208,9 @@ export function ChatInterfaceMVP({
       const result = await res.json()
 
       if (result.success && result.data.length > 0) {
+        if (typeof result.editWindowMinutes === 'number') {
+          setEditWindowMinutes(result.editWindowMinutes)
+        }
         setMessages((prev) => {
           // Evitar duplicatas
           const newMsgs = result.data.filter(
@@ -161,6 +241,9 @@ export function ChatInterfaceMVP({
       if (result.success) {
         setMessages(result.data)
         setHasMore(result.data.length === 50)
+        if (typeof result.editWindowMinutes === 'number') {
+          setEditWindowMinutes(result.editWindowMinutes)
+        }
 
         if (result.data.length > 0) {
           lastMessageIdRef.current = result.data[result.data.length - 1].id
@@ -207,6 +290,85 @@ export function ChatInterfaceMVP({
       }
     }
   }, [fetchInitialMessages, fetchNewMessages])
+
+  // Sincronizar edições entre abas / participantes
+  useEffect(() => {
+    if (!matchId) return
+    const client = getPusherClient()
+    const channel = client.subscribe(`match-${matchId}`)
+    channel.bind('message-edited', (data: Message) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === data.id
+            ? {
+                ...m,
+                conteudo: data.conteudo,
+                isEdited: data.isEdited ?? true,
+                editedAt:
+                  typeof data.editedAt === 'string'
+                    ? data.editedAt
+                    : data.editedAt
+                      ? new Date(data.editedAt as unknown as string).toISOString()
+                      : new Date().toISOString(),
+                editCount: data.editCount ?? m.editCount,
+              }
+            : m
+        )
+      )
+    })
+    return () => {
+      channel.unbind_all()
+      channel.unsubscribe()
+    }
+  }, [matchId])
+
+  const handleSaveEdit = useCallback(
+    async (messageId: string) => {
+      const trimmed = editDraft.trim()
+      if (!trimmed) return
+      setSavingEdit(true)
+      try {
+        const res = await fetch(`/api/chat/messages/${messageId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: trimmed }),
+        })
+        const result = await res.json()
+        if (!result.success) {
+          throw new Error(result.error || 'Erro ao editar')
+        }
+        const data = result.data as Message
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === messageId
+              ? {
+                  ...m,
+                  conteudo: data.conteudo,
+                  isEdited: data.isEdited ?? true,
+                  editedAt: data.editedAt
+                    ? typeof data.editedAt === 'string'
+                      ? data.editedAt
+                      : new Date(data.editedAt).toISOString()
+                    : new Date().toISOString(),
+                  editCount: data.editCount ?? m.editCount,
+                }
+              : m
+          )
+        )
+        setEditingId(null)
+        setEditDraft('')
+      } catch (e) {
+        toast({
+          title: 'Não foi possível editar',
+          description: e instanceof Error ? e.message : 'Tente novamente',
+          variant: 'destructive',
+        })
+      } finally {
+        setSavingEdit(false)
+      }
+    },
+    [editDraft, toast]
+  )
 
   // Auto-scroll otimizado (apenas quando novas mensagens)
   useEffect(() => {
@@ -447,6 +609,21 @@ export function ChatInterfaceMVP({
                 message={message}
                 isCurrentUser={message.remetente.id === currentUserId}
                 getInitials={getInitials}
+                currentUserId={currentUserId}
+                editWindowMinutes={editWindowMinutes}
+                editingId={editingId}
+                editDraft={editDraft}
+                onDraftChange={setEditDraft}
+                onStartEdit={(m) => {
+                  setEditingId(m.id)
+                  setEditDraft(m.conteudo)
+                }}
+                onCancelEdit={() => {
+                  setEditingId(null)
+                  setEditDraft('')
+                }}
+                onSaveEdit={(id) => void handleSaveEdit(id)}
+                savingEdit={savingEdit}
               />
             ))}
             <div ref={messagesEndRef} />

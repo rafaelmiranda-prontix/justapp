@@ -157,6 +157,17 @@ export class ConfigService {
   }
 
   /**
+   * Janela em minutos para o autor editar mensagem no chat match (cidadão/advogado).
+   */
+  static async getChatMessageEditWindowMinutes(): Promise<number> {
+    const raw = await this.get<number>('chat_message_edit_window_minutes', 15)
+    const n = Number(raw)
+    if (!Number.isFinite(n) || n < 1) return 15
+    if (n > 24 * 60) return 24 * 60
+    return Math.floor(n)
+  }
+
+  /**
    * Retorna horas para lembrete de expiração
    */
   static async getMatchExpiringReminderHours(): Promise<number> {

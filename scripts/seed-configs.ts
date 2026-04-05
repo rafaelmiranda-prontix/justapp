@@ -84,6 +84,14 @@ async function seedConfigs() {
       descricao: 'Tamanho máximo de anexo em MB',
       categoria: 'chat',
     },
+    {
+      chave: 'chat_message_edit_window_minutes',
+      valor: '15',
+      tipo: 'NUMBER' as const,
+      descricao:
+        'Minutos após o envio em que o autor pode editar mensagens no chat cidadão ↔ advogado',
+      categoria: 'chat',
+    },
 
     // === AVALIAÇÕES ===
     {

@@ -54,6 +54,7 @@ function getSeverity(action: string): 'INFO' | 'WARNING' | 'CRITICAL' {
     'CONFIGURACAO_ALTERADA',
     'PLANO_CRIADO',
     'PLANO_EDITADO',
+    'CHAT_MESSAGE_EDITED',
   ]
 
   if (criticalActions.includes(action)) {

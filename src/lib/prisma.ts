@@ -22,7 +22,8 @@ function getPrisma(): PrismaClient {
       (typeof (cached as unknown as { emailActionToken?: unknown }).emailActionToken === 'undefined' ||
         typeof (cached as unknown as { supportContact?: unknown }).supportContact === 'undefined' ||
         typeof (cached as unknown as { serviceDistributionBatch?: unknown }).serviceDistributionBatch ===
-          'undefined')
+          'undefined' ||
+        typeof (cached as unknown as { messageEditHistory?: unknown }).messageEditHistory === 'undefined')
     if (stale) {
       void cached.$disconnect().catch(() => {})
       const next = createPrismaClient()

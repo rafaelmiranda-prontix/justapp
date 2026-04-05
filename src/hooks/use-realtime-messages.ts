@@ -2,12 +2,15 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { getPusherClient } from '@/lib/pusher'
 import type { Channel } from 'pusher-js'
 
-interface Message {
+export interface ChatMatchMessage {
   id: string
   conteudo: string
   anexoUrl: string | null
   lida: boolean
   createdAt: string
+  isEdited?: boolean
+  editedAt?: string | null
+  editCount?: number
   remetente: {
     id: string
     name: string
@@ -16,12 +19,14 @@ interface Message {
 }
 
 interface UseRealtimeMessagesReturn {
-  messages: Message[]
+  messages: ChatMatchMessage[]
+  editWindowMinutes: number
   isLoading: boolean
   isLoadingMore: boolean
   hasMore: boolean
   error: string | null
   sendMessage: (content: string, attachmentUrl?: string | null) => Promise<void>
+  editMessageContent: (messageId: string, content: string) => Promise<void>
   loadMore: () => Promise<void>
   markAsRead: () => void
   typingUsers: Set<string>
@@ -35,7 +40,8 @@ export function useRealtimeMessages(
   currentUserName: string = 'Você',
   currentUserImage: string | null = null
 ): UseRealtimeMessagesReturn {
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<ChatMatchMessage[]>([])
+  const [editWindowMinutes, setEditWindowMinutes] = useState(15)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
@@ -56,6 +62,9 @@ export function useRealtimeMessages(
       if (result.success) {
         setMessages(result.data)
         setHasMore(result.data.length === 50)
+        if (typeof result.editWindowMinutes === 'number') {
+          setEditWindowMinutes(result.editWindowMinutes)
+        }
       } else {
         setError(result.error || 'Erro ao carregar mensagens')
       }
@@ -80,6 +89,9 @@ export function useRealtimeMessages(
       if (result.success) {
         setMessages((prev) => [...result.data, ...prev])
         setHasMore(result.data.length === 50)
+        if (typeof result.editWindowMinutes === 'number') {
+          setEditWindowMinutes(result.editWindowMinutes)
+        }
       }
     } catch (err) {
       console.error('Error loading more messages:', err)
@@ -98,7 +110,7 @@ export function useRealtimeMessages(
     channelRef.current = channel
 
     // Escutar nova mensagem
-    channel.bind('new-message', (data: Message) => {
+    channel.bind('new-message', (data: ChatMatchMessage) => {
       setMessages((prev) => {
         // Evitar duplicatas
         if (prev.some((m) => m.id === data.id)) {
@@ -106,6 +118,27 @@ export function useRealtimeMessages(
         }
         return [...prev, data]
       })
+    })
+
+    channel.bind('message-edited', (data: ChatMatchMessage) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === data.id
+            ? {
+                ...m,
+                conteudo: data.conteudo,
+                isEdited: data.isEdited ?? true,
+                editedAt:
+                  typeof data.editedAt === 'string'
+                    ? data.editedAt
+                    : data.editedAt
+                      ? new Date(data.editedAt as unknown as string).toISOString()
+                      : new Date().toISOString(),
+                editCount: data.editCount ?? m.editCount,
+              }
+            : m
+        )
+      )
     })
 
     // Escutar mensagens marcadas como lidas
@@ -149,7 +182,7 @@ export function useRealtimeMessages(
     async (content: string, attachmentUrl: string | null = null) => {
       // OPTIMISTIC UPDATE: Criar mensagem temporária
       const tempId = `temp-${Date.now()}`
-      const optimisticMessage: Message = {
+      const optimisticMessage: ChatMatchMessage = {
         id: tempId,
         conteudo: content,
         anexoUrl: attachmentUrl,
@@ -202,6 +235,36 @@ export function useRealtimeMessages(
     [matchId, currentUserId, currentUserName, currentUserImage]
   )
 
+  const editMessageContent = useCallback(async (messageId: string, content: string) => {
+    const res = await fetch(`/api/chat/messages/${messageId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    })
+    const result = await res.json()
+    if (!result.success) {
+      throw new Error(result.error || 'Erro ao editar mensagem')
+    }
+    const data = result.data as ChatMatchMessage
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId
+          ? {
+              ...m,
+              conteudo: data.conteudo,
+              isEdited: data.isEdited ?? true,
+              editedAt: data.editedAt
+                ? typeof data.editedAt === 'string'
+                  ? data.editedAt
+                  : new Date(data.editedAt).toISOString()
+                : new Date().toISOString(),
+              editCount: data.editCount ?? m.editCount,
+            }
+          : m
+      )
+    )
+  }, [])
+
   // Marcar mensagens como lidas
   const markAsRead = useCallback(() => {
     const unreadIds = messages
@@ -251,11 +314,13 @@ export function useRealtimeMessages(
 
   return {
     messages,
+    editWindowMinutes,
     isLoading,
     isLoadingMore,
     hasMore,
     error,
     sendMessage,
+    editMessageContent,
     loadMore,
     markAsRead,
     typingUsers,

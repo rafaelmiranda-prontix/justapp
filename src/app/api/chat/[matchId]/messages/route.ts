@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { ChatService } from '@/lib/chat.service'
+import { ConfigService } from '@/lib/config-service'
 
 /**
  * GET /api/chat/[matchId]/messages
@@ -37,6 +38,8 @@ export async function GET(
       )
     }
 
+    const editWindowMinutes = await ConfigService.getChatMessageEditWindowMinutes()
+
     return NextResponse.json({
       success: true,
       data: {
@@ -45,6 +48,7 @@ export async function GET(
         limit,
         offset,
         hasMore: (result.total || 0) > offset + limit,
+        editWindowMinutes,
       },
     })
   } catch (error: any) {

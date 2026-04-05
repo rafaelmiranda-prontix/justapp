@@ -31,6 +31,7 @@ import {
   Mail,
   FlaskConical,
   Loader2,
+  History,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -43,6 +44,8 @@ interface ChatMessageRow {
   conteudoPreview: string
   conteudoLength: number
   lida: boolean
+  isEdited?: boolean
+  editCount?: number
   remetente: { id: string; name: string; email: string; role: string }
   destinatario: { id: string; name: string; email: string; role: string } | null
   destinatarioResolvido: boolean
@@ -71,7 +74,39 @@ export default function AdminChatMensagensPage() {
   const [sendingTest, setSendingTest] = useState(false)
   const [sampleTestEmail, setSampleTestEmail] = useState('')
   const [sendingSample, setSendingSample] = useState(false)
+  const [historyMessageId, setHistoryMessageId] = useState<string | null>(null)
+  const [historyRows, setHistoryRows] = useState<
+    Array<{
+      id: string
+      previousContent: string
+      newContent: string
+      editedAt: string
+      editedBy: { id: string; name: string; email: string; role: string }
+    }>
+  >([])
+  const [historyLoading, setHistoryLoading] = useState(false)
   const { toast } = useToast()
+
+  async function loadEditHistory(messageId: string) {
+    setHistoryMessageId(messageId)
+    setHistoryLoading(true)
+    setHistoryRows([])
+    try {
+      const res = await fetch(`/api/admin/chat-messages/${messageId}/edit-history`)
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Erro')
+      setHistoryRows(json.data || [])
+    } catch (e) {
+      toast({
+        title: 'Erro',
+        description: e instanceof Error ? e.message : 'Falha ao carregar histórico',
+        variant: 'destructive',
+      })
+      setHistoryMessageId(null)
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -333,6 +368,7 @@ export default function AdminChatMensagensPage() {
                       <TableHead>Match / Caso</TableHead>
                       <TableHead>Prévia</TableHead>
                       <TableHead>Lida</TableHead>
+                      <TableHead>Edições</TableHead>
                       <TableHead className="text-right">E-mail</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -392,6 +428,23 @@ export default function AdminChatMensagensPage() {
                           </button>
                         </TableCell>
                         <TableCell>{r.lida ? 'Sim' : 'Não'}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs text-muted-foreground">
+                              {(r.editCount ?? 0) > 0 ? `${r.editCount} edição(ões)` : '—'}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-fit"
+                              onClick={() => void loadEditHistory(r.id)}
+                            >
+                              <History className="h-3.5 w-3.5 mr-1" />
+                              Histórico
+                            </Button>
+                          </div>
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex flex-col sm:flex-row gap-1 justify-end">
                             <Button
@@ -459,6 +512,46 @@ export default function AdminChatMensagensPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={!!historyMessageId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setHistoryMessageId(null)
+            setHistoryRows([])
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Histórico de edições</DialogTitle>
+          </DialogHeader>
+          {historyLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando…</p>
+          ) : historyRows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma edição registrada para esta mensagem.</p>
+          ) : (
+            <ul className="space-y-4 text-sm">
+              {historyRows.map((h) => (
+                <li key={h.id} className="border-b pb-3">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {format(new Date(h.editedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })} · {h.editedBy.name}{' '}
+                    ({h.editedBy.email})
+                  </p>
+                  <p className="text-xs font-medium text-muted-foreground">Antes</p>
+                  <p className="whitespace-pre-wrap break-words bg-muted/50 rounded p-2 mb-2 max-h-24 overflow-y-auto">
+                    {h.previousContent}
+                  </p>
+                  <p className="text-xs font-medium text-muted-foreground">Depois</p>
+                  <p className="whitespace-pre-wrap break-words bg-muted/50 rounded p-2 max-h-24 overflow-y-auto">
+                    {h.newContent}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!previewText} onOpenChange={() => setPreviewText(null)}>
         <DialogContent>
