@@ -4,8 +4,16 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { CaseDetails } from '@/components/casos/case-details'
-import { ArrowLeft, AlertCircle, MessageSquare, Send } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ArrowLeft, AlertCircle, Send, Headphones } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { JustAppLoading } from '@/components/ui/justapp-loading'
 import { useToast } from '@/hooks/use-toast'
@@ -106,7 +114,10 @@ export default function CidadaoCasoDetailsPage() {
       if (result.success && result.data) {
         setAdminMessages((prev) => [...prev, result.data])
         setReplyText('')
-        toast({ title: 'Mensagem enviada', description: 'Sua resposta foi enviada ao suporte.' })
+        toast({
+          title: 'Mensagem enviada',
+          description: 'Sua mensagem foi enviada à equipe de suporte da plataforma.',
+        })
       } else {
         throw new Error(result.error || 'Erro ao enviar')
       }
@@ -123,59 +134,83 @@ export default function CidadaoCasoDetailsPage() {
 
   return (
     <div className="container max-w-4xl py-8">
-      <Button variant="ghost" onClick={() => router.back()} className="mb-6">
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Voltar
-      </Button>
-
-      <CaseDetails caso={caso} showCidadaoInfo={false} />
-
-      {/* Atendimento JustApp (mediação admin) */}
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Atendimento JustApp
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Mensagens com nossa equipe sobre este caso. Você pode responder aqui.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="border rounded-lg p-3 max-h-72 overflow-y-auto space-y-2 bg-muted/30">
-            {loadingMessages ? (
-              <p className="text-sm text-muted-foreground">Carregando mensagens...</p>
-            ) : adminMessages.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda. Nossa equipe pode entrar em contato por aqui.</p>
-            ) : (
-              adminMessages.map((m) => (
-                <div
-                  key={m.id}
-                  className={`text-sm p-2 rounded ${m.senderRole === 'ADMIN' ? 'bg-muted ml-4' : 'bg-primary/10 mr-4'}`}
-                >
-                  <div className="font-medium text-xs text-muted-foreground">
-                    {m.senderRole === 'ADMIN' ? 'Atendimento JustApp' : m.sender.name} · {format(new Date(m.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                  </div>
-                  <p className="mt-1">{m.message}</p>
-                </div>
-              ))
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Textarea
-              placeholder="Digite sua resposta..."
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              rows={2}
-              className="resize-none flex-1"
-            />
-            <Button onClick={handleSendReply} disabled={!replyText.trim() || sendingReply}>
-              <Send className="h-4 w-4 mr-2" />
-              {sendingReply ? 'Enviando...' : 'Enviar'}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <Button variant="ghost" onClick={() => router.back()} className="w-fit -ml-2">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar
+        </Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="w-full sm:w-auto shrink-0">
+              <Headphones className="h-4 w-4 mr-2" />
+              Suporte da plataforma
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg sm:max-w-xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 pr-6">
+                <Headphones className="h-5 w-5" />
+                Suporte da plataforma
+              </DialogTitle>
+              <DialogDescription asChild>
+                <div className="text-left space-y-2 pt-1">
+                  <p>
+                    Use este canal para falar com a equipe do JustApp: dúvidas sobre o aplicativo, problemas
+                    técnicos, cobrança ou mediação da plataforma.
+                  </p>
+                  <p className="text-muted-foreground">
+                    Para conversar sobre o conteúdo jurídico do seu caso com o advogado, use o{' '}
+                    <strong className="font-medium text-foreground">chat com advogados</strong> na seção acima.
+                  </p>
+                </div>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="border rounded-lg p-3 max-h-60 overflow-y-auto space-y-2 bg-muted/30">
+                {loadingMessages ? (
+                  <p className="text-sm text-muted-foreground">Carregando mensagens...</p>
+                ) : adminMessages.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma mensagem ainda. Você pode enviar sua dúvida ou pedido de ajuda abaixo.
+                  </p>
+                ) : (
+                  adminMessages.map((m) => (
+                    <div
+                      key={m.id}
+                      className={`text-sm p-2 rounded ${m.senderRole === 'ADMIN' ? 'bg-muted ml-2' : 'bg-primary/10 mr-2'}`}
+                    >
+                      <div className="font-medium text-xs text-muted-foreground">
+                        {m.senderRole === 'ADMIN' ? 'Equipe JustApp' : m.sender.name} ·{' '}
+                        {format(new Date(m.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </div>
+                      <p className="mt-1">{m.message}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Textarea
+                  placeholder="Descreva sua dúvida ou pedido de suporte..."
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  rows={3}
+                  className="resize-none flex-1 min-h-[80px]"
+                />
+                <Button
+                  className="shrink-0 sm:self-end"
+                  onClick={handleSendReply}
+                  disabled={!replyText.trim() || sendingReply}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  {sendingReply ? 'Enviando...' : 'Enviar'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <CaseDetails caso={caso} showCidadaoInfo={false} lawyerChats={caso.lawyerChats ?? []} />
     </div>
   )
 }

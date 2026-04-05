@@ -29,7 +29,7 @@ export async function GET(
       return NextResponse.json({ error: 'Cidadão não encontrado' }, { status: 404 })
     }
 
-    // Buscar caso
+    // Buscar caso (matches ativos para resumo do chat com advogados)
     const caso = await prisma.casos.findUnique({
       where: { id: casoId },
       include: {
@@ -41,6 +41,19 @@ export async function GET(
                 name: true,
               },
             },
+          },
+        },
+        matches: {
+          where: { status: { in: ['ACEITO', 'CONTRATADO'] } },
+          select: {
+            id: true,
+            status: true,
+            advogados: {
+              select: {
+                users: { select: { name: true } },
+              },
+            },
+            _count: { select: { mensagens: true } },
           },
         },
       },
@@ -58,6 +71,13 @@ export async function GET(
       )
     }
 
+    const lawyerChats = caso.matches.map((m) => ({
+      matchId: m.id,
+      advogadoNome: m.advogados.users.name,
+      status: m.status,
+      messageCount: m._count.mensagens,
+    }))
+
     return NextResponse.json({
       success: true,
       data: {
@@ -70,6 +90,7 @@ export async function GET(
         createdAt: caso.createdAt.toISOString(),
         especialidades: caso.especialidades,
         cidadaos: caso.cidadaos,
+        lawyerChats,
       },
     })
   } catch (error) {

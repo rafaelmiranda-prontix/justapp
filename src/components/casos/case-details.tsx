@@ -7,13 +7,21 @@ import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { formatDate } from '@/lib/utils'
-import { Clock, MapPin, AlertCircle, MessageSquare, User, Bot, Play, Pause } from 'lucide-react'
+import Link from 'next/link'
+import { Clock, MapPin, AlertCircle, MessageSquare, User, Bot, Play, Pause, Scale } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant' | 'system'
   content: string
   timestamp?: string
   audioUrl?: string
+}
+
+export type CaseLawyerChatInfo = {
+  matchId: string
+  advogadoNome: string
+  status: string
+  messageCount: number
 }
 
 interface CaseDetailsProps {
@@ -38,6 +46,8 @@ interface CaseDetailsProps {
     }
   }
   showCidadaoInfo?: boolean // Se deve mostrar info do cidadão (apenas para advogado)
+  /** Quando definido (ex.: tela do cidadão), mostra resumo do chat com advogados no topo */
+  lawyerChats?: CaseLawyerChatInfo[]
 }
 
 const urgenciaColors = {
@@ -188,7 +198,7 @@ function normalizeConversaHistorico(
   return []
 }
 
-export function CaseDetails({ caso, showCidadaoInfo = false }: CaseDetailsProps) {
+export function CaseDetails({ caso, showCidadaoInfo = false, lawyerChats }: CaseDetailsProps) {
   const conversaHistorico = normalizeConversaHistorico(caso.conversaHistorico)
 
   return (
@@ -247,6 +257,54 @@ export function CaseDetails({ caso, showCidadaoInfo = false }: CaseDetailsProps)
           )}
         </CardContent>
       </Card>
+
+      {lawyerChats !== undefined && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <MessageSquare className="h-5 w-5" />
+              Chat com advogados do caso
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Conversa direta com o advogado após ele aceitar o caso. É diferente do suporte da plataforma.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {lawyerChats.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Ainda não há chat com advogado neste caso. Quando um advogado aceitar sua proposta, o chat será
+                liberado e você poderá enviar e receber mensagens.
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {lawyerChats.map((chat) => (
+                  <li
+                    key={chat.matchId}
+                    className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex items-start gap-2 min-w-0">
+                      <Scale className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{chat.advogadoNome}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {chat.messageCount > 0
+                            ? `Já há ${chat.messageCount} mensagem${chat.messageCount === 1 ? '' : 'es'} nesta conversa.`
+                            : 'Nenhuma mensagem ainda nesta conversa.'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button asChild size="sm" className="shrink-0 w-full sm:w-auto">
+                      <Link href={`/chat/${chat.matchId}`}>
+                        {chat.messageCount > 0 ? 'Abrir conversa' : 'Ir ao chat'}
+                      </Link>
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Descrição do problema */}
       <Card>
