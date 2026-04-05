@@ -118,7 +118,7 @@ async function seedConfigs() {
     },
     {
       chave: 'audiencias_diligencias_enabled',
-      valor: 'true',
+      valor: 'false',
       tipo: 'BOOLEAN' as const,
       descricao:
         'Ativar módulo Audiências e diligências para advogados (menu, páginas e APIs). O painel administrativo permanece disponível.',

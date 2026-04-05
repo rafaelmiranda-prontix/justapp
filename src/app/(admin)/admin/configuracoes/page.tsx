@@ -242,7 +242,8 @@ export default function ConfiguracoesPage() {
                   <div className="space-y-6">
                     {configs.map((config) => {
                       const valorAtual = editedValues[config.chave] || config.valor
-                      const hasChanges = valorAtual !== config.valor
+                      const isVirtualRow = config.id.startsWith('__virtual__')
+                      const hasChanges = valorAtual !== config.valor || isVirtualRow
 
                       return (
                         <div
@@ -259,8 +260,11 @@ export default function ConfiguracoesPage() {
                             <div className="mt-3">{renderConfigInput(config)}</div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {hasChanges && (
+                            {hasChanges && !isVirtualRow && (
                               <span className="text-xs text-muted-foreground">Modificado</span>
+                            )}
+                            {isVirtualRow && (
+                              <span className="text-xs text-muted-foreground">Ainda não salvo no banco</span>
                             )}
                             <Button
                               onClick={() => handleSave(config.chave)}

@@ -150,13 +150,13 @@ export default function LandingPage() {
     resetChat,
   } = useAnonymousChat()
 
-  const [audienciasFeatureOn, setAudienciasFeatureOn] = useState(true)
+  const [audienciasFeatureOn, setAudienciasFeatureOn] = useState(false)
   useEffect(() => {
     let cancelled = false
     fetch('/api/public/feature-flags')
       .then((r) => r.json())
       .then((d) => {
-        if (!cancelled) setAudienciasFeatureOn(d.audienciasDiligenciasEnabled !== false)
+        if (!cancelled) setAudienciasFeatureOn(d.audienciasDiligenciasEnabled === true)
       })
       .catch(() => {})
     return () => {

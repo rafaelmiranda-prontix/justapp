@@ -215,7 +215,7 @@ async function main() {
     },
     {
       chave: 'audiencias_diligencias_enabled',
-      valor: 'true',
+      valor: 'false',
       tipo: 'BOOLEAN',
       descricao:
         'Ativar módulo Audiências e diligências para advogados (menu, páginas e APIs). O painel administrativo de gestão permanece disponível.',

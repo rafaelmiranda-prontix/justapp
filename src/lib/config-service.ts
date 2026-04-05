@@ -226,17 +226,17 @@ export class ConfigService {
         where: { chave },
       })
       configCache.delete(chave)
-      if (!config) return true
+      if (!config) return false
       if (config.tipo === 'BOOLEAN') {
         return config.valor === 'true'
       }
       const s = String(config.valor).trim().toLowerCase()
       if (s === 'false' || s === '0' || s === 'no' || s === 'off') return false
       if (s === 'true' || s === '1' || s === 'yes' || s === 'on') return true
-      return true
+      return false
     } catch (error) {
       console.error(`Erro ao buscar configuração ${chave}:`, error)
-      return true
+      return false
     }
   }
 }

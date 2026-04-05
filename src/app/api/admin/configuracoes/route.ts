@@ -3,7 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ConfigService } from '@/lib/config-service'
+import { CONFIGURACOES_DEFINIDAS, getDefinicaoConfiguracao } from '@/lib/configuracoes-definitions'
 import { z } from 'zod'
+import { nanoid } from 'nanoid'
 
 const updateConfigSchema = z.object({
   chave: z.string(),
@@ -19,11 +21,36 @@ export async function GET() {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const configuracoes = await prisma.configuracoes.findMany({
+    const configuracoesDb = await prisma.configuracoes.findMany({
       orderBy: [
         { categoria: 'asc' },
         { chave: 'asc' },
       ],
+    })
+
+    const chavesDb = new Set(configuracoesDb.map((c) => c.chave))
+    const now = new Date()
+    const extras: typeof configuracoesDb = []
+
+    for (const [chave, def] of Object.entries(CONFIGURACOES_DEFINIDAS)) {
+      if (chavesDb.has(chave)) continue
+      extras.push({
+        id: `__virtual__${chave}`,
+        chave,
+        valor: def.valorPadrao,
+        tipo: def.tipo,
+        descricao: def.descricao,
+        categoria: def.categoria,
+        createdAt: now,
+        updatedAt: now,
+      })
+    }
+
+    const configuracoes = [...configuracoesDb, ...extras].sort((a, b) => {
+      const ca = a.categoria || 'outros'
+      const cb = b.categoria || 'outros'
+      if (ca !== cb) return ca.localeCompare(cb)
+      return a.chave.localeCompare(b.chave)
     })
 
     // Agrupar por categoria
@@ -66,35 +93,48 @@ export async function POST(req: Request) {
       where: { chave },
     })
 
-    if (!configExistente) {
+    const definicao = !configExistente ? getDefinicaoConfiguracao(chave) : null
+    if (!configExistente && !definicao) {
       return NextResponse.json({ error: 'Configuração não encontrada' }, { status: 404 })
     }
 
-    // Converter valor para string baseado no tipo
+    const tipo = configExistente?.tipo ?? definicao!.tipo
+
     let valorString: string
-    if (configExistente.tipo === 'NUMBER') {
+    if (tipo === 'NUMBER') {
       valorString = String(valor)
-    } else if (configExistente.tipo === 'BOOLEAN') {
+    } else if (tipo === 'BOOLEAN') {
       valorString = String(valor)
     } else {
       valorString = String(valor)
     }
 
-    // Atualizar configuração
-    const configAtualizada = await prisma.configuracoes.update({
-      where: { chave },
-      data: {
-        valor: valorString,
-        updatedAt: new Date(),
-      },
-    })
+    const configAtualizada = configExistente
+      ? await prisma.configuracoes.update({
+          where: { chave },
+          data: {
+            valor: valorString,
+            updatedAt: new Date(),
+          },
+        })
+      : await prisma.configuracoes.create({
+          data: {
+            id: nanoid(),
+            chave,
+            valor: valorString,
+            tipo: definicao!.tipo,
+            descricao: definicao!.descricao,
+            categoria: definicao!.categoria,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        })
 
-    // Limpar cache do ConfigService
     ConfigService.clearCache()
 
     return NextResponse.json({
       success: true,
-      message: 'Configuração atualizada com sucesso',
+      message: configExistente ? 'Configuração atualizada com sucesso' : 'Configuração criada com sucesso',
       data: configAtualizada,
     })
   } catch (error) {
