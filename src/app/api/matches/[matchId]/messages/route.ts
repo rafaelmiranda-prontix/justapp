@@ -7,6 +7,7 @@ import { pusherServer } from '@/lib/pusher'
 import { randomUUID } from 'crypto'
 import { logger } from '@/lib/logger'
 import { ConfigService } from '@/lib/config-service'
+import { inAppNotificationService } from '@/lib/in-app-notification.service'
 
 const createMessageSchema = z.object({
   conteudo: z.string().min(1).max(2000),
@@ -250,7 +251,27 @@ export async function POST(req: Request, { params }: { params: Promise<{ matchId
       // Não falhar a requisição se Pusher falhar
     }
 
-    // TODO: Enviar notificação push/email para o destinatário
+    const recipientUserId = isCidadao ? match.advogados.userId : match.casos.cidadaos.userId
+    const senderName = isCidadao
+      ? match.casos.cidadaos.users?.name ?? 'Cidadão'
+      : match.advogados.users?.name ?? 'Advogado'
+    const href =
+      recipientUserId === match.advogados.userId
+        ? `/advogado/chat/${matchId}`
+        : `/chat/${matchId}`
+    const recipientRole = isCidadao ? ('ADVOGADO' as const) : ('CIDADAO' as const)
+    const preview = conteudo.trim().slice(0, 80) + (conteudo.trim().length > 80 ? '…' : '')
+
+    inAppNotificationService
+      .notifyUser(recipientUserId, {
+        type: 'CHAT_NEW_MESSAGE',
+        title: 'Nova mensagem',
+        message: `${senderName}: ${preview}`,
+        href,
+        metadata: { chatId: matchId, caseId: match.casos.id },
+        role: recipientRole,
+      })
+      .catch((err) => logger.error('[API] Chat in-app notification failed', err))
 
     return NextResponse.json({
       success: true,
