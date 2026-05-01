@@ -8,6 +8,7 @@ import { CaseDetails } from '@/components/casos/case-details'
 import { ArrowLeft, AlertCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { JustAppLoading } from '@/components/ui/justapp-loading'
+import { Badge } from '@/components/ui/badge'
 
 export default function CasoDetailsPage() {
   const params = useParams()
@@ -73,6 +74,19 @@ export default function CasoDetailsPage() {
         <ArrowLeft className="h-4 w-4 mr-2" />
         Voltar
       </Button>
+
+      {caso.status === 'CANCELADO' && (
+        <Card className="mb-6 border-slate-300 bg-slate-100">
+          <CardContent className="py-4 flex items-center justify-between gap-3">
+            <p className="text-sm text-slate-800">
+              Este caso foi cancelado pelo usuário.
+            </p>
+            <Badge variant="outline" className="border-slate-400 text-slate-700 bg-slate-50">
+              Cancelado pelo usuário
+            </Badge>
+          </CardContent>
+        </Card>
+      )}
 
       <CaseDetails caso={caso} showCidadaoInfo={true} />
     </div>

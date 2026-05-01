@@ -12,6 +12,7 @@ import { ptBR } from 'date-fns/locale'
 import { useMatchActions } from '@/hooks/use-match-actions'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 
 interface Match {
   id: string
@@ -22,6 +23,7 @@ interface Match {
   respondidoEm: string | null
   casos: {
     id: string
+    status: 'PENDENTE_ATIVACAO' | 'ABERTO' | 'EM_MEDIACAO' | 'EM_ANDAMENTO' | 'FECHADO' | 'CANCELADO'
     descricao: string
     urgencia: 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE'
     especialidades: {
@@ -146,8 +148,18 @@ export default function CasosRecebidosPage() {
     }
 
     // Renderização normal para outros status
+    const wasCancelledByUser = match.casos.status === 'CANCELADO'
+
     return (
-      <Card key={match.id} className="hover:shadow-lg transition-shadow">
+      <Card
+        key={match.id}
+        className={cn(
+          'transition-shadow',
+          wasCancelledByUser
+            ? 'bg-muted/35 border-muted hover:shadow-none'
+            : 'hover:shadow-lg'
+        )}
+      >
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -161,6 +173,11 @@ export default function CasosRecebidosPage() {
                 >
                   {statusLabels[match.status]}
                 </Badge>
+                {wasCancelledByUser && (
+                  <Badge variant="outline" className="border-slate-400 text-slate-700 bg-slate-100">
+                    Cancelado pelo usuário
+                  </Badge>
+                )}
               </div>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
@@ -181,6 +198,14 @@ export default function CasosRecebidosPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {wasCancelledByUser && (
+            <div className="rounded-md border border-slate-300 bg-slate-100 px-3 py-2">
+              <p className="text-sm text-slate-700">
+                Este caso foi cancelado pelo usuário. Mantenha apenas como referência histórica.
+              </p>
+            </div>
+          )}
+
           {/* Badges de informação */}
           <div className="flex flex-wrap gap-2">
             {match.casos.urgencia && (
