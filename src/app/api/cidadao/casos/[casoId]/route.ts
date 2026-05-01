@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
+
+const updateCaseStatusSchema = z.object({
+  action: z.enum(['CANCELAR', 'FECHAR']),
+  reason: z.string().max(500).optional(),
+})
 
 /**
  * GET /api/cidadao/casos/[casoId]
@@ -97,6 +103,108 @@ export async function GET(
     console.error('[Cidadao] Error fetching case details:', error)
     return NextResponse.json(
       { error: 'Erro ao buscar detalhes do caso' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * PATCH /api/cidadao/casos/[casoId]
+ * Permite ao cidadão cancelar/fechar um caso próprio.
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ casoId: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session || session.user.role !== 'CIDADAO') {
+      return NextResponse.json({ success: false, error: 'Não autorizado' }, { status: 401 })
+    }
+
+    const { casoId } = await params
+    const payload = updateCaseStatusSchema.parse(await request.json())
+
+    const cidadao = await prisma.cidadaos.findUnique({
+      where: { userId: session.user.id },
+    })
+
+    if (!cidadao) {
+      return NextResponse.json({ success: false, error: 'Cidadão não encontrado' }, { status: 404 })
+    }
+
+    const caso = await prisma.casos.findUnique({
+      where: { id: casoId },
+      select: { id: true, cidadaoId: true, status: true },
+    })
+
+    if (!caso) {
+      return NextResponse.json({ success: false, error: 'Caso não encontrado' }, { status: 404 })
+    }
+
+    if (caso.cidadaoId !== cidadao.id) {
+      return NextResponse.json({ success: false, error: 'Você não tem acesso a este caso' }, { status: 403 })
+    }
+
+    if (caso.status === 'FECHADO' || caso.status === 'CANCELADO') {
+      return NextResponse.json(
+        { success: false, error: 'Este caso já está encerrado.' },
+        { status: 400 }
+      )
+    }
+
+    const nextStatus = payload.action === 'CANCELAR' ? 'CANCELADO' : 'FECHADO'
+    const summaryPrefix = payload.action === 'CANCELAR' ? 'Cancelado pelo cidadão' : 'Fechado pelo cidadão'
+    const closeSummary = payload.reason?.trim()
+      ? `${summaryPrefix}: ${payload.reason.trim()}`
+      : summaryPrefix
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedCaso = await tx.casos.update({
+        where: { id: casoId },
+        data: {
+          status: nextStatus,
+          closedAt: new Date(),
+          closeSummary,
+          closeReason: payload.action === 'FECHAR' ? 'RESOLVIDO' : null,
+          updatedAt: new Date(),
+        },
+        include: {
+          especialidades: { select: { nome: true } },
+        },
+      })
+
+      await tx.matches.updateMany({
+        where: {
+          casoId,
+          status: { in: ['PENDENTE', 'ACEITO'] },
+        },
+        data: {
+          status: 'EXPIRADO',
+          respondidoEm: new Date(),
+        },
+      })
+
+      return updatedCaso
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: payload.action === 'CANCELAR' ? 'Caso cancelado com sucesso' : 'Caso fechado com sucesso',
+      data: {
+        ...updated,
+        createdAt: updated.createdAt.toISOString(),
+      },
+    })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ success: false, error: error.errors[0]?.message }, { status: 400 })
+    }
+
+    console.error('[Cidadao] Error updating case status:', error)
+    return NextResponse.json(
+      { success: false, error: 'Erro ao atualizar status do caso' },
       { status: 500 }
     )
   }

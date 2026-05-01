@@ -32,7 +32,15 @@ export default function CidadaoCasoDetailsPage() {
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [replyText, setReplyText] = useState('')
   const [sendingReply, setSendingReply] = useState(false)
+  const [updatingCaseStatus, setUpdatingCaseStatus] = useState(false)
   const { toast } = useToast()
+
+  const getCloseAction = (status: string) => {
+    if (status === 'ABERTO' || status === 'PENDENTE_ATIVACAO') {
+      return { action: 'CANCELAR' as const, label: 'Cancelar caso' }
+    }
+    return { action: 'FECHAR' as const, label: 'Fechar caso' }
+  }
 
   const fetchAdminMessages = useCallback(async () => {
     if (!casoId) return
@@ -132,6 +140,42 @@ export default function CidadaoCasoDetailsPage() {
     }
   }
 
+  const handleCloseCase = async () => {
+    if (!caso) return
+    const closeAction = getCloseAction(caso.status)
+    const confirmed = window.confirm(`Tem certeza que deseja ${closeAction.label.toLowerCase()}?`)
+    if (!confirmed) return
+
+    setUpdatingCaseStatus(true)
+    try {
+      const response = await fetch(`/api/cidadao/casos/${casoId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: closeAction.action }),
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Não foi possível encerrar o caso.')
+      }
+
+      const nextStatus = closeAction.action === 'CANCELAR' ? 'CANCELADO' : 'FECHADO'
+      setCaso((prev: any) => (prev ? { ...prev, status: nextStatus } : prev))
+      toast({
+        title: closeAction.action === 'CANCELAR' ? 'Caso cancelado' : 'Caso fechado',
+        description: 'O status do caso foi atualizado.',
+      })
+    } catch (error) {
+      toast({
+        title: 'Erro ao encerrar caso',
+        description: error instanceof Error ? error.message : 'Tente novamente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setUpdatingCaseStatus(false)
+    }
+  }
+
   return (
     <div className="container max-w-4xl py-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
@@ -139,14 +183,25 @@ export default function CidadaoCasoDetailsPage() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar
         </Button>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="w-full sm:w-auto shrink-0">
-              <Headphones className="h-4 w-4 mr-2" />
-              Suporte da plataforma
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          {caso.status !== 'FECHADO' && caso.status !== 'CANCELADO' && (
+            <Button
+              variant="destructive"
+              className="w-full sm:w-auto shrink-0"
+              disabled={updatingCaseStatus}
+              onClick={handleCloseCase}
+            >
+              {updatingCaseStatus ? 'Encerrando...' : getCloseAction(caso.status).label}
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg sm:max-w-xl max-h-[90vh] overflow-y-auto">
+          )}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-auto shrink-0">
+                <Headphones className="h-4 w-4 mr-2" />
+                Suporte da plataforma
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 pr-6">
                 <Headphones className="h-5 w-5" />
@@ -206,8 +261,9 @@ export default function CidadaoCasoDetailsPage() {
                 </Button>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <CaseDetails caso={caso} showCidadaoInfo={false} lawyerChats={caso.lawyerChats ?? []} />

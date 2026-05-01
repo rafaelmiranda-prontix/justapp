@@ -13,12 +13,13 @@ import Link from 'next/link'
 import { CasoStats } from '@/components/cidadao/caso-stats'
 import { CasoFilters } from '@/components/cidadao/caso-filters'
 import { JustAppLoading } from '@/components/ui/justapp-loading'
+import { useToast } from '@/hooks/use-toast'
 
 interface Caso {
   id: string
   descricao: string
   descricaoIA?: string | null
-  status: 'ABERTO' | 'EM_ANDAMENTO' | 'FECHADO' | 'CANCELADO'
+  status: 'PENDENTE_ATIVACAO' | 'ABERTO' | 'EM_ANDAMENTO' | 'FECHADO' | 'CANCELADO'
   urgencia: 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE'
   createdAt: string
   redistribuicoes?: number
@@ -42,6 +43,7 @@ interface Match {
 }
 
 const statusColors = {
+  PENDENTE_ATIVACAO: 'bg-slate-500',
   ABERTO: 'bg-yellow-500',
   EM_ANDAMENTO: 'bg-blue-500',
   FECHADO: 'bg-green-500',
@@ -49,6 +51,7 @@ const statusColors = {
 }
 
 const statusLabels = {
+  PENDENTE_ATIVACAO: 'Pendente de ativação',
   ABERTO: 'Aberto',
   EM_ANDAMENTO: 'Em Andamento',
   FECHADO: 'Fechado',
@@ -65,9 +68,11 @@ const urgenciaColors = {
 export default function MeusCasosPage() {
   const [casos, setCasos] = useState<Caso[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [closingCaseId, setClosingCaseId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [especialidadeFilter, setEspecialidadeFilter] = useState('all')
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchCasos()
@@ -135,6 +140,58 @@ export default function MeusCasosPage() {
     return caso.matches.find((m) => m.status === 'ACEITO' || m.status === 'CONTRATADO')
   }
 
+  const getCloseAction = (status: Caso['status']) => {
+    if (status === 'ABERTO' || status === 'PENDENTE_ATIVACAO') {
+      return { action: 'CANCELAR' as const, label: 'Cancelar caso' }
+    }
+
+    return { action: 'FECHAR' as const, label: 'Fechar caso' }
+  }
+
+  const handleCloseCase = async (caso: Caso) => {
+    const closeAction = getCloseAction(caso.status)
+    const confirmed = window.confirm(`Tem certeza que deseja ${closeAction.label.toLowerCase()}?`)
+    if (!confirmed) return
+
+    setClosingCaseId(caso.id)
+    try {
+      const response = await fetch(`/api/cidadao/casos/${caso.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: closeAction.action }),
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Não foi possível encerrar o caso.')
+      }
+
+      setCasos((prev) =>
+        prev.map((item) =>
+          item.id === caso.id
+            ? {
+                ...item,
+                status: closeAction.action === 'CANCELAR' ? 'CANCELADO' : 'FECHADO',
+              }
+            : item
+        )
+      )
+
+      toast({
+        title: closeAction.action === 'CANCELAR' ? 'Caso cancelado' : 'Caso fechado',
+        description: 'O status do seu caso foi atualizado com sucesso.',
+      })
+    } catch (error) {
+      toast({
+        title: 'Erro ao encerrar caso',
+        description: error instanceof Error ? error.message : 'Tente novamente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setClosingCaseId(null)
+    }
+  }
+
   return (
     <div className="container max-w-7xl py-8">
       <div className="flex items-center justify-between mb-8">
@@ -195,7 +252,11 @@ export default function MeusCasosPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <CardTitle className="text-lg">{caso.descricao.substring(0, 80)}...</CardTitle>
+                            <CardTitle className="text-lg">
+                              <Link href={`/cidadao/casos/${caso.id}`} className="hover:underline">
+                                {caso.descricao.substring(0, 80)}...
+                              </Link>
+                            </CardTitle>
                             <Badge
                               className={`${statusColors[caso.status]} text-white`}
                             >
@@ -261,6 +322,20 @@ export default function MeusCasosPage() {
                           </Button>
                         </div>
                       )}
+
+                      <div className="flex justify-end gap-2 pt-4 border-t mt-4">
+                        <Button size="sm" variant="outline" asChild>
+                          <Link href={`/cidadao/casos/${caso.id}`}>Ver detalhes</Link>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleCloseCase(caso)}
+                          disabled={closingCaseId === caso.id}
+                        >
+                          {closingCaseId === caso.id ? 'Encerrando...' : getCloseAction(caso.status).label}
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 )
@@ -281,7 +356,11 @@ export default function MeusCasosPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <CardTitle className="text-lg">{caso.descricao.substring(0, 80)}...</CardTitle>
+                            <CardTitle className="text-lg">
+                              <Link href={`/cidadao/casos/${caso.id}`} className="hover:underline">
+                                {caso.descricao.substring(0, 80)}...
+                              </Link>
+                            </CardTitle>
                             <Badge
                               className={`${statusColors[caso.status]} text-white`}
                             >
